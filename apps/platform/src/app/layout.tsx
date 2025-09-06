@@ -1,17 +1,6 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { APP_NAME } from "@/constants";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: APP_NAME,
@@ -47,9 +36,7 @@ export default function RootLayout({
 			<meta name="msapplication-TileColor" content="#fff" />
 			<meta name="msapplication-TileImage" content="/icon/ms-icon-144x144.png" />
 			<meta name="theme-color" content="#fff" />
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body>
         {children}
       </body>
     </html>
