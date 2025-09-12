@@ -22,9 +22,12 @@
     "lint": "eslint . && stylelint --allow-empty-input \"**/*.{css,less,scss}\"",
     "lint:fix": "prettier --write . && eslint --fix . && stylelint --allow-empty-input --fix \"**/*.{css,less,scss}\"",
     "prepare": "husky",
-    "start": "next start"
+    "start": "next start --port 8062",
+    "start:test": "next start --port 8061",
+    "start:dev": "next start --port 8060"
   },
   "dependencies": {
+    "alova": "^3.3.4",
     "next": "15.5.2",
     "react": "19.1.1",
     "react-dom": "19.1.1"

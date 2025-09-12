@@ -1,16 +1,13 @@
-function mockFetch(): Promise<string> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve('我是一个页面');
-    }, 2000);
-  });
-}
+import { query } from '@/services/demo';
+import Button from './button';
 
 export default async function Page() {
-  const data = await mockFetch();
+  const response = await query();
+
   return (
     <div>
-      <h1>demo page {data}</h1>
+      <h1>demo page - · - {response.data}</h1>
+      <Button />
     </div>
   );
 }
