@@ -1,4 +1,4 @@
-function isArrayPolyfill(v: any): Boolean {
+function isArrayPolyfill(v: any): boolean {
   return Object.prototype.toString.call(v) === '[object Array]';
 }
 
@@ -18,7 +18,7 @@ function isArrayPolyfill(v: any): Boolean {
  *
  * @returns {Boolean} 是数组则返回 true
  */
-export function isArray(v: any): Boolean {
+export function isArray(v: any): boolean {
   if (typeof Array.isArray === 'function') {
     return Array.isArray(v);
   }
