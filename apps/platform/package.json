@@ -23,8 +23,8 @@
     "lint:fix": "prettier --write . && eslint --fix . && stylelint --allow-empty-input --fix \"**/*.{css,less,scss}\"",
     "prepare": "husky",
     "start": "next start --port 8062",
-    "start:test": "cross-env NODE_ENV=test next start --port 8061",
-    "start:dev": "cross-env NODE_ENV=development next start --port 8060"
+    "start:test": "cross-env NODE_ENV=test next start",
+    "start:dev": "cross-env NODE_ENV=development next start"
   },
   "dependencies": {
     "alova": "^3.3.4",
