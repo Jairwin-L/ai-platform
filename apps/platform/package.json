@@ -17,7 +17,7 @@
   },
   "scripts": {
     "dev": "next dev --turbopack --port 8060",
-    "build": "next build --turbopack",
+    "build": "NODE_ENV=test next build --turbopack",
     "ci:eslint": "eslint -f json src -o ./.ci/eslint.json",
     "lint": "eslint . && stylelint --allow-empty-input \"**/*.{css,less,scss}\"",
     "lint:fix": "prettier --write . && eslint --fix . && stylelint --allow-empty-input --fix \"**/*.{css,less,scss}\"",
@@ -27,7 +27,6 @@
     "start:dev": "next start --port 8060"
   },
   "dependencies": {
-    "@next/env": "^15.5.3",
     "alova": "^3.3.4",
     "next": "15.5.2",
     "react": "19.1.1",
