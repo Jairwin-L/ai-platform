@@ -1,15 +1,11 @@
 import { createAlova } from 'alova';
 import fetch from 'alova/fetch';
 import ReactHook from 'alova/react';
-import { loadEnvConfig } from '@next/env';
-
-const projectDir = process.cwd();
-const envConfig = loadEnvConfig(projectDir);
-console.log(`envConfig----->：`, envConfig);
 
 const nodeEnv = process.env.NODE_ENV;
 console.log(`nodeEnv----->：`, nodeEnv);
-const baseURL = `${process.env.NEXT_PUBLIC_API_URL}`;
+const baseURL = process.env.NEXT_PUBLIC_API_URL!;
+console.log(`baseURL----->：`, baseURL);
 
 export const alovaInstance = createAlova({
   requestAdapter: fetch(),
