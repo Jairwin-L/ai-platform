@@ -2,7 +2,9 @@ import { createAlova } from 'alova';
 import fetch from 'alova/fetch';
 import ReactHook from 'alova/react';
 
-const baseURL = `${process!.env!.NEXT_PUBLIC_API_URL}`;
+const nodeEnv = process.env.NODE_ENV;
+console.log(`nodeEnv----->：`, nodeEnv);
+const baseURL = `${process.env.NEXT_PUBLIC_API_URL}`;
 
 export const alovaInstance = createAlova({
   requestAdapter: fetch(),
