@@ -7,7 +7,7 @@ module.exports = {
       instances: 1,
       exec_mode: 'fork',
       ignore_watch: ['node_modules'],
-      env_production: {
+      env: {
         NODE_ENV: 'production',
         PORT: 8062,
       },
@@ -20,7 +20,7 @@ module.exports = {
       exec_mode: 'cluster',
       watch: ['.next'],
       ignore_watch: ['node_modules'],
-      env_test: {
+      env: {
         NODE_ENV: 'test',
         PORT: 8061,
       },
@@ -33,7 +33,7 @@ module.exports = {
       exec_mode: 'cluster',
       watch: ['.next'],
       ignore_watch: ['node_modules'],
-      env_development: {
+      env: {
         NODE_ENV: 'development',
         PORT: 8060,
       },

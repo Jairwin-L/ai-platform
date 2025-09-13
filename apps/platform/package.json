@@ -23,8 +23,8 @@
     "lint:fix": "prettier --write . && eslint --fix . && stylelint --allow-empty-input --fix \"**/*.{css,less,scss}\"",
     "prepare": "husky",
     "start": "next start --port 8062",
-    "start:test": "next start --port 8061",
-    "start:dev": "next start --port 8060"
+    "start:test": "cross-env NODE_ENV=test next start --port 8061",
+    "start:dev": "cross-env NODE_ENV=development next start --port 8060"
   },
   "dependencies": {
     "alova": "^3.3.4",
@@ -39,6 +39,7 @@
     "@types/node": "^24.3.1",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
+    "cross-env": "^10.0.0",
     "eslint": "^9.35.0",
     "eslint-config-ali": "^16.5.0",
     "eslint-config-prettier": "^10.1.8",
