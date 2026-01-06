@@ -12,7 +12,7 @@ export default function NotFound() {
         抱歉，你访问的页面不存在。
       </p>
       <button
-        className="cursor-pointer px-6 py-2 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 active:scale-95"
+        className="cursor-pointer px-6 py-2 rounded-2xl bg-linear-to-r from-blue-500 to-purple-600 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 active:scale-95"
         onClick={onGoBack}
       >
         返回主页
