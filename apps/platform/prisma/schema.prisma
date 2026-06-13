@@ -1,0 +1,21 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Article {
+  id        String   @id @default(cuid())
+  title     String   @db.VarChar(120)
+  slug      String   @unique @db.VarChar(160)
+  summary   String?  @db.VarChar(240)
+  content   String
+  published Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([createdAt])
+  @@map("articles")
+}

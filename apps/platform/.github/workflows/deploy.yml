@@ -49,8 +49,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    env:
-      NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || (github.event_name == 'pull_request_target' && 'https://m1.apifoxmock.com/m1/7116578-6839375-default' || 'https://m1.apifoxmock.com/m1/7116581-6839378-default') }}
     outputs:
       commit_sha: ${{ steps.image.outputs.sha }}
       image_tag: ${{ steps.image.outputs.tag }}
@@ -69,6 +67,7 @@ jobs:
           echo "name=${IMAGE_NAME}" >> "${GITHUB_OUTPUT}"
           echo "sha=${COMMIT_SHA}" >> "${GITHUB_OUTPUT}"
           echo "tag=${IMAGE_NAME}:${COMMIT_SHA}" >> "${GITHUB_OUTPUT}"
+          echo "migrate_tag=${IMAGE_NAME}:${COMMIT_SHA}-migrate" >> "${GITHUB_OUTPUT}"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -90,8 +89,19 @@ jobs:
           tags: |
             ${{ steps.image.outputs.name }}:latest
             ${{ steps.image.outputs.tag }}
-          build-args: |
-            NEXT_PUBLIC_API_URL=${{ env.NEXT_PUBLIC_API_URL }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push migration image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: migrator
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:latest-migrate
+            ${{ steps.image.outputs.migrate_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -144,8 +154,12 @@ jobs:
           DEPLOY_SHA: ${{ needs.build.outputs.commit_sha }}
           GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN || secrets.GITHUB_TOKEN }}
           APP_PORT: ${{ vars.APP_PORT || (github.event_name == 'pull_request_target' && '8062' || '8060') }}
+          POSTGRES_DB: ${{ vars.POSTGRES_DB || (github.event_name == 'pull_request_target' && 'nextjs_blank_template' || 'nextjs_blank_template_dev') }}
+          POSTGRES_USER: ${{ vars.POSTGRES_USER || 'nextjs_blank_template' }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
-          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || (github.event_name == 'pull_request_target' && 'https://m1.apifoxmock.com/m1/7116578-6839375-default' || 'https://m1.apifoxmock.com/m1/7116581-6839378-default') }}
+          MIGRATE_IMAGE: ${{ needs.build.outputs.image_tag }}-migrate
         run: |
           : "${DEPLOY_HOST:?Missing required secret DEPLOY_HOST}"
           : "${DEPLOY_PORT:?Missing required secret DEPLOY_PORT}"
@@ -156,7 +170,9 @@ jobs:
           : "${DEPLOY_ENVIRONMENT:?Missing DEPLOY_ENVIRONMENT}"
           : "${DEPLOY_SHA:?Missing deploy sha}"
           : "${IMAGE_TAG:?Missing image tag}"
+          : "${MIGRATE_IMAGE:?Missing migration image tag}"
           : "${GHCR_READ_TOKEN:?Missing GHCR token}"
+          : "${POSTGRES_PASSWORD:?Missing POSTGRES_PASSWORD secret}"
 
           runtime_env="$(mktemp)"
           remote_env_tmp="/tmp/nextjs-blank-template-${DEPLOY_ENVIRONMENT}-${DEPLOY_SHA}.env"
@@ -177,7 +193,13 @@ jobs:
 
           write_env APP_PORT "${APP_PORT}"
           write_env APP_IMAGE "${IMAGE_TAG}"
-          write_env NEXT_PUBLIC_API_URL "${NEXT_PUBLIC_API_URL}"
+          write_env MIGRATE_IMAGE "${MIGRATE_IMAGE}"
+          write_env POSTGRES_DB "${POSTGRES_DB}"
+          write_env POSTGRES_USER "${POSTGRES_USER}"
+          write_env POSTGRES_PASSWORD "${POSTGRES_PASSWORD}"
+          if [[ -n "${DATABASE_URL}" ]]; then
+            write_env DATABASE_URL "${DATABASE_URL}"
+          fi
 
           scp -i ~/.ssh/deploy_key -P "${DEPLOY_PORT}" \
             "${runtime_env}" \

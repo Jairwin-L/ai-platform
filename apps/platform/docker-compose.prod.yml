@@ -1,12 +1,43 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-nextjs_blank_template}
+      POSTGRES_USER: ${POSTGRES_USER:-nextjs_blank_template}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres-prod-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   app:
     image: ${APP_IMAGE:?APP_IMAGE is required, for example ghcr.io/owner/nextjs-blank-template:latest}
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       NODE_ENV: production
       NODE_OPTIONS: ${NODE_OPTIONS:---max-old-space-size=3072}
       PORT: 8062
       HOSTNAME: 0.0.0.0
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://m1.apifoxmock.com/m1/7116578-6839375-default}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-nextjs_blank_template}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-nextjs_blank_template}?schema=public}
     ports:
       - '${APP_PORT:-8062}:8062'
+
+  migrate:
+    image: ${MIGRATE_IMAGE:?MIGRATE_IMAGE is required, for example ghcr.io/owner/nextjs-blank-template:latest-migrate}
+    profiles:
+      - tools
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-nextjs_blank_template}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-nextjs_blank_template}?schema=public}
+
+volumes:
+  postgres-prod-data:

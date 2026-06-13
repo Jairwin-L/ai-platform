@@ -1,12 +1,9 @@
-import { query } from '@/services/demo';
 import Button from './button';
 
-export default async function Page() {
-  const response = await query();
-
+export default function Page() {
   return (
     <div>
-      <h1>demo page - · - {response.data}</h1>
+      <h1>demo page</h1>
       <Button />
     </div>
   );

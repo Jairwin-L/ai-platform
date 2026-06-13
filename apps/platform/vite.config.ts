@@ -2818,9 +2818,6 @@ export default defineConfig({
       },
     },
   },
-  test: {
-    include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
-  },
   fmt: {
     printWidth: 100,
     tabWidth: 2,

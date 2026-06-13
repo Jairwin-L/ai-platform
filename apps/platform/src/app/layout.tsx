@@ -1,6 +1,9 @@
 import { type ReactNode } from 'react';
 import type { Metadata } from 'next';
+import { AntdRegistry } from '@ant-design/nextjs-registry';
+import { AntdProvider } from '@/components';
 import { APP_NAME } from '@/constants';
+import 'antd/dist/reset.css';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -37,7 +40,11 @@ export default function RootLayout({
       <meta name="msapplication-TileColor" content="#fff" />
       <meta name="msapplication-TileImage" content="/icon/ms-icon-144x144.png" />
       <meta name="theme-color" content="#fff" />
-      <body>{children}</body>
+      <body>
+        <AntdRegistry>
+          <AntdProvider>{children}</AntdProvider>
+        </AntdRegistry>
+      </body>
     </html>
   );
 }

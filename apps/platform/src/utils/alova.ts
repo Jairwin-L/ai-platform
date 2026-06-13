@@ -8,19 +8,25 @@ import type { RequestBody } from 'alova';
 import fetch from 'alova/fetch';
 import ReactHook from 'alova/react';
 
-const baseURL = process.env.NEXT_PUBLIC_API_URL;
+/**
+ * @func parseSuccessResponse
+ * @desc 解析响应 JSON 数据。
+ * @param {Response} response fetch 响应对象。
+ * @returns {Promise<unknown>} 响应体 JSON 数据。
+ */
+async function parseSuccessResponse(response: Response): Promise<unknown> {
+  const data = await response.json();
+  return data;
+}
 
 export const alovaInstance = createAlova({
   requestAdapter: fetch(),
   statesHook: ReactHook,
-  baseURL,
+  baseURL: '',
   timeout: 3500,
   cacheFor: null,
   responded: {
-    onSuccess: async (response) => {
-      const data = await response.json();
-      return data;
-    },
+    onSuccess: parseSuccessResponse,
     onError: (error) => {
       throw error;
     },

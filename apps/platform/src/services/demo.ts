@@ -5,6 +5,6 @@ export interface DemoResponse {
 }
 
 export async function query(): Promise<DemoResponse> {
-  const response = await alovaGet('/demo');
+  const response = await alovaGet('/api/demo');
   return response as DemoResponse;
 }
