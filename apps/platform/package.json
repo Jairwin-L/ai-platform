@@ -14,15 +14,15 @@
   "funding": "https://github.com/sponsors/Jairwin-L",
   "author": {
     "name": "Jairwin",
-    "email": "jairwin@jairwin.cn"
+    "email": "jairwin@jairwin.cc"
   },
   "scripts": {
     "dev": "next dev --port 8060",
     "build": "next build",
-    "ci:eslint": "eslint -f json src -o ./.ci/eslint.json",
-    "lint": "eslint . && stylelint --allow-empty-input \"**/*.{css,less,scss}\"",
-    "lint:fix": "prettier --write . && eslint --fix . && stylelint --allow-empty-input --fix \"**/*.{css,less,scss}\"",
-    "prepare": "husky",
+    "ci:eslint": "vp lint -f json src -o ./.ci/eslint.json",
+    "lint": "vp lint . && stylelint --allow-empty-input \"**/*.{css,less,scss}\"",
+    "lint:fix": "vp fmt . && vp lint --fix . && stylelint --allow-empty-input --fix \"**/*.{css,less,scss}\"",
+    "prepare": "vp config",
     "start": "next start --port 8062",
     "start:test": "next start --port 8061",
     "start:dev": "next start --port 8060"
@@ -40,31 +40,20 @@
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "eslint": "^9.35.0",
-    "eslint-config-ali": "^16.5.0",
-    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.1.6",
-    "prettier": "^3.6.2",
     "prettier-config-ali": "^1.5.0",
     "stylelint": "^16.24.0",
     "stylelint-config-ali": "^2.3.0",
     "stylelint-prettier": "^5.0.3",
     "tailwindcss": "^4.1.18",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vite-plus": "catalog:"
   },
   "commitlint": {
     "extends": [
       "@commitlint/config-conventional"
     ]
   },
-  "lint-staged": {
-    "*.{cjs,cts,js,jsx,mjs,mts,ts,tsx,vue}": "eslint --fix",
-    "*.{css,less,scss}": "stylelint --fix",
-    "*.{cjs,css,cts,html,js,json,jsx,less,md,mjs,mts,scss,ts,tsx,vue,yaml,yml}": "prettier --write"
-  },
-  "prettier": "prettier-config-ali",
   "stylelint": {
     "extends": [
       "stylelint-config-ali",
@@ -82,5 +71,6 @@
   },
   "yarn": {
     "mode": "pnpm"
-  }
+  },
+  "packageManager": "pnpm@11.6.0"
 }

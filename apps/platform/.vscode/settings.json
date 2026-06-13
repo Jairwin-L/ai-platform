@@ -3,9 +3,8 @@
   "stylelint.validate": ["css", "scss", "less", "acss"],
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit",
-    "source.fixAll.stylelint": "explicit"
-    // TODO:
-    // "source.organizeImports": "explicit"
+    "source.fixAll.stylelint": "explicit",
+    "source.fixAll.oxc": "explicit"
   },
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[javascript]": {
@@ -43,5 +42,7 @@
   },
   "editor.formatOnSave": true,
   "editor.rulers": [100],
-  "cSpell.words": ["alova"]
+  "cSpell.words": ["alova"],
+  "oxc.fmt.configPath": "./vite.config.ts",
+  "editor.formatOnSaveMode": "file"
 }
