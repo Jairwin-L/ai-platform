@@ -1,33 +1,15 @@
 import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { getPrisma } from '@/lib/prisma';
 import { articleQuerySchema, createArticleSchema } from '@/lib/article-schema';
-
-function createSuccessResponse<T>(data: T, message = 'Operation successful', status = 200) {
-  return NextResponse.json(
-    {
-      success: true,
-      message,
-      data,
-      timestamp: Date.now(),
-    },
-    { status },
-  );
-}
-
-function createErrorResponse(message: string, status = 500, errorDetail?: unknown) {
-  return NextResponse.json(
-    {
-      success: false,
-      message,
-      data: null,
-      errorDetail: process.env.NODE_ENV === 'development' ? errorDetail : undefined,
-      timestamp: Date.now(),
-    },
-    { status },
-  );
-}
+import {
+  COMMON_ERROR,
+  DATA_ERROR,
+  createErrorResponse,
+  createPaginatedResponse,
+  createSuccessResponse,
+  withApiHandler,
+} from '@/lib/server';
 
 function getValidationMessage(error: ZodError) {
   return error.issues.map((issue) => issue.message).join('；');
@@ -47,7 +29,7 @@ function throwIfRejected<T>(result: PromiseSettledResult<T>) {
   return result.value;
 }
 
-export async function GET(request: NextRequest) {
+const listArticlesHandler = async (request: NextRequest) => {
   try {
     const searchParams = Object.fromEntries(request.nextUrl.searchParams);
     const { page, pageSize, keyword } = articleQuerySchema.parse(searchParams);
@@ -74,29 +56,22 @@ export async function GET(request: NextRequest) {
     const articles = throwIfRejected(articlesResult);
     const total = throwIfRejected(totalResult);
 
-    return createSuccessResponse(
-      {
-        data: articles,
-        total,
-        page,
-        pageSize,
-      },
-      'Query successful',
-    );
+    return createPaginatedResponse(articles, total, page, pageSize);
   } catch (error) {
     if (error instanceof ZodError) {
-      return createErrorResponse(getValidationMessage(error), 400, error);
+      return createErrorResponse(
+        COMMON_ERROR.VALIDATION_ERROR,
+        getValidationMessage(error),
+        error,
+        400,
+      );
     }
 
-    return createErrorResponse(
-      error instanceof Error ? error.message : 'Failed to query articles',
-      500,
-      error,
-    );
+    return createErrorResponse(DATA_ERROR.QUERY_FAILED, 'Failed to query articles', error, 500);
   }
-}
+};
 
-export async function POST(request: NextRequest) {
+const createArticleHandler = async (request: NextRequest) => {
   try {
     const body = await request.json();
     const payload = createArticleSchema.parse(body);
@@ -108,17 +83,26 @@ export async function POST(request: NextRequest) {
     return createSuccessResponse(article, 'Article created successfully', 201);
   } catch (error) {
     if (error instanceof ZodError) {
-      return createErrorResponse(getValidationMessage(error), 400, error);
+      return createErrorResponse(
+        COMMON_ERROR.VALIDATION_ERROR,
+        getValidationMessage(error),
+        error,
+        400,
+      );
     }
 
     if (getErrorCode(error) === 'P2002') {
-      return createErrorResponse('Slug 已存在，请更换后重试', 409, error);
+      return createErrorResponse(
+        DATA_ERROR.DUPLICATE_ENTRY,
+        'Slug 已存在，请更换后重试',
+        error,
+        409,
+      );
     }
 
-    return createErrorResponse(
-      error instanceof Error ? error.message : 'Failed to create article',
-      500,
-      error,
-    );
+    return createErrorResponse(DATA_ERROR.CREATE_FAILED, 'Failed to create article', error, 500);
   }
-}
+};
+
+export const GET = withApiHandler(listArticlesHandler);
+export const POST = withApiHandler(createArticleHandler);

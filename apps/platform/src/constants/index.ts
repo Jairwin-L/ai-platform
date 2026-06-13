@@ -5,3 +5,4 @@
  */
 
 export { APP_NAME } from './app';
+export * from './error-codes';

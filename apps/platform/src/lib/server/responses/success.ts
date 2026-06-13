@@ -1,0 +1,58 @@
+import { NextResponse } from 'next/server';
+import type { ApiResponse, PaginatedResponse } from '../types';
+
+export const JSON_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+function serialize<T>(payload: ApiResponse<T> | PaginatedResponse<unknown>) {
+  return JSON.parse(
+    JSON.stringify(payload, (key, value) => {
+      if (typeof value === 'bigint') {
+        return value.toString();
+      }
+
+      if ((key === 'id' || key.endsWith('_id') || key.endsWith('Id')) && typeof value === 'number') {
+        return value.toString();
+      }
+
+      return value;
+    }),
+  );
+}
+
+export function createSuccessResponse<T>(
+  data: T,
+  message = 'Operation successful',
+  code = 200,
+): NextResponse<ApiResponse<T>> {
+  const body: ApiResponse<T> = {
+    code,
+    success: true,
+    message,
+    data,
+    timestamp: Date.now(),
+  };
+
+  return NextResponse.json(serialize(body), { status: code, headers: JSON_HEADERS });
+}
+
+export function createPaginatedResponse<T>(
+  data: T[],
+  total: number,
+  page: number,
+  pageSize: number,
+  message = 'Query successful',
+): NextResponse<PaginatedResponse<T>> {
+  const body: PaginatedResponse<T> = {
+    code: 200,
+    success: true,
+    message,
+    data: { data, total, page, pageSize },
+    timestamp: Date.now(),
+  };
+
+  return NextResponse.json(serialize(body), { status: 200, headers: JSON_HEADERS });
+}

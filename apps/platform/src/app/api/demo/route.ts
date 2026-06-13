@@ -1,9 +1,3 @@
-import { NextResponse } from 'next/server';
+import { createSuccessResponse, withApiHandler } from '@/lib/server';
 
-export async function GET() {
-  return NextResponse.json({
-    message: 'Hello',
-    success: true,
-    data: 'Hello',
-  });
-}
+export const GET = withApiHandler(async () => createSuccessResponse('Hello', 'Hello'));
