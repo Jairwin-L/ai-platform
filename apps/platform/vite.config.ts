@@ -1,10 +1,15 @@
 import { defineConfig } from 'vite-plus';
+import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
   lint: {
     plugins: ['oxc', 'typescript', 'unicorn', 'react'],
     jsPlugins: [
-      'eslint-plugin-prettier',
       {
         name: 'vite-plus',
         specifier: 'vite-plus/oxlint-plugin',
@@ -334,7 +339,6 @@ export default defineConfig({
       'react/no-array-index-key': 'warn',
       'react/void-dom-elements-no-children': 'error',
       'react/no-redundant-should-component-update': 'error',
-      'prettier/prettier': 'error',
       'react/rules-of-hooks': 'error',
       'typescript/dot-notation': [
         'error',
@@ -2805,6 +2809,17 @@ export default defineConfig({
     '*.{cjs,cts,js,jsx,mjs,mts,ts,tsx,vue}': 'vp lint --fix',
     '*.{css,less,scss}': 'stylelint --fix',
     '*.{cjs,css,cts,html,js,json,jsx,less,md,mjs,mts,scss,ts,tsx,vue,yaml,yml}': 'vp fmt',
+  },
+  run: {
+    tasks: {
+      verify: {
+        command: ['vp check', 'vp test'],
+        cache: false,
+      },
+    },
+  },
+  test: {
+    include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
   },
   fmt: {
     printWidth: 100,

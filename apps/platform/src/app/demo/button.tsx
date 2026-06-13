@@ -6,9 +6,8 @@ import { query } from '@/services/demo';
 export default function Button() {
   const [text, setText] = useState<string>('');
   const onQuery = async () => {
-    console.log('query');
-    const response: any = await query();
-    setText(response.data as string);
+    const response = await query();
+    setText(response.data);
   };
   return (
     <>

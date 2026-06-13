@@ -49,7 +49,7 @@
 - 启动生产服务：`vp run start`（端口 8062）
 - 代码检查：`vp check` 或 `vp run lint`
 - 自动修复：`vp run lint:fix`
-- 测试：`vp test`；当前无测试文件时，CI 使用 `vp test --passWithNoTests`
+- 测试：`vp test`；CI 统一使用 `vp run verify`
 - Vite+ 帮助：`vp help`
 
 当改动涉及以下范围时，至少执行：

@@ -37,11 +37,8 @@ jobs:
       - name: Install dependencies
         run: vp install
 
-      - name: Check
-        run: vp check
-
-      - name: Test
-        run: vp test --passWithNoTests
+      - name: Verify
+        run: vp run verify
 
   build:
     name: Build Docker image

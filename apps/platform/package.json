@@ -40,14 +40,12 @@
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "eslint-plugin-prettier": "^5.5.4",
-    "prettier-config-ali": "^1.5.0",
     "stylelint": "^16.24.0",
     "stylelint-config-ali": "^2.3.0",
-    "stylelint-prettier": "^5.0.3",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3",
-    "vite-plus": "catalog:"
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
   },
   "commitlint": {
     "extends": [
@@ -56,8 +54,7 @@
   },
   "stylelint": {
     "extends": [
-      "stylelint-config-ali",
-      "stylelint-prettier/recommended"
+      "stylelint-config-ali"
     ]
   },
   "engines": {
