@@ -3,17 +3,30 @@ name: Build and Deploy
 on:
   push:
     branches:
-      - main
       - dev
+  pull_request_target:
+    branches:
+      - main
+    types:
+      - closed
   workflow_dispatch:
 
 jobs:
   validate:
     name: Validate with Vite+
     runs-on: ubuntu-latest
+    if: >-
+      github.actor == github.repository_owner &&
+      (
+        (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main') ||
+        (github.event_name == 'push' && github.ref_name == 'dev') ||
+        (github.event_name == 'workflow_dispatch' && github.ref_name == 'dev')
+      )
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
 
       - name: Set up Vite+
         uses: voidzero-dev/setup-vp@v1
@@ -35,23 +48,30 @@ jobs:
     runs-on: ubuntu-latest
     needs: validate
     environment:
-      name: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+      name: ${{ github.event_name == 'pull_request_target' && 'production' || 'development' }}
     permissions:
       contents: read
       packages: write
     env:
-      NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || (github.ref_name == 'main' && 'https://m1.apifoxmock.com/m1/7116578-6839375-default' || 'https://m1.apifoxmock.com/m1/7116581-6839378-default') }}
+      NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || (github.event_name == 'pull_request_target' && 'https://m1.apifoxmock.com/m1/7116578-6839375-default' || 'https://m1.apifoxmock.com/m1/7116581-6839378-default') }}
+    outputs:
+      commit_sha: ${{ steps.image.outputs.sha }}
+      image_tag: ${{ steps.image.outputs.tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
 
       - name: Resolve image name
         id: image
         shell: bash
         run: |
+          COMMIT_SHA="${{ github.event.pull_request.merge_commit_sha || github.sha }}"
           IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
           echo "name=${IMAGE_NAME}" >> "${GITHUB_OUTPUT}"
-          echo "tag=${IMAGE_NAME}:${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+          echo "sha=${COMMIT_SHA}" >> "${GITHUB_OUTPUT}"
+          echo "tag=${IMAGE_NAME}:${COMMIT_SHA}" >> "${GITHUB_OUTPUT}"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -82,15 +102,16 @@ jobs:
     name: Deploy to server
     runs-on: ubuntu-latest
     needs: build
-    if: contains(fromJSON('["main","dev"]'), github.ref_name)
     environment:
-      name: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+      name: ${{ github.event_name == 'pull_request_target' && 'production' || 'development' }}
     permissions:
       contents: read
       packages: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
 
       - name: Configure SSH
         shell: bash
@@ -120,15 +141,15 @@ jobs:
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-          DEPLOY_ENV_FILE: ${{ vars.DEPLOY_ENV_FILE || secrets.DEPLOY_ENV_FILE || (github.ref_name == 'main' && '.env.production' || '.env.development') }}
-          COMPOSE_PROJECT_NAME: ${{ vars.COMPOSE_PROJECT_NAME || secrets.COMPOSE_PROJECT_NAME || (github.ref_name == 'main' && 'nextjs-blank-template-prod' || 'nextjs-blank-template-dev') }}
-          DEPLOY_ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+          DEPLOY_ENV_FILE: ${{ vars.DEPLOY_ENV_FILE || secrets.DEPLOY_ENV_FILE || (github.event_name == 'pull_request_target' && '.env.production' || '.env.development') }}
+          COMPOSE_PROJECT_NAME: ${{ vars.COMPOSE_PROJECT_NAME || secrets.COMPOSE_PROJECT_NAME || (github.event_name == 'pull_request_target' && 'nextjs-blank-template-prod' || 'nextjs-blank-template-dev') }}
+          DEPLOY_ENVIRONMENT: ${{ github.event_name == 'pull_request_target' && 'production' || 'development' }}
+          DEPLOY_SHA: ${{ needs.build.outputs.commit_sha }}
           GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN || secrets.GITHUB_TOKEN }}
-          APP_PORT: ${{ vars.APP_PORT || (github.ref_name == 'main' && '8062' || '8061') }}
-          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || (github.ref_name == 'main' && 'https://m1.apifoxmock.com/m1/7116578-6839375-default' || 'https://m1.apifoxmock.com/m1/7116581-6839378-default') }}
+          APP_PORT: ${{ vars.APP_PORT || (github.event_name == 'pull_request_target' && '8062' || '8060') }}
+          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || (github.event_name == 'pull_request_target' && 'https://m1.apifoxmock.com/m1/7116578-6839375-default' || 'https://m1.apifoxmock.com/m1/7116581-6839378-default') }}
         run: |
-          IMAGE_TAG="ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}"
-
           : "${DEPLOY_HOST:?Missing required secret DEPLOY_HOST}"
           : "${DEPLOY_PORT:?Missing required secret DEPLOY_PORT}"
           : "${DEPLOY_USER:?Missing required secret DEPLOY_USER}"
@@ -136,11 +157,12 @@ jobs:
           : "${DEPLOY_ENV_FILE:?Missing DEPLOY_ENV_FILE}"
           : "${COMPOSE_PROJECT_NAME:?Missing COMPOSE_PROJECT_NAME}"
           : "${DEPLOY_ENVIRONMENT:?Missing DEPLOY_ENVIRONMENT}"
+          : "${DEPLOY_SHA:?Missing deploy sha}"
           : "${IMAGE_TAG:?Missing image tag}"
           : "${GHCR_READ_TOKEN:?Missing GHCR token}"
 
           runtime_env="$(mktemp)"
-          remote_env_tmp="/tmp/nextjs-blank-template-${DEPLOY_ENVIRONMENT}-${GITHUB_SHA}.env"
+          remote_env_tmp="/tmp/nextjs-blank-template-${DEPLOY_ENVIRONMENT}-${DEPLOY_SHA}.env"
           trap 'rm -f "${runtime_env}"' EXIT
 
           write_env() {

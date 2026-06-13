@@ -40,7 +40,7 @@ case "${environment}" in
     default_env_file=".env.development"
     default_project_name="nextjs-blank-template-dev"
     default_compose_file="docker-compose.prod.yml"
-    default_app_port="8061"
+    default_app_port="8060"
     default_next_public_api_url="https://m1.apifoxmock.com/m1/7116581-6839378-default"
     ;;
   *)
