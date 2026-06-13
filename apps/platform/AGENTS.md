@@ -8,9 +8,11 @@
 - 技术栈：`Next.js (App Router) + React 19 + TypeScript + Tailwind CSS`
 - 请求层：`alova`，现有封装位于 `src/utils/alova.ts`，业务请求示例位于 `src/services/`
 - 包管理与工具链：Vite+ (`vp`) + `pnpm`
+- 部署：GitHub Actions 构建 Docker 镜像并推送到 GHCR，再通过 SSH 登录服务器执行 Docker Compose 拉取镜像并重启服务。
 - Node 版本要求：`22.x`
 - 主要代码目录：`src/`（包含 `app/`、`components/`、`constants/`、`lib/`、`services/`、`styles/`、`utils/` 等）
 - 主要配置文件：`package.json`、`vite.config.ts`、`next.config.ts`、`tsconfig.json`、`postcss.config.mjs`
+- 部署相关文件：`Dockerfile`、`docker-compose.prod.yml`、`.github/workflows/deploy.yml`、`scripts/deploy-compose.sh`
 
 ## 2. 工作优先级
 
@@ -39,10 +41,12 @@
 - 安装依赖：`vp install`
 - 本地开发：`vp run dev`（端口 8060）
 - 生产构建：`vp run build`
+- Docker 生产构建：`docker build --target runner -t nextjs-blank-template:local .`
+- 服务器部署脚本：`APP_IMAGE=<image> scripts/deploy-compose.sh <production|development>`
 - 启动生产服务：`vp run start`（端口 8062）
 - 代码检查：`vp check` 或 `vp run lint`
 - 自动修复：`vp run lint:fix`
-- 测试：`vp test`
+- 测试：`vp test`；当前无测试文件时，CI 使用 `vp test --passWithNoTests`
 - Vite+ 帮助：`vp help`
 
 当改动涉及以下范围时，至少执行：
@@ -50,12 +54,13 @@
 - TS 类型、公共工具函数、路由、`next.config.ts`、`tsconfig.json` 等构建配置 -> `vp check`；影响面较大时再执行 `vp run build`
 - 样式文件（`*.css`、`*.less`、`*.scss`） -> `vp run lint` 或更小范围的 Stylelint 检查
 - `vite.config.ts`、`package.json`、依赖与工具链配置 -> `vp install` + `vp check`，必要时执行 `vp env doctor`
+- `Dockerfile`、`docker-compose*.yml`、`.github/workflows/deploy.yml` 或 `scripts/deploy-compose.sh` -> 检查对应 Docker / GitHub Actions / Compose 流程，必要时执行针对性构建或脚本校验
 - 新增或修改测试后 -> `vp test`
 
 ## 5. 代码修改约束
 
 - 默认不做大规模无关重构。
-- 不随意改动构建配置（`next.config.ts`、`tsconfig.json`、`vite.config.ts`、`package.json`、Stylelint/Prettier 配置），除非需求明确要求。
+- 不随意改动构建配置（`next.config.ts`、`tsconfig.json`、`vite.config.ts`、`package.json`、`Dockerfile`、`docker-compose*.yml`、`.github/workflows/deploy.yml`、Stylelint/Prettier 配置），除非需求明确要求。
 - 不引入与需求无关的新依赖；如确需引入，须说明用途与体积影响。
 - 避免重复实现：已有工具函数（`src/utils/`）、请求封装（`src/utils/alova.ts`、`src/services/`）、组件可复用时不要新增平行实现。
 - 单文件代码行数上限：每个页面（`src/app/**/page.tsx`、`layout.tsx` 等）、每个组件文件不得超过 500 行（含注释与空行）；超过时必须按职责拆分为子组件 / 子模块，不允许通过删注释、压行等方式绕过该限制。

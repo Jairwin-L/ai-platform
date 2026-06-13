@@ -1,0 +1,12 @@
+services:
+  app:
+    image: ${APP_IMAGE:?APP_IMAGE is required, for example ghcr.io/owner/nextjs-blank-template:latest}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NODE_OPTIONS: ${NODE_OPTIONS:---max-old-space-size=3072}
+      PORT: 8062
+      HOSTNAME: 0.0.0.0
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://m1.apifoxmock.com/m1/7116578-6839375-default}
+    ports:
+      - '${APP_PORT:-8062}:8062'

@@ -1,0 +1,187 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate with Vite+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: '22'
+          cache: true
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Check
+        run: vp check
+
+      - name: Test
+        run: vp test --passWithNoTests
+
+  build:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    needs: validate
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+    permissions:
+      contents: read
+      packages: write
+    env:
+      NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || (github.ref_name == 'main' && 'https://m1.apifoxmock.com/m1/7116578-6839375-default' || 'https://m1.apifoxmock.com/m1/7116581-6839378-default') }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve image name
+        id: image
+        shell: bash
+        run: |
+          IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
+          echo "name=${IMAGE_NAME}" >> "${GITHUB_OUTPUT}"
+          echo "tag=${IMAGE_NAME}:${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runner
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:latest
+            ${{ steps.image.outputs.tag }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ env.NEXT_PUBLIC_API_URL }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to server
+    runs-on: ubuntu-latest
+    needs: build
+    if: contains(fromJSON('["main","dev"]'), github.ref_name)
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          : "${DEPLOY_HOST:?Missing required secret DEPLOY_HOST}"
+          : "${DEPLOY_PORT:?Missing required secret DEPLOY_PORT}"
+          : "${DEPLOY_SSH_KEY:?Missing required secret DEPLOY_SSH_KEY}"
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${DEPLOY_SSH_KEY}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -T 10 -p "${DEPLOY_PORT}" -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts || {
+            echo "Failed to scan SSH host key for ${DEPLOY_HOST}:${DEPLOY_PORT}."
+            echo "Check DEPLOY_HOST, DEPLOY_PORT, firewall rules, and whether SSH is reachable from GitHub Actions."
+            exit 1
+          }
+
+      - name: Pull image and restart app
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_ENV_FILE: ${{ vars.DEPLOY_ENV_FILE || secrets.DEPLOY_ENV_FILE || (github.ref_name == 'main' && '.env.production' || '.env.development') }}
+          COMPOSE_PROJECT_NAME: ${{ vars.COMPOSE_PROJECT_NAME || secrets.COMPOSE_PROJECT_NAME || (github.ref_name == 'main' && 'nextjs-blank-template-prod' || 'nextjs-blank-template-dev') }}
+          DEPLOY_ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+          GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN || secrets.GITHUB_TOKEN }}
+          APP_PORT: ${{ vars.APP_PORT || (github.ref_name == 'main' && '8062' || '8061') }}
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || (github.ref_name == 'main' && 'https://m1.apifoxmock.com/m1/7116578-6839375-default' || 'https://m1.apifoxmock.com/m1/7116581-6839378-default') }}
+        run: |
+          IMAGE_TAG="ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}"
+
+          : "${DEPLOY_HOST:?Missing required secret DEPLOY_HOST}"
+          : "${DEPLOY_PORT:?Missing required secret DEPLOY_PORT}"
+          : "${DEPLOY_USER:?Missing required secret DEPLOY_USER}"
+          : "${DEPLOY_PATH:?Missing required secret DEPLOY_PATH}"
+          : "${DEPLOY_ENV_FILE:?Missing DEPLOY_ENV_FILE}"
+          : "${COMPOSE_PROJECT_NAME:?Missing COMPOSE_PROJECT_NAME}"
+          : "${DEPLOY_ENVIRONMENT:?Missing DEPLOY_ENVIRONMENT}"
+          : "${IMAGE_TAG:?Missing image tag}"
+          : "${GHCR_READ_TOKEN:?Missing GHCR token}"
+
+          runtime_env="$(mktemp)"
+          remote_env_tmp="/tmp/nextjs-blank-template-${DEPLOY_ENVIRONMENT}-${GITHUB_SHA}.env"
+          trap 'rm -f "${runtime_env}"' EXIT
+
+          write_env() {
+            local key="$1"
+            local value="$2"
+
+            if [[ "${value}" == *$'\n'* || "${value}" == *$'\r'* ]]; then
+              echo "Environment value for ${key} must be a single line." >&2
+              exit 1
+            fi
+
+            value=${value//\'/\'\\\'\'}
+            printf "%s='%s'\n" "${key}" "${value}" >> "${runtime_env}"
+          }
+
+          write_env APP_PORT "${APP_PORT}"
+          write_env APP_IMAGE "${IMAGE_TAG}"
+          write_env NEXT_PUBLIC_API_URL "${NEXT_PUBLIC_API_URL}"
+
+          scp -i ~/.ssh/deploy_key -P "${DEPLOY_PORT}" \
+            "${runtime_env}" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${remote_env_tmp}"
+
+          ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT}" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "mkdir -p '${DEPLOY_PATH}/scripts'"
+
+          scp -i ~/.ssh/deploy_key -P "${DEPLOY_PORT}" \
+            docker-compose.prod.yml \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/docker-compose.prod.yml"
+
+          scp -i ~/.ssh/deploy_key -P "${DEPLOY_PORT}" \
+            scripts/deploy-compose.sh \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/scripts/deploy-compose.sh"
+
+          ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT}" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "cd '${DEPLOY_PATH}' && \
+             mv '${remote_env_tmp}' '${DEPLOY_ENV_FILE}' && \
+             chmod 600 '${DEPLOY_ENV_FILE}' && \
+             chmod +x scripts/deploy-compose.sh && \
+             if [ ! -x scripts/deploy-compose.sh ]; then echo 'Missing executable script: scripts/deploy-compose.sh' && exit 1; fi && \
+             echo '${GHCR_READ_TOKEN}' | docker login ghcr.io -u '${{ github.repository_owner }}' --password-stdin && \
+             DEPLOY_ENV_FILE='${DEPLOY_ENV_FILE}' COMPOSE_PROJECT_NAME='${COMPOSE_PROJECT_NAME}' scripts/deploy-compose.sh '${DEPLOY_ENVIRONMENT}' '${IMAGE_TAG}'"
