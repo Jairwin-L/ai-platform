@@ -26,15 +26,18 @@
 1. 先理解需求与影响范围，再动手改代码。
 2. 先查现有实现（`src/app/` 路由、`src/services/` 请求封装、`src/components/` 组件、`src/utils/`、`src/lib/`），优先复用。
 3. 修改完成后运行与改动范围匹配的必要校验命令；不要求每次都执行全量 lint。
-4. 检测到用户明确提出“提交代码”指令时，需要在必要校验通过后提交代码。
-5. 提交说明必须参考 [conventional-changelog/commitlint](https://github.com/conventional-changelog/commitlint) 的 Conventional Commits 风格，格式为 `type(scope?): subject`；`scope` 可选，`subject` 必须使用简洁英文说明本次改动。
-6. commit 内容必须使用英文，不使用中文提交说明。
-7. 常用提交类型包括：`feat`、`fix`、`docs`、`style`、`refactor`、`perf`、`test`、`build`、`ci`、`chore`、`revert`。
-8. 输出时必须说明：
-   - 改了哪些文件
-   - 为什么这样改
-   - 校验命令和结果
-   - 未覆盖的风险（如果有）
+4. 公开仓库在提交、发布或用户要求检查时，需要检查是否包含隐私或敏感数据；重点覆盖 `.env*`、部署配置、GitHub Actions、Docker/Compose、源码、文档、Git 跟踪文件与必要的 Git 历史。
+5. 隐私与敏感数据检查至少关注：密钥、token、密码、私钥、真实服务器地址、数据库连接串、Webhook、第三方服务凭证、个人邮箱/手机号、内部业务地址与生产环境配置；发现风险时先报告并给出最小修复建议。
+6. 检测到用户明确提出“提交代码”指令时，需要在必要校验通过后提交代码。
+7. 提交说明必须参考 [conventional-changelog/commitlint](https://github.com/conventional-changelog/commitlint) 的 Conventional Commits 风格，格式为 `type(scope?): subject`；`scope` 可选，`subject` 必须使用简洁英文说明本次改动。
+8. commit 内容必须使用英文，不使用中文提交说明。
+9. 常用提交类型包括：`feat`、`fix`、`docs`、`style`、`refactor`、`perf`、`test`、`build`、`ci`、`chore`、`revert`。
+10. 输出时必须说明：
+
+- 改了哪些文件
+- 为什么这样改
+- 校验命令和结果
+- 未覆盖的风险（如果有）
 
 ## 4. 常用命令基线
 
@@ -88,7 +91,7 @@
 - 未经用户确认，不执行任何会影响线上环境的部署或发布命令。
 - 不覆盖用户未要求修改的既有行为。
 - 不伪造命令执行结果；无法执行时必须明确说明原因。
-- 不提交 `.env*`、密钥、生成产物（`.next/`、`node_modules/`）等到仓库。
+- 不提交真实 `.env*`、密钥、token、私钥、账号密码、个人隐私数据、生成产物（`.next/`、`node_modules/`）等到仓库；如需示例环境变量，只提交无敏感值的 `.env.example`。
 
 ## 8. 交付标准（Definition of Done）
 
