@@ -1,6 +1,6 @@
 # AGENTS 规范（Codex 可识别）
 
-本文件定义 Codex 在 `nextjs-blank-template` 仓库中的默认行为规范。  
+本文件定义 Codex 在 `nextjs-starter-kit` 仓库中的默认行为规范。
 除非用户在当前对话中明确覆盖，否则按以下规则执行。
 
 ## 1. 项目背景
@@ -44,7 +44,7 @@
 - 安装依赖：`vp install`
 - 本地开发：`vp run dev`（端口 8060）
 - 生产构建：`vp run build`
-- Docker 生产构建：`docker build --target runner -t nextjs-blank-template:local .`
+- Docker 生产构建：`docker build --target runner -t nextjs-starter-kit:local .`
 - 服务器部署脚本：`APP_IMAGE=<image> scripts/deploy-compose.sh <production|development>`
 - 启动生产服务：`vp run start`（端口 8062）
 - 代码检查：`vp check` 或 `vp run lint`

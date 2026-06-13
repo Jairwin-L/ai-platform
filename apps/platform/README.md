@@ -1,4 +1,4 @@
-# nextjs-blank-template
+# nextjs-starter-kit
 
 ## Getting Started
 

@@ -3,10 +3,10 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-nextjs_starter_kit}
+      POSTGRES_DB: ${POSTGRES_DB:-nextjs_starter_kit_dev}
       POSTGRES_USER: ${POSTGRES_USER:-nextjs_starter_kit}
     volumes:
-      - postgres-prod-data:/var/lib/postgresql/data
+      - postgres-dev-data:/var/lib/postgresql/data
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
       interval: 10s
@@ -24,9 +24,9 @@ services:
       NODE_OPTIONS: ${NODE_OPTIONS:---max-old-space-size=3072}
       PORT: 8062
       HOSTNAME: 0.0.0.0
-      DATABASE_URL: postgresql://${POSTGRES_USER:-nextjs_starter_kit}@postgres:5432/${POSTGRES_DB:-nextjs_starter_kit}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nextjs_starter_kit}@postgres:5432/${POSTGRES_DB:-nextjs_starter_kit_dev}?schema=public
     ports:
-      - '${APP_PORT:-8062}:8062'
+      - '${APP_PORT:-8060}:8062'
 
   migrate:
     image: ${MIGRATE_IMAGE:?MIGRATE_IMAGE is required, for example ghcr.io/owner/nextjs-starter-kit:latest-migrate}
@@ -36,7 +36,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-nextjs_starter_kit}@postgres:5432/${POSTGRES_DB:-nextjs_starter_kit}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nextjs_starter_kit}@postgres:5432/${POSTGRES_DB:-nextjs_starter_kit_dev}?schema=public
 
 volumes:
-  postgres-prod-data:
+  postgres-dev-data:

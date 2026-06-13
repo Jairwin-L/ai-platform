@@ -10,15 +10,14 @@ Usage:
 
 Optional environment variables:
   DEPLOY_ENV_FILE        Override env file. Defaults to .env.production or .env.development.
-  COMPOSE_PROJECT_NAME   Override Compose project. Defaults to nextjs-blank-template-prod or nextjs-blank-template-dev.
-  COMPOSE_FILE           Override Compose file. Defaults to docker-compose.prod.yml.
+  COMPOSE_PROJECT_NAME   Override Compose project. Defaults to nextjs-starter-kit-prod or nextjs-starter-kit-dev.
+  COMPOSE_FILE           Override Compose file. Defaults to docker-compose.prod.yml or docker-compose.dev.yml.
   COMPOSE_SERVICE        Override Compose service. Defaults to app.
   MIGRATE_IMAGE          Override migration image. Defaults to APP_IMAGE-migrate.
-  POSTGRES_PASSWORD      Required by docker-compose.prod.yml for the bundled PostgreSQL service.
 
 Examples:
-  APP_IMAGE=ghcr.io/jairwin-l/nextjs-blank-template:latest scripts/deploy-compose.sh production
-  scripts/deploy-compose.sh development ghcr.io/jairwin-l/nextjs-blank-template:dev
+  APP_IMAGE=ghcr.io/jairwin-l/nextjs-starter-kit:latest scripts/deploy-compose.sh production
+  scripts/deploy-compose.sh development ghcr.io/jairwin-l/nextjs-starter-kit:dev
 EOF
 }
 
@@ -33,19 +32,19 @@ fi
 case "${environment}" in
   production | prod | main)
     default_env_file=".env.production"
-    default_project_name="nextjs-blank-template-prod"
+    default_project_name="nextjs-starter-kit-prod"
     default_compose_file="docker-compose.prod.yml"
     default_app_port="8062"
-    default_postgres_db="nextjs_blank_template"
-    default_postgres_user="nextjs_blank_template"
+    default_postgres_db="nextjs_starter_kit"
+    default_postgres_user="nextjs_starter_kit"
     ;;
   development | dev)
     default_env_file=".env.development"
-    default_project_name="nextjs-blank-template-dev"
-    default_compose_file="docker-compose.prod.yml"
+    default_project_name="nextjs-starter-kit-dev"
+    default_compose_file="docker-compose.dev.yml"
     default_app_port="8060"
-    default_postgres_db="nextjs_blank_template_dev"
-    default_postgres_user="nextjs_blank_template"
+    default_postgres_db="nextjs_starter_kit_dev"
+    default_postgres_user="nextjs_starter_kit"
     ;;
   *)
     echo "Unknown environment: ${environment}" >&2
@@ -71,35 +70,50 @@ if [[ ! -f "${compose_file}" ]]; then
   exit 1
 fi
 
-if [[ ! -f "${env_file}" ]]; then
-  echo "Missing env file: ${env_file}" >&2
-  exit 1
-fi
+mkdir -p "$(dirname "${env_file}")"
+touch "${env_file}"
+chmod 600 "${env_file}"
+
+has_env_key() {
+  local key="$1"
+
+  grep -qE "^${key}[[:space:]]*=" "${env_file}"
+}
+
+append_env() {
+  local key="$1"
+  local value="$2"
+
+  if [[ "${value}" == *$'\n'* || "${value}" == *$'\r'* ]]; then
+    echo "Environment value for ${key} must be a single line." >&2
+    exit 1
+  fi
+
+  value=${value//\'/\'\\\'\'}
+  printf "%s='%s'\n" "${key}" "${value}" >> "${env_file}"
+}
 
 ensure_default_env() {
   local key="$1"
   local value="$2"
 
+  if has_env_key "${key}"; then
+    unset "${key}"
+    return
+  fi
+
   if [[ -n "${!key:-}" ]]; then
+    append_env "${key}" "${!key}"
     return
   fi
 
-  if grep -qE "^${key}[[:space:]]*=" "${env_file}"; then
-    return
-  fi
-
+  append_env "${key}" "${value}"
   export "${key}=${value}"
 }
 
 ensure_default_env APP_PORT "${default_app_port}"
 ensure_default_env POSTGRES_DB "${default_postgres_db}"
 ensure_default_env POSTGRES_USER "${default_postgres_user}"
-
-if [[ -z "${POSTGRES_PASSWORD:-}" ]] &&
-  ! grep -qE "^POSTGRES_PASSWORD[[:space:]]*=" "${env_file}"; then
-  echo "POSTGRES_PASSWORD is required in ${env_file} for docker-compose.prod.yml." >&2
-  exit 1
-fi
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "docker command is required." >&2

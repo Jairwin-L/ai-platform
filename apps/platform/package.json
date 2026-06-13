@@ -1,15 +1,15 @@
 {
-  "name": "nextjs-blank-template",
+  "name": "nextjs-starter-kit",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "homepage": "https://github.com/Jairwin-L/nextjs-blank-template#readme",
+  "homepage": "https://github.com/Jairwin-L/nextjs-starter-kit#readme",
   "bugs": {
-    "url": "https://github.com/Jairwin-L/nextjs-blank-template/issues"
+    "url": "https://github.com/Jairwin-L/nextjs-starter-kit/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Jairwin-L/nextjs-blank-template.git"
+    "url": "git+https://github.com/Jairwin-L/nextjs-starter-kit.git"
   },
   "funding": "https://github.com/sponsors/Jairwin-L",
   "author": {

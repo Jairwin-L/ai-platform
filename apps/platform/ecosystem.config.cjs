@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'nextjs-blank-template',
+      name: 'nextjs-starter-kit',
       script: 'pnpm',
       args: 'start',
       instances: 1,
@@ -13,7 +13,7 @@ module.exports = {
       },
     },
     {
-      name: 'nextjs-blank-template-test',
+      name: 'nextjs-starter-kit-test',
       script: 'pnpm',
       args: 'start:test',
       instances: 1,
@@ -26,7 +26,7 @@ module.exports = {
       },
     },
     {
-      name: 'nextjs-blank-template-dev',
+      name: 'nextjs-starter-kit-dev',
       script: 'pnpm',
       args: 'start:dev',
       instances: 1,

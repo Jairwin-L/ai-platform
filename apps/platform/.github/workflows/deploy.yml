@@ -149,15 +149,13 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           DEPLOY_ENV_FILE: ${{ vars.DEPLOY_ENV_FILE || secrets.DEPLOY_ENV_FILE || (github.event_name == 'pull_request_target' && '.env.production' || '.env.development') }}
-          COMPOSE_PROJECT_NAME: ${{ vars.COMPOSE_PROJECT_NAME || secrets.COMPOSE_PROJECT_NAME || (github.event_name == 'pull_request_target' && 'nextjs-blank-template-prod' || 'nextjs-blank-template-dev') }}
+          COMPOSE_PROJECT_NAME: ${{ vars.COMPOSE_PROJECT_NAME || secrets.COMPOSE_PROJECT_NAME || (github.event_name == 'pull_request_target' && 'nextjs-starter-kit-prod' || 'nextjs-starter-kit-dev') }}
           DEPLOY_ENVIRONMENT: ${{ github.event_name == 'pull_request_target' && 'production' || 'development' }}
           DEPLOY_SHA: ${{ needs.build.outputs.commit_sha }}
           GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN || secrets.GITHUB_TOKEN }}
           APP_PORT: ${{ vars.APP_PORT || (github.event_name == 'pull_request_target' && '8062' || '8060') }}
-          POSTGRES_DB: ${{ vars.POSTGRES_DB || (github.event_name == 'pull_request_target' && 'nextjs_blank_template' || 'nextjs_blank_template_dev') }}
-          POSTGRES_USER: ${{ vars.POSTGRES_USER || 'nextjs_blank_template' }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          POSTGRES_DB: ${{ vars.POSTGRES_DB || (github.event_name == 'pull_request_target' && 'nextjs_starter_kit' || 'nextjs_starter_kit_dev') }}
+          POSTGRES_USER: ${{ vars.POSTGRES_USER || 'nextjs_starter_kit' }}
           IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
           MIGRATE_IMAGE: ${{ needs.build.outputs.image_tag }}-migrate
         run: |
@@ -172,13 +170,11 @@ jobs:
           : "${IMAGE_TAG:?Missing image tag}"
           : "${MIGRATE_IMAGE:?Missing migration image tag}"
           : "${GHCR_READ_TOKEN:?Missing GHCR token}"
-          : "${POSTGRES_PASSWORD:?Missing POSTGRES_PASSWORD secret}"
 
-          runtime_env="$(mktemp)"
-          remote_env_tmp="/tmp/nextjs-blank-template-${DEPLOY_ENVIRONMENT}-${DEPLOY_SHA}.env"
-          trap 'rm -f "${runtime_env}"' EXIT
+          remote_script="$(mktemp)"
+          trap 'rm -f "${remote_script}"' EXIT
 
-          write_env() {
+          write_export() {
             local key="$1"
             local value="$2"
 
@@ -188,22 +184,25 @@ jobs:
             fi
 
             value=${value//\'/\'\\\'\'}
-            printf "%s='%s'\n" "${key}" "${value}" >> "${runtime_env}"
+            printf "export %s='%s'\n" "${key}" "${value}"
           }
 
-          write_env APP_PORT "${APP_PORT}"
-          write_env APP_IMAGE "${IMAGE_TAG}"
-          write_env MIGRATE_IMAGE "${MIGRATE_IMAGE}"
-          write_env POSTGRES_DB "${POSTGRES_DB}"
-          write_env POSTGRES_USER "${POSTGRES_USER}"
-          write_env POSTGRES_PASSWORD "${POSTGRES_PASSWORD}"
-          if [[ -n "${DATABASE_URL}" ]]; then
-            write_env DATABASE_URL "${DATABASE_URL}"
-          fi
-
-          scp -i ~/.ssh/deploy_key -P "${DEPLOY_PORT}" \
-            "${runtime_env}" \
-            "${DEPLOY_USER}@${DEPLOY_HOST}:${remote_env_tmp}"
+          {
+            echo "set -euo pipefail"
+            write_export DEPLOY_PATH "${DEPLOY_PATH}"
+            write_export DEPLOY_ENV_FILE "${DEPLOY_ENV_FILE}"
+            write_export COMPOSE_PROJECT_NAME "${COMPOSE_PROJECT_NAME}"
+            write_export DEPLOY_ENVIRONMENT "${DEPLOY_ENVIRONMENT}"
+            write_export IMAGE_TAG "${IMAGE_TAG}"
+            write_export MIGRATE_IMAGE "${MIGRATE_IMAGE}"
+            write_export APP_PORT "${APP_PORT}"
+            write_export POSTGRES_DB "${POSTGRES_DB}"
+            write_export POSTGRES_USER "${POSTGRES_USER}"
+            echo 'cd "${DEPLOY_PATH}"'
+            echo 'chmod +x scripts/deploy-compose.sh'
+            echo 'if [ ! -x scripts/deploy-compose.sh ]; then echo "Missing executable script: scripts/deploy-compose.sh" && exit 1; fi'
+            echo 'scripts/deploy-compose.sh "${DEPLOY_ENVIRONMENT}" "${IMAGE_TAG}"'
+          } > "${remote_script}"
 
           ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT}" \
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
@@ -214,15 +213,17 @@ jobs:
             "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/docker-compose.prod.yml"
 
           scp -i ~/.ssh/deploy_key -P "${DEPLOY_PORT}" \
+            docker-compose.dev.yml \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/docker-compose.dev.yml"
+
+          scp -i ~/.ssh/deploy_key -P "${DEPLOY_PORT}" \
             scripts/deploy-compose.sh \
             "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/scripts/deploy-compose.sh"
 
+          printf '%s\n' "${GHCR_READ_TOKEN}" | ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT}" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "docker login ghcr.io -u '${{ github.repository_owner }}' --password-stdin"
+
           ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT}" \
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "cd '${DEPLOY_PATH}' && \
-             mv '${remote_env_tmp}' '${DEPLOY_ENV_FILE}' && \
-             chmod 600 '${DEPLOY_ENV_FILE}' && \
-             chmod +x scripts/deploy-compose.sh && \
-             if [ ! -x scripts/deploy-compose.sh ]; then echo 'Missing executable script: scripts/deploy-compose.sh' && exit 1; fi && \
-             echo '${GHCR_READ_TOKEN}' | docker login ghcr.io -u '${{ github.repository_owner }}' --password-stdin && \
-             DEPLOY_ENV_FILE='${DEPLOY_ENV_FILE}' COMPOSE_PROJECT_NAME='${COMPOSE_PROJECT_NAME}' scripts/deploy-compose.sh '${DEPLOY_ENVIRONMENT}' '${IMAGE_TAG}'"
+            'bash -s' < "${remote_script}"
