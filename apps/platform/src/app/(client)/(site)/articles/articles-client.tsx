@@ -60,8 +60,9 @@ export default function ArticlesClient({ initialData, initialKeyword }: Articles
     setPage(initialData.page);
     setPageSize(initialData.pageSize);
     setKeyword(initialKeyword);
-    fetchArticles(initialData.page, initialData.pageSize, initialKeyword).then(() => undefined);
-  }, [fetchArticles, initialData.page, initialData.pageSize, initialKeyword]);
+    setArticles(initialData.data);
+    setTotal(initialData.total);
+  }, [initialData.data, initialData.page, initialData.pageSize, initialData.total, initialKeyword]);
 
   const refreshArticles = async () => {
     await fetchArticles(page, pageSize, keyword.trim());
@@ -182,7 +183,6 @@ export default function ArticlesClient({ initialData, initialKeyword }: Articles
             <Title level={2} className={styles.title}>
               文章管理
             </Title>
-            <Text type="secondary">基于 PostgreSQL、Prisma、Zod 与 Ant Design 的文章 CRUD。</Text>
           </div>
           <Button type="primary" href="/articles/new">
             新增文章

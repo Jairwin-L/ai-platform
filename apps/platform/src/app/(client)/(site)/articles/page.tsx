@@ -1,6 +1,6 @@
-import { type ArticleListData } from '@/services/articles';
 import { articleQuerySchema } from '@/lib/article-schema';
 import ArticlesClient from './articles-client';
+import { fetchArticleList } from './utils/article';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +12,7 @@ function getSearchValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export default async function ArticlesPage({ searchParams }: ArticlesPageProps) {
+export default async function Page({ searchParams }: ArticlesPageProps) {
   const params = await searchParams;
   const query = articleQuerySchema.parse({
     page: getSearchValue(params.page),
@@ -21,12 +21,7 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
   });
   const { page, pageSize, keyword } = query;
 
-  const initialData: ArticleListData = {
-    data: [],
-    total: 0,
-    page,
-    pageSize,
-  };
+  const initialData = await fetchArticleList({ page, pageSize, keyword });
 
   return <ArticlesClient initialData={initialData} initialKeyword={keyword} />;
 }

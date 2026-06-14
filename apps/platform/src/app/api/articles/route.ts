@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { ZodError } from 'zod';
 import { getPrisma } from '@/lib/prisma';
+import { queryArticles } from './query';
 import { articleQuerySchema, createArticleSchema } from '@/lib/article-schema';
 import {
   COMMON_ERROR,
@@ -21,42 +22,13 @@ function getErrorCode(error: unknown) {
     : undefined;
 }
 
-function throwIfRejected<T>(result: PromiseSettledResult<T>) {
-  if (result.status === 'rejected') {
-    throw result.reason;
-  }
-
-  return result.value;
-}
-
 const listArticlesHandler = async (request: NextRequest) => {
   try {
     const searchParams = Object.fromEntries(request.nextUrl.searchParams);
     const { page, pageSize, keyword } = articleQuerySchema.parse(searchParams);
-    const prisma = getPrisma();
-    const where = keyword
-      ? {
-          OR: [
-            { title: { contains: keyword, mode: 'insensitive' as const } },
-            { slug: { contains: keyword, mode: 'insensitive' as const } },
-            { summary: { contains: keyword, mode: 'insensitive' as const } },
-          ],
-        }
-      : {};
+    const result = await queryArticles({ page, pageSize, keyword });
 
-    const [articlesResult, totalResult] = await Promise.allSettled([
-      prisma.article.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-      prisma.article.count({ where }),
-    ]);
-    const articles = throwIfRejected(articlesResult);
-    const total = throwIfRejected(totalResult);
-
-    return createPaginatedResponse(articles, total, page, pageSize);
+    return createPaginatedResponse(result.data, result.total, result.page, result.pageSize);
   } catch (error) {
     if (error instanceof ZodError) {
       return createErrorResponse(
