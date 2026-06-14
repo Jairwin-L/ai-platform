@@ -1,20 +1,220 @@
 # nextjs-starter-kit
 
-## Getting Started
+基于 Next.js App Router 的业务项目模板，内置 React 19、TypeScript、Sass Module、Ant Design、alova 请求封装、Prisma/PostgreSQL、OpenAPI 文档生成，以及 Docker + GitHub Actions 的部署流程。
 
-First, run the development server:
+## 功能概览
+
+- Next.js App Router 页面与 API Routes。
+- 文章管理示例：文章列表、搜索、创建、编辑、删除和无限加载。
+- 统一 API 响应封装、错误处理和 alova 客户端请求方法。
+- Prisma 7 + PostgreSQL 数据访问，当前包含 `Article` 模型。
+- 基于 JSDoc OpenAPI 注释生成 `public/openapi.json`，并通过 Scalar 渲染 API 文档页。
+- Ant Design 6 组件与全局 message 提示注入。
+- Vite+ 统一管理安装、开发、构建、检查、格式化和 CI 校验。
+- Docker 多阶段构建，包含应用镜像和 Prisma 同步镜像。
+- GitHub Actions 自动校验、构建 GHCR 镜像，并通过 SSH + Docker Compose 部署。
+
+## 技术栈
+
+- Next.js 16
+- React 19
+- TypeScript
+- Sass Module
+- Ant Design 6
+- alova
+- Prisma 7
+- PostgreSQL
+- Vite+ / pnpm
+- Docker / Docker Compose
+
+## 目录结构
+
+```text
+src/
+  app/            App Router 页面、布局、API Routes 和错误页
+  components/     通用组件与 Ant Design Provider
+  constants/      应用常量与错误码
+  lib/            Prisma、Swagger、服务端响应工具等公共模块
+  services/       前端业务请求封装
+  styles/         全局样式、变量与 mixin
+  utils/          alova 实例与通用工具函数
+prisma/           Prisma schema 与迁移目录
+scripts/          OpenAPI 生成和部署脚本
+public/           静态资源与生成后的 OpenAPI JSON
+```
+
+## 环境要求
+
+- Node.js `22.x`
+- Vite+ CLI `vp`
+- pnpm，由 Vite+ 按项目配置使用
+- PostgreSQL，本地开发可使用本机数据(远程服务器数据库/prisma数据库)库或 Docker Compose
+
+安装依赖：
 
 ```bash
 vp install
-vp run dev
 ```
 
-Open [http://localhost:8060](http://localhost:8060) with your browser to see the result.
+## 环境变量
 
-## Vite+ commands
+本地开发至少需要配置 `DATABASE_URL`：
+
+```bash
+DATABASE_URL="postgresql://user:password@localhost:5432/nextjs_starter_kit?schema=public"
+```
+
+生产环境 API 文档默认隐藏。如需开放 `/api/doc`，配置：
+
+```bash
+ENABLE_API_DOCS="true"
+```
+
+部署流程还会使用以下变量或 GitHub Secrets：
+
+- `APP_IMAGE`
+- `MIGRATE_IMAGE`
+- `APP_PORT`
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `DEPLOY_HOST`
+- `DEPLOY_PORT`
+- `DEPLOY_USER`
+- `DEPLOY_PATH`
+- `DEPLOY_SSH_KEY`
+- `GHCR_READ_TOKEN`
+
+不要提交真实 `.env*`、密钥、Token、私钥或生产连接串。
+
+## 本地开发
+
+同步数据库结构：
+
+```bash
+vp run prisma:push
+```
+
+启动开发服务：
 
 ```bash
 vp run dev
-vp run build
-vp run verify
 ```
+
+打开 [http://localhost:8060](http://localhost:8060)。
+
+常用页面：
+
+- `/`：首页入口
+- `/demo`：请求示例页面
+- `/articles`：文章管理
+- `/articles/new`：新增文章
+- `/articles/[id]/edit`：编辑文章
+- `/api/doc`：API 文档
+
+## 常用命令
+
+```bash
+vp run dev              # 启动开发服务，端口 8060
+vp run build            # 生成 OpenAPI 文档并构建 Next.js
+vp run start            # 启动生产服务，端口 8062
+vp check                # 代码检查
+vp run lint             # lint 与 stylelint
+vp run lint:fix         # 格式化并自动修复
+vp run openapi:generate # 生成 public/openapi.json
+vp run prisma:generate  # 生成 Prisma Client
+vp run prisma:push      # 根据 schema 推送数据库结构
+vp run prisma:migrate   # 创建并执行本地迁移
+vp run prisma:studio    # 打开 Prisma Studio
+vp run verify           # CI 校验
+```
+
+## API 与数据模型
+
+当前示例 API：
+
+- `GET /api/demo`
+- `GET /api/articles`
+- `POST /api/articles`
+- `GET /api/articles/{id}`
+- `PUT /api/articles/{id}`
+- `DELETE /api/articles/{id}`
+
+文章数据模型位于 `prisma/schema.prisma`，主要字段包括：
+
+- `title`
+- `slug`
+- `summary`
+- `content`
+- `published`
+- `createdAt`
+- `updatedAt`
+
+请求层封装位于 `src/utils/alova.ts`，业务请求示例位于 `src/services/articles.ts` 和 `src/services/demo.ts`。
+
+## OpenAPI 文档
+
+构建时会先执行：
+
+```bash
+vp run openapi:generate
+```
+
+该命令从 API Route 中的 `@openapi` 注释生成 `public/openapi.json`。开发环境可访问 `/api/doc` 查看 Scalar API 文档；生产环境需要显式配置 `ENABLE_API_DOCS=true`。
+
+## Docker
+
+构建生产运行镜像：
+
+```bash
+docker build --target runner -t nextjs-starter-kit:local .
+```
+
+生产 Compose 文件：
+
+```bash
+APP_IMAGE=nextjs-starter-kit:local \
+MIGRATE_IMAGE=nextjs-starter-kit:local-migrate \
+docker compose -f docker-compose.prod.yml up -d
+```
+
+`Dockerfile` 还提供 `migrator` 阶段，用于在部署前执行 Prisma 数据库同步。
+
+## 部署流程
+
+`.github/workflows/deploy.yml` 会在以下场景触发：
+
+- 推送到 `dev` 分支，部署 development 环境。
+- 合并到 `main` 的 Pull Request，部署 production 环境。
+- 手动执行 `workflow_dispatch`。
+
+流水线步骤：
+
+1. 使用 Vite+ 安装依赖并执行 `vp run verify`。
+2. 构建并推送应用镜像到 GHCR。
+3. 构建并推送迁移镜像到 GHCR。
+4. 通过 SSH 登录服务器。
+5. 同步 Compose 文件和部署脚本。
+6. 拉取镜像、执行 Prisma 同步、重启服务。
+
+服务器侧也可以手动执行：
+
+```bash
+APP_IMAGE=ghcr.io/owner/nextjs-starter-kit:latest \
+scripts/deploy-compose.sh production
+```
+
+开发环境示例：
+
+```bash
+scripts/deploy-compose.sh development ghcr.io/owner/nextjs-starter-kit:dev
+```
+
+## 开发约定
+
+- 公共请求优先复用 `src/utils/alova.ts` 与 `src/services/`。
+- Server Component / Client Component 按需区分，只有存在客户端交互时才添加 `"use client"`。
+- `src/utils/` 及路径或文件名包含 `utils` 的文件需要保留 JSDoc `@file`、`@func`、`@desc`、`@param` 和 `@returns` 说明。
+- 工具函数使用 `function` 声明，不使用 `const` + 箭头函数。
+- 多个异步任务并发时使用 `Promise.allSettled` 并显式处理成功和失败结果。
+- 提交信息使用 Conventional Commits，例如 `feat: add article management`。
