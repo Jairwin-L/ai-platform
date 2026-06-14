@@ -80,7 +80,7 @@ const createArticleHandler = async (request: NextRequest) => {
       data: payload,
     });
 
-    return createSuccessResponse(article, 'Article created successfully', 201);
+    return createSuccessResponse(article, '文章已创建', 201);
   } catch (error) {
     if (error instanceof ZodError) {
       return createErrorResponse(

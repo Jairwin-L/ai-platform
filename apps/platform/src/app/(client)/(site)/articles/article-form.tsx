@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { App, Button, Form, Input, Space, Switch, Typography } from 'antd';
+import { Alert, Button, Form, Input, Space, Switch, Typography } from 'antd';
 import {
   type Article,
   type ArticleFormValues,
   createArticle,
+  getArticle,
   updateArticle,
 } from '@/services/articles';
 import styles from './article-form.module.scss';
@@ -16,14 +17,44 @@ const { Title, Text } = Typography;
 interface ArticleFormProps {
   mode: 'create' | 'edit';
   article?: Article;
+  articleId?: string;
 }
 
-export default function ArticleForm({ mode, article }: ArticleFormProps) {
+export default function ArticleForm({ mode, article, articleId }: ArticleFormProps) {
   const router = useRouter();
-  const { message } = App.useApp();
   const [form] = Form.useForm<ArticleFormValues>();
   const [submitting, setSubmitting] = useState(false);
+  const [currentArticle, setCurrentArticle] = useState(article);
+  const [loadingArticle, setLoadingArticle] = useState(mode === 'edit' && !article);
+  const [errorMessage, setErrorMessage] = useState('');
   const isEdit = mode === 'edit';
+
+  useEffect(() => {
+    if (!isEdit || currentArticle || !articleId) {
+      return;
+    }
+
+    setLoadingArticle(true);
+    setErrorMessage('');
+
+    getArticle(articleId)
+      .then((nextArticle) => {
+        setCurrentArticle(nextArticle);
+        form.setFieldsValue({
+          title: nextArticle.title,
+          slug: nextArticle.slug,
+          summary: nextArticle.summary,
+          content: nextArticle.content,
+          published: nextArticle.published,
+        });
+      })
+      .catch((error) => {
+        setErrorMessage(error instanceof Error ? error.message : '文章加载失败');
+      })
+      .finally(() => {
+        setLoadingArticle(false);
+      });
+  }, [articleId, currentArticle, form, isEdit]);
 
   const onFinish = async (values: ArticleFormValues) => {
     setSubmitting(true);
@@ -35,18 +66,21 @@ export default function ArticleForm({ mode, article }: ArticleFormProps) {
         published: Boolean(values.published),
       };
 
-      if (isEdit && article) {
-        await updateArticle(article.id, payload);
-        message.success('文章已更新');
+      if (isEdit) {
+        if (!currentArticle) {
+          setErrorMessage('文章尚未加载完成');
+          return;
+        }
+
+        await updateArticle(currentArticle.id, payload);
       } else {
         await createArticle(payload);
-        message.success('文章已创建');
       }
 
       router.push('/articles');
       router.refresh();
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '保存文章失败');
+      setErrorMessage(error instanceof Error ? error.message : '保存文章失败');
     } finally {
       setSubmitting(false);
     }
@@ -69,16 +103,19 @@ export default function ArticleForm({ mode, article }: ArticleFormProps) {
           <Button href="/articles">返回列表</Button>
         </div>
 
+        {errorMessage ? <Alert showIcon type="error" title={errorMessage} /> : null}
+
         <div className={styles.card}>
           <Form<ArticleFormValues>
             form={form}
             layout="vertical"
+            disabled={loadingArticle || (isEdit && !currentArticle)}
             initialValues={{
-              title: article?.title ?? '',
-              slug: article?.slug ?? '',
-              summary: article?.summary ?? null,
-              content: article?.content ?? '',
-              published: article?.published ?? false,
+              title: currentArticle?.title ?? '',
+              slug: currentArticle?.slug ?? '',
+              summary: currentArticle?.summary ?? null,
+              content: currentArticle?.content ?? '',
+              published: currentArticle?.published ?? false,
             }}
             onFinish={onFinish}
           >
@@ -130,7 +167,12 @@ export default function ArticleForm({ mode, article }: ArticleFormProps) {
 
             <Form.Item className={styles.formActions}>
               <Space>
-                <Button type="primary" htmlType="submit" loading={submitting}>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={submitting || loadingArticle}
+                  disabled={isEdit && !currentArticle}
+                >
                   {isEdit ? '保存修改' : '创建文章'}
                 </Button>
                 <Button href="/articles">取消</Button>

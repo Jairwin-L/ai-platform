@@ -53,6 +53,11 @@ export async function listArticles(params: ArticleListParams) {
   return assertApiResponse<ArticleListData>(response).data;
 }
 
+export async function getArticle(id: string) {
+  const response = await alovaGet(`/api/articles/${id}`);
+  return assertApiResponse<Article>(response).data;
+}
+
 export async function createArticle(payload: ArticleFormValues) {
   const response = await alovaPost('/api/articles', payload);
   return assertApiResponse<Article>(response).data;

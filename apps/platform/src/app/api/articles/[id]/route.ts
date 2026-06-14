@@ -65,7 +65,7 @@ const updateArticleHandler = async (request: NextRequest, context: ApiContext) =
       data: payload,
     });
 
-    return createSuccessResponse(article, 'Article updated successfully');
+    return createSuccessResponse(article, '文章已更新');
   } catch (error) {
     if (error instanceof ZodError) {
       return createErrorResponse(
@@ -104,7 +104,7 @@ const deleteArticleHandler = async (_request: NextRequest, context: ApiContext) 
     const prisma = getPrisma();
     await prisma.article.delete({ where: { id } });
 
-    return createSuccessResponse({ id }, 'Article deleted successfully');
+    return createSuccessResponse({ id }, '文章已删除');
   } catch (error) {
     if (getErrorCode(error) === 'P2025') {
       return createErrorResponse(DATA_ERROR.NOT_FOUND, '文章不存在', error, 404);

@@ -1,10 +1,15 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useCallback, useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Alert, App, Button, Input, Popconfirm, Space, Table, Tag, Typography } from 'antd';
+import { Button, Input, Popconfirm, Space, Table, Tag, Typography } from 'antd';
 import type { TablePaginationConfig, TableProps } from 'antd';
-import { type Article, type ArticleListData, deleteArticle } from '@/services/articles';
+import {
+  type Article,
+  type ArticleListData,
+  deleteArticle,
+  listArticles,
+} from '@/services/articles';
 import styles from './articles-client.module.scss';
 
 const { Title, Text } = Typography;
@@ -14,35 +19,52 @@ const DEFAULT_PAGE_SIZE = 10;
 interface ArticlesClientProps {
   initialData: ArticleListData;
   initialKeyword: string;
-  initialError: string;
 }
 
-export default function ArticlesClient({
-  initialData,
-  initialKeyword,
-  initialError,
-}: ArticlesClientProps) {
+export default function ArticlesClient({ initialData, initialKeyword }: ArticlesClientProps) {
   const router = useRouter();
-  const { message } = App.useApp();
   const [isPending, startTransition] = useTransition();
   const [articles, setArticles] = useState<Article[]>(initialData.data);
   const [keyword, setKeyword] = useState(initialKeyword);
   const [page, setPage] = useState(initialData.page);
   const [pageSize, setPageSize] = useState(initialData.pageSize);
   const [total, setTotal] = useState(initialData.total);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchArticles = useCallback(
+    async (nextPage: number, nextPageSize: number, nextKeyword: string) => {
+      setIsLoading(true);
+      try {
+        const data = await listArticles({
+          page: nextPage,
+          pageSize: nextPageSize,
+          keyword: nextKeyword,
+        });
+
+        setArticles(data.data);
+        setPage(data.page);
+        setPageSize(data.pageSize);
+        setTotal(data.total);
+      } catch (error) {
+        console.error(`error----->：`, error);
+        setArticles([]);
+        setTotal(0);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
-    setArticles(initialData.data);
     setPage(initialData.page);
     setPageSize(initialData.pageSize);
-    setTotal(initialData.total);
     setKeyword(initialKeyword);
-  }, [initialData, initialKeyword]);
+    fetchArticles(initialData.page, initialData.pageSize, initialKeyword).then(() => undefined);
+  }, [fetchArticles, initialData.page, initialData.pageSize, initialKeyword]);
 
-  const refreshArticles = () => {
-    startTransition(() => {
-      router.refresh();
-    });
+  const refreshArticles = async () => {
+    await fetchArticles(page, pageSize, keyword.trim());
   };
 
   const updateRoute = (nextPage: number, nextPageSize: number, nextKeyword: string) => {
@@ -79,16 +101,15 @@ export default function ArticlesClient({
   const onDelete = async (article: Article) => {
     try {
       await deleteArticle(article.id);
-      message.success('文章已删除');
 
       if (articles.length === 1 && page > 1) {
         updateRoute(page - 1, pageSize, keyword.trim());
         return;
       }
 
-      refreshArticles();
+      await refreshArticles();
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '删除文章失败');
+      console.error(`error----->：`, error);
     }
   };
 
@@ -167,9 +188,6 @@ export default function ArticlesClient({
             新增文章
           </Button>
         </div>
-
-        {initialError ? <Alert showIcon type="error" title={initialError} /> : null}
-
         <div className={styles.toolbar}>
           <Input.Search
             allowClear
@@ -186,7 +204,7 @@ export default function ArticlesClient({
           rowKey="id"
           columns={columns}
           dataSource={articles}
-          loading={isPending}
+          loading={isPending || isLoading}
           pagination={{
             current: page,
             pageSize,
