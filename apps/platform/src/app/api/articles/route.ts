@@ -21,6 +21,119 @@ function getErrorCode(error: unknown) {
     : undefined;
 }
 
+/**
+ * @openapi
+ * /api/articles:
+ *   get:
+ *     tags:
+ *       - Articles
+ *     summary: List articles
+ *     parameters:
+ *       - in: query
+ *         name: cursor
+ *         schema:
+ *           type: string
+ *         description: Cursor article id for forward pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 10
+ *       - in: query
+ *         name: keyword
+ *         schema:
+ *           type: string
+ *           maxLength: 80
+ *         description: Search keyword matched against title, slug and summary
+ *     responses:
+ *       200:
+ *         description: Article list returned successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [code, success, message, data, timestamp]
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                   example: 200
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Query successful
+ *                 data:
+ *                   $ref: '#/components/schemas/ArticleListData'
+ *                 timestamp:
+ *                   type: integer
+ *                   format: int64
+ *       400:
+ *         description: Validation failure
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiErrorResponse'
+ *       500:
+ *         description: Failed to query articles
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiErrorResponse'
+ *   post:
+ *     tags:
+ *       - Articles
+ *     summary: Create an article
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ArticleFormInput'
+ *     responses:
+ *       201:
+ *         description: Article created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [code, success, message, data, timestamp]
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                   example: 201
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: 文章已创建
+ *                 data:
+ *                   $ref: '#/components/schemas/Article'
+ *                 timestamp:
+ *                   type: integer
+ *                   format: int64
+ *       400:
+ *         description: Validation failure
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiErrorResponse'
+ *       409:
+ *         description: Slug already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiErrorResponse'
+ *       500:
+ *         description: Failed to create article
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiErrorResponse'
+ */
 const listArticlesHandler = async (request: NextRequest) => {
   try {
     const searchParams = Object.fromEntries(request.nextUrl.searchParams);

@@ -28,6 +28,183 @@ async function getArticleId(context: ApiContext) {
   return Array.isArray(id) ? id[0] : id;
 }
 
+/**
+ * @openapi
+ * /api/articles/{id}:
+ *   get:
+ *     tags:
+ *       - Articles
+ *     summary: Get article detail
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Article id
+ *     responses:
+ *       200:
+ *         description: Article detail returned successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [code, success, message, data, timestamp]
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                   example: 200
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Query successful
+ *                 data:
+ *                   $ref: '#/components/schemas/Article'
+ *                 timestamp:
+ *                   type: integer
+ *                   format: int64
+ *       400:
+ *         description: Article id is required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiErrorResponse'
+ *       404:
+ *         description: Article not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiErrorResponse'
+ *       500:
+ *         description: Failed to query article
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiErrorResponse'
+ *   put:
+ *     tags:
+ *       - Articles
+ *     summary: Update an article
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Article id
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             description: Partial article fields; at least one field is required
+ *             $ref: '#/components/schemas/ArticleUpdateInput'
+ *     responses:
+ *       200:
+ *         description: Article updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [code, success, message, data, timestamp]
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                   example: 200
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: 文章已更新
+ *                 data:
+ *                   $ref: '#/components/schemas/Article'
+ *                 timestamp:
+ *                   type: integer
+ *                   format: int64
+ *       400:
+ *         description: Article id is required or validation failure
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiErrorResponse'
+ *       404:
+ *         description: Article not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiErrorResponse'
+ *       409:
+ *         description: Slug already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiErrorResponse'
+ *       500:
+ *         description: Failed to update article
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiErrorResponse'
+ *   delete:
+ *     tags:
+ *       - Articles
+ *     summary: Delete an article
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Article id
+ *     responses:
+ *       200:
+ *         description: Article deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [code, success, message, data, timestamp]
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                   example: 200
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: 文章已删除
+ *                 data:
+ *                   type: object
+ *                   required: [id]
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                 timestamp:
+ *                   type: integer
+ *                   format: int64
+ *       400:
+ *         description: Article id is required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiErrorResponse'
+ *       404:
+ *         description: Article not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiErrorResponse'
+ *       500:
+ *         description: Failed to delete article
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiErrorResponse'
+ */
 const getArticleHandler = async (_request: NextRequest, context: ApiContext) => {
   try {
     const id = await getArticleId(context);
