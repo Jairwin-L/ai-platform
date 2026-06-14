@@ -9,6 +9,7 @@ import {
   createArticle,
   updateArticle,
 } from '@/services/articles';
+import styles from './article-form.module.scss';
 
 const { Title, Text } = Typography;
 
@@ -52,11 +53,11 @@ export default function ArticleForm({ mode, article }: ArticleFormProps) {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
-      <section className="mx-auto flex max-w-3xl flex-col gap-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <main className={styles.page}>
+      <section className={styles.container}>
+        <div className={styles.header}>
           <div>
-            <Title level={2} className="!mb-2">
+            <Title level={2} className={styles.title}>
               {isEdit ? '编辑文章' : '新增文章'}
             </Title>
             <Text type="secondary">
@@ -68,7 +69,7 @@ export default function ArticleForm({ mode, article }: ArticleFormProps) {
           <Button href="/articles">返回列表</Button>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <div className={styles.card}>
           <Form<ArticleFormValues>
             form={form}
             layout="vertical"
@@ -127,7 +128,7 @@ export default function ArticleForm({ mode, article }: ArticleFormProps) {
               <Switch checkedChildren="发布" unCheckedChildren="草稿" />
             </Form.Item>
 
-            <Form.Item className="!mb-0">
+            <Form.Item className={styles.formActions}>
               <Space>
                 <Button type="primary" htmlType="submit" loading={submitting}>
                   {isEdit ? '保存修改' : '创建文章'}

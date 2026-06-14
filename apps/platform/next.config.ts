@@ -6,6 +6,15 @@ const root = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  sassOptions: {
+    loadPaths: [root],
+    additionalData: [
+      '@import "src/styles/variable.scss";',
+      '@import "src/styles/mixins.scss";',
+    ].join('\n'),
+    charset: false,
+    silenceDeprecations: ['import', 'legacy-js-api'],
+  },
   turbopack: {
     root,
   },

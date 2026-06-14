@@ -1,6 +1,6 @@
 allowBuilds:
+  '@parcel/watcher': true
   '@prisma/engines': true
-  '@tailwindcss/oxide': true
   prisma: true
   sharp: true
 catalog:

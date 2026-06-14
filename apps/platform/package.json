@@ -49,7 +49,6 @@
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
-    "@tailwindcss/postcss": "^4.1.13",
     "@types/node": "^24.13.2",
     "@types/pg": "^8.20.0",
     "@types/react": "^19.2.17",
@@ -57,9 +56,9 @@
     "dotenv": "^17.4.2",
     "dotenv-cli": "^10.0.0",
     "prisma": "^7.8.0",
+    "sass": "^1.101.0",
     "stylelint": "^16.24.0",
     "stylelint-config-ali": "^2.3.0",
-    "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3",
     "vite-plus": "catalog:",
     "vitest": "catalog:"

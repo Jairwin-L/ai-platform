@@ -1,3 +1,5 @@
+import styles from './page.module.scss';
+
 function mockFetch(): Promise<string> {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -10,7 +12,7 @@ export default async function Page() {
   const data = await mockFetch();
   return (
     <div>
-      <h1 className="text-blue-600">main page, {data}</h1>
+      <h1 className={styles.title}>main page, {data}</h1>
     </div>
   );
 }

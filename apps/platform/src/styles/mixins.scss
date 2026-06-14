@@ -1,0 +1,81 @@
+@mixin baseArrow {
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid $color-white;
+  border-right: 2px solid $color-white;
+}
+
+@mixin prevBaseArrow {
+  @include baseArrow;
+  transform: rotate(225deg);
+}
+@mixin nextBaseArrow {
+  @include baseArrow;
+  transform: rotate(45deg);
+}
+
+@mixin resetUlTagStyle {
+  list-style: none;
+  padding-inline-start: 0;
+  margin-block-end: 0;
+}
+
+@mixin resetPTagStyle {
+  margin-block-end: 0;
+  margin-block-start: 0;
+}
+
+// Responsive layout ref to antd grid design
+// https://ant.design/components/grid/#Col
+@mixin responsive($breakpoint) {
+  @if $breakpoint == 'xxxl' {
+    @media only screen and (min-width: $grid-width-xxxl) {
+      @content;
+    }
+  } @else if $breakpoint == 'xxl' {
+    @media only screen and (min-width: $grid-width-xxl) {
+      @content;
+    }
+  } @else if $breakpoint == 'xl' {
+    @media only screen and (min-width: $grid-width-xl) {
+      @content;
+    }
+  } @else if $breakpoint == 'lg' {
+    @media only screen and (min-width: $grid-width-lg) {
+      @content;
+    }
+  } @else if $breakpoint == 'md' {
+    @media only screen and (min-width: $grid-width-md) {
+      @content;
+    }
+  } @else if $breakpoint == 'sm' {
+    @media only screen and (min-width: $grid-width-sm) {
+      @content;
+    }
+  } @else if $breakpoint == 'xs' {
+    @media only screen and (max-width: $grid-width-xs) {
+      @content;
+    }
+  }
+}
+
+// Functions
+@function rhythm($n) {
+  @return 6px * $n;
+}
+
+// Functions
+@function rhythm8($n) {
+  @return 8px * $n;
+}
+
+@function calc-columns($n) {
+  @return $gutter-width * ($n - 1) + 77px * $n;
+}
+
+// Mixin
+@mixin gradient-text {
+  // background: linear-gradient(145deg, #fa5c7f, #98a0ff, #5ef0d9);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Alert, App, Button, Input, Popconfirm, Space, Table, Tag, Typography } from 'antd';
 import type { TablePaginationConfig, TableProps } from 'antd';
 import { type Article, type ArticleListData, deleteArticle } from '@/services/articles';
+import styles from './articles-client.module.scss';
 
 const { Title, Text } = Typography;
 
@@ -153,11 +154,11 @@ export default function ArticlesClient({
   ];
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
-      <section className="mx-auto flex max-w-6xl flex-col gap-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <main className={styles.page}>
+      <section className={styles.container}>
+        <div className={styles.header}>
           <div>
-            <Title level={2} className="!mb-2">
+            <Title level={2} className={styles.title}>
               文章管理
             </Title>
             <Text type="secondary">基于 PostgreSQL、Prisma、Zod 与 Ant Design 的文章 CRUD。</Text>
@@ -169,10 +170,10 @@ export default function ArticlesClient({
 
         {initialError ? <Alert showIcon type="error" title={initialError} /> : null}
 
-        <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+        <div className={styles.toolbar}>
           <Input.Search
             allowClear
-            className="max-w-xl"
+            className={styles.search}
             placeholder="搜索标题、Slug 或摘要"
             value={keyword}
             enterButton="搜索"

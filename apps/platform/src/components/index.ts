@@ -6,3 +6,4 @@
 
 export { default as AutoCenter } from './auto-center';
 export { default as AntdProvider } from './antd-provider';
+export { default as Loading } from './loading';

@@ -1,0 +1,53 @@
+$main-font: thicccboi, sans-serif;
+$gutter-width: 32px;
+$app-header-height: 80px;
+
+$color-theme-green: #14f195;
+$color-white: #fff;
+
+$grid-width-xs: 575px;
+$grid-width-sm: 576px;
+$grid-width-md: 768px;
+$grid-width-lg: 1024px;
+$grid-width-xl: 1280px;
+$grid-width-xxl: 1440px;
+$grid-width-xxxl: 1920px;
+
+$color-separator: #6c757d;
+
+$default-black: #111;
+$color-dark-bg-darkest: #121212;
+
+// Separation distance
+$separation-distance: 24px;
+$border-radius: 8px;
+$space-margin-xs: 8px;
+$space-margin-xxs: 4px;
+$space-margin-mini-xxs: 2px;
+
+// 色值参考（antd-mobile）
+// https://github.com/ant-design/ant-design-mobile/blob/master/.dumi/theme/style/variables.less
+/* 颜色表 */
+$color-primary: #1677ff;
+$color-black: #333;
+$color-default-black: #000;
+$color-bg: #f5f5f5;
+$color-gray: rgba(0, 0, 0, 0.45);
+$color-amount-info: #4f702d;
+$color-danger: #ff4d4f;
+$color-warn: #ec9243;
+$color-white: #fff;
+$heading: #0d1a26;
+$text: #314659;
+$secondary: #717484;
+$weak: #a8a8ad;
+$link: $color-primary;
+$border: #e6e6e6;
+$border-inner: #f0f1f3;
+$btn-border: #dadadf;
+$light-bg: #f5f7fa;
+$white: #fff;
+$black: #333;
+$danger: #ff3141;
+$tabbarClientHeight: 160px;
+$tabbarDesktopHeight: 100px;

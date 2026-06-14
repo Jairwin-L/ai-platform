@@ -4,7 +4,7 @@ import { AntdRegistry } from '@ant-design/nextjs-registry';
 import { AntdProvider } from '@/components';
 import { APP_NAME } from '@/constants';
 import 'antd/dist/reset.css';
-import '@/styles/globals.css';
+import '@/styles/globals.scss';
 
 export const metadata: Metadata = {
   title: APP_NAME,

@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react';
+import styles from './index.module.scss';
 
 interface IAutoCenter {
   children: ReactNode;
@@ -7,7 +8,7 @@ interface IAutoCenter {
 
 export default function AutoCenter(props: IAutoCenter) {
   const { children, className } = props;
-  return (
-    <div className={`flex items-center justify-center h-screen ${className || ''}`}>{children}</div>
-  );
+  const rootClassName = [styles.root, className].filter(Boolean).join(' ');
+
+  return <div className={rootClassName}>{children}</div>;
 }
