@@ -38,6 +38,17 @@
   max-width: 36rem;
 }
 
+.loader {
+  height: 1.25rem;
+}
+
+.loadStatus {
+  display: flex;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: center;
+}
+
 @media (min-width: 640px) {
   .page {
     padding-right: 1.5rem;

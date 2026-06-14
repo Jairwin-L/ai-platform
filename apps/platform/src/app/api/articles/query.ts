@@ -2,16 +2,18 @@ import type { Article as PrismaArticle, Prisma } from '@prisma/client';
 import { getPrisma } from '@/lib/prisma';
 
 export interface ArticleQueryParams {
-  page: number;
-  pageSize: number;
+  cursor?: string | null;
+  limit: number;
   keyword?: string;
 }
 
 export interface ArticleQueryResult {
   data: PrismaArticle[];
-  total: number;
-  page: number;
-  pageSize: number;
+  pagination: {
+    nextCursor: string | null;
+    hasMore: boolean;
+    limit: number;
+  };
 }
 
 function getArticleWhere(keyword: string): Prisma.ArticleWhereInput {
@@ -28,33 +30,26 @@ function getArticleWhere(keyword: string): Prisma.ArticleWhereInput {
   };
 }
 
-function throwIfRejected<T>(result: PromiseSettledResult<T>): T {
-  if (result.status === 'rejected') {
-    throw result.reason;
-  }
-
-  return result.value;
-}
-
 export async function queryArticles(params: ArticleQueryParams): Promise<ArticleQueryResult> {
   const prisma = getPrisma();
   const where = getArticleWhere(params.keyword ?? '');
-  const [articlesResult, totalResult] = await Promise.allSettled([
-    prisma.article.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      skip: (params.page - 1) * params.pageSize,
-      take: params.pageSize,
-    }),
-    prisma.article.count({ where }),
-  ]);
-  const articles = throwIfRejected(articlesResult);
-  const total = throwIfRejected(totalResult);
+  const { cursor, limit } = params;
+  const articles = await prisma.article.findMany({
+    where,
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    cursor: cursor ? { id: cursor } : undefined,
+    skip: cursor ? 1 : 0,
+    take: limit + 1,
+  });
+  const hasMore = articles.length > limit;
+  const data = hasMore ? articles.slice(0, limit) : articles;
 
   return {
-    data: articles,
-    total,
-    page: params.page,
-    pageSize: params.pageSize,
+    data,
+    pagination: {
+      nextCursor: hasMore ? (data.at(-1)?.id ?? null) : null,
+      hasMore,
+      limit,
+    },
   };
 }

@@ -6,8 +6,9 @@ const optionalSummarySchema = z.preprocess(
 );
 
 export const articleQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(50).default(10),
+  cursor: z
+    .preprocess((value) => (value === '' ? undefined : value), z.string().trim().min(1).optional()),
+  limit: z.coerce.number().int().min(1).max(50).default(10),
   keyword: z.string().trim().max(80).optional().default(''),
 });
 

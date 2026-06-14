@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState, useTransition } from 'react';
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Input, Popconfirm, Space, Table, Tag, Typography } from 'antd';
-import type { TablePaginationConfig, TableProps } from 'antd';
+import type { TableProps } from 'antd';
 import {
   type Article,
   type ArticleListData,
@@ -14,7 +14,7 @@ import styles from './articles-client.module.scss';
 
 const { Title, Text } = Typography;
 
-const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_LIMIT = 10;
 
 interface ArticlesClientProps {
   initialData: ArticleListData;
@@ -26,57 +26,117 @@ export default function ArticlesClient({ initialData, initialKeyword }: Articles
   const [isPending, startTransition] = useTransition();
   const [articles, setArticles] = useState<Article[]>(initialData.data);
   const [keyword, setKeyword] = useState(initialKeyword);
-  const [page, setPage] = useState(initialData.page);
-  const [pageSize, setPageSize] = useState(initialData.pageSize);
-  const [total, setTotal] = useState(initialData.total);
-  const [isLoading, setIsLoading] = useState(false);
+  const [cursor, setCursor] = useState<string | null>(initialData.pagination.nextCursor);
+  const [limit, setLimit] = useState(initialData.pagination.limit);
+  const [hasMore, setHasMore] = useState(initialData.pagination.hasMore);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const loaderRef = useRef<HTMLDivElement>(null);
+  const requestRef = useRef(false);
 
-  const fetchArticles = useCallback(
-    async (nextPage: number, nextPageSize: number, nextKeyword: string) => {
-      setIsLoading(true);
+  const refreshArticles = useCallback(
+    async (nextKeyword: string) => {
+      if (requestRef.current) {
+        return;
+      }
+
+      requestRef.current = true;
+      setIsRefreshing(true);
+
       try {
         const data = await listArticles({
-          page: nextPage,
-          pageSize: nextPageSize,
+          limit,
           keyword: nextKeyword,
         });
 
         setArticles(data.data);
-        setPage(data.page);
-        setPageSize(data.pageSize);
-        setTotal(data.total);
+        setCursor(data.pagination.nextCursor);
+        setLimit(data.pagination.limit);
+        setHasMore(data.pagination.hasMore);
       } catch (error) {
         console.error(`error----->：`, error);
         setArticles([]);
-        setTotal(0);
+        setCursor(null);
+        setHasMore(false);
       } finally {
-        setIsLoading(false);
+        setIsRefreshing(false);
+        requestRef.current = false;
       }
     },
-    [],
+    [limit],
   );
 
-  useEffect(() => {
-    setPage(initialData.page);
-    setPageSize(initialData.pageSize);
-    setKeyword(initialKeyword);
-    setArticles(initialData.data);
-    setTotal(initialData.total);
-  }, [initialData.data, initialData.page, initialData.pageSize, initialData.total, initialKeyword]);
-
-  const refreshArticles = async () => {
-    await fetchArticles(page, pageSize, keyword.trim());
-  };
-
-  const updateRoute = (nextPage: number, nextPageSize: number, nextKeyword: string) => {
-    const search = new URLSearchParams();
-
-    if (nextPage > 1) {
-      search.set('page', String(nextPage));
+  const fetchMoreArticles = useCallback(async () => {
+    if (!hasMore || !cursor || requestRef.current) {
+      return;
     }
 
-    if (nextPageSize !== DEFAULT_PAGE_SIZE) {
-      search.set('pageSize', String(nextPageSize));
+    requestRef.current = true;
+    setIsLoadingMore(true);
+
+    try {
+      const data = await listArticles({
+        cursor,
+        limit,
+        keyword: keyword.trim(),
+      });
+
+      setArticles((prevArticles) => [...prevArticles, ...data.data]);
+      setCursor(data.pagination.nextCursor);
+      setLimit(data.pagination.limit);
+      setHasMore(data.pagination.hasMore);
+    } catch (error) {
+      console.error(`error----->：`, error);
+    } finally {
+      setIsLoadingMore(false);
+      requestRef.current = false;
+    }
+  }, [cursor, hasMore, keyword, limit]);
+
+  useEffect(() => {
+    const loader = loaderRef.current;
+
+    if (!loader) {
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          fetchMoreArticles().catch((error: unknown) => {
+            console.error(`error----->：`, error);
+          });
+        }
+      },
+      { rootMargin: '100px' },
+    );
+
+    observer.observe(loader);
+
+    return () => {
+      observer.unobserve(loader);
+    };
+  }, [fetchMoreArticles]);
+
+  useEffect(() => {
+    setKeyword(initialKeyword);
+    setArticles(initialData.data);
+    setCursor(initialData.pagination.nextCursor);
+    setLimit(initialData.pagination.limit);
+    setHasMore(initialData.pagination.hasMore);
+  }, [
+    initialData.data,
+    initialData.pagination.hasMore,
+    initialData.pagination.limit,
+    initialData.pagination.nextCursor,
+    initialKeyword,
+  ]);
+
+  const updateRoute = (nextKeyword: string) => {
+    const search = new URLSearchParams();
+
+    if (limit !== DEFAULT_LIMIT) {
+      search.set('limit', String(limit));
     }
 
     if (nextKeyword) {
@@ -90,25 +150,13 @@ export default function ArticlesClient({ initialData, initialKeyword }: Articles
   };
 
   const onSearch = () => {
-    updateRoute(1, pageSize, keyword.trim());
-  };
-
-  const onTableChange = (pagination: TablePaginationConfig) => {
-    const nextPage = pagination.current ?? 1;
-    const nextPageSize = pagination.pageSize ?? DEFAULT_PAGE_SIZE;
-    updateRoute(nextPage, nextPageSize, keyword.trim());
+    updateRoute(keyword.trim());
   };
 
   const onDelete = async (article: Article) => {
     try {
       await deleteArticle(article.id);
-
-      if (articles.length === 1 && page > 1) {
-        updateRoute(page - 1, pageSize, keyword.trim());
-        return;
-      }
-
-      await refreshArticles();
+      await refreshArticles(keyword.trim());
     } catch (error) {
       console.error(`error----->：`, error);
     }
@@ -204,16 +252,14 @@ export default function ArticlesClient({ initialData, initialKeyword }: Articles
           rowKey="id"
           columns={columns}
           dataSource={articles}
-          loading={isPending || isLoading}
-          pagination={{
-            current: page,
-            pageSize,
-            total,
-            showSizeChanger: true,
-            showTotal: (value) => `共 ${value} 篇文章`,
-          }}
-          onChange={onTableChange}
+          loading={isPending || isRefreshing}
+          pagination={false}
         />
+        <div ref={loaderRef} className={styles.loader} />
+        <div className={styles.loadStatus}>
+          {isLoadingMore ? <Text type="secondary">加载中...</Text> : null}
+          {!hasMore && !isLoadingMore ? <Text type="secondary">没有更多文章了</Text> : null}
+        </div>
       </section>
     </main>
   );

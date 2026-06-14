@@ -7,7 +7,6 @@ import {
   COMMON_ERROR,
   DATA_ERROR,
   createErrorResponse,
-  createPaginatedResponse,
   createSuccessResponse,
   withApiHandler,
 } from '@/lib/server';
@@ -25,10 +24,10 @@ function getErrorCode(error: unknown) {
 const listArticlesHandler = async (request: NextRequest) => {
   try {
     const searchParams = Object.fromEntries(request.nextUrl.searchParams);
-    const { page, pageSize, keyword } = articleQuerySchema.parse(searchParams);
-    const result = await queryArticles({ page, pageSize, keyword });
+    const { cursor, limit, keyword } = articleQuerySchema.parse(searchParams);
+    const result = await queryArticles({ cursor, limit, keyword });
 
-    return createPaginatedResponse(result.data, result.total, result.page, result.pageSize);
+    return createSuccessResponse(result, 'Query successful');
   } catch (error) {
     if (error instanceof ZodError) {
       return createErrorResponse(

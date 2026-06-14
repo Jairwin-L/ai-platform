@@ -1,3 +1,8 @@
+/**
+ * @file
+ * 文章列表服务端数据查询与序列化工具。
+ */
+
 import { queryArticles } from '@/app/api/articles/query';
 import type { Article as PrismaArticle } from '@prisma/client';
 import type { Article, ArticleListData, ArticleListParams } from '@/services/articles';
@@ -25,9 +30,11 @@ function transformArticle(article: PrismaArticle): Article {
 function createEmptyArticleList(params: ArticleListParams): ArticleListData {
   return {
     data: [],
-    total: 0,
-    page: params.page,
-    pageSize: params.pageSize,
+    pagination: {
+      nextCursor: null,
+      hasMore: false,
+      limit: params.limit ?? 10,
+    },
   };
 }
 
@@ -39,13 +46,15 @@ function createEmptyArticleList(params: ArticleListParams): ArticleListData {
  */
 export async function fetchArticleList(params: ArticleListParams): Promise<ArticleListData> {
   try {
-    const result = await queryArticles(params);
+    const result = await queryArticles({
+      cursor: params.cursor,
+      limit: params.limit ?? 10,
+      keyword: params.keyword,
+    });
 
     return {
       data: result.data.map(transformArticle),
-      total: result.total,
-      page: result.page,
-      pageSize: result.pageSize,
+      pagination: result.pagination,
     };
   } catch (error) {
     console.error('articles retrieval failed', error);

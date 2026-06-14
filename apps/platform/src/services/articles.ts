@@ -20,9 +20,15 @@ export interface ArticleFormValues {
 }
 
 export interface ArticleListParams {
-  page: number;
-  pageSize: number;
+  cursor?: string | null;
+  limit?: number;
   keyword?: string;
+}
+
+export interface ArticleListPagination {
+  nextCursor: string | null;
+  hasMore: boolean;
+  limit: number;
 }
 
 interface ApiResponse<T> {
@@ -33,9 +39,7 @@ interface ApiResponse<T> {
 
 export interface ArticleListData {
   data: Article[];
-  total: number;
-  page: number;
-  pageSize: number;
+  pagination: ArticleListPagination;
 }
 
 function assertApiResponse<T>(response: unknown): ApiResponse<T> {
