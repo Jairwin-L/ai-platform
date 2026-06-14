@@ -1,4 +1,4 @@
-import ArticleForm from '../../article-form';
+import ArticleForm from '../../form';
 
 export const dynamic = 'force-dynamic';
 

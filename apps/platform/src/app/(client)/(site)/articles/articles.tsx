@@ -10,7 +10,7 @@ import {
   deleteArticle,
   listArticles,
 } from '@/services/articles';
-import styles from './articles-client.module.scss';
+import styles from './articles.module.scss';
 
 const { Title, Text } = Typography;
 

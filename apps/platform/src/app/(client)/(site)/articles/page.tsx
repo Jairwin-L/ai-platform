@@ -1,5 +1,5 @@
 import { articleQuerySchema } from '@/lib/article-schema';
-import ArticlesClient from './articles-client';
+import ArticlesClient from './articles';
 import { fetchArticleList } from './utils/article';
 
 interface ArticlesPageProps {

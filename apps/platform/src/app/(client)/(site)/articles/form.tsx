@@ -10,7 +10,7 @@ import {
   getArticle,
   updateArticle,
 } from '@/services/articles';
-import styles from './article-form.module.scss';
+import styles from './form.module.scss';
 
 const { Title, Text } = Typography;
 

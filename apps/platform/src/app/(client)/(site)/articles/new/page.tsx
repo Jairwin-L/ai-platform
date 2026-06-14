@@ -1,4 +1,4 @@
-import ArticleForm from '../article-form';
+import ArticleForm from '../form';
 
 export default function NewArticlePage() {
   return <ArticleForm mode="create" />;
