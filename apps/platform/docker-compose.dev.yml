@@ -5,6 +5,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-nextjs_starter_kit_dev}
       POSTGRES_USER: ${POSTGRES_USER:-nextjs_starter_kit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nextjs_starter_kit}
     volumes:
       - postgres-dev-data:/var/lib/postgresql/data
     healthcheck:
@@ -24,7 +25,7 @@ services:
       NODE_OPTIONS: ${NODE_OPTIONS:---max-old-space-size=3072}
       PORT: 8062
       HOSTNAME: 0.0.0.0
-      DATABASE_URL: postgresql://${POSTGRES_USER:-nextjs_starter_kit}@postgres:5432/${POSTGRES_DB:-nextjs_starter_kit_dev}?schema=public
+      DATABASE_URL: ${DATABASE_URL:-postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit_dev?schema=public}
     ports:
       - '${APP_PORT:-8060}:8062'
 
@@ -36,7 +37,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-nextjs_starter_kit}@postgres:5432/${POSTGRES_DB:-nextjs_starter_kit_dev}?schema=public
+      DATABASE_URL: ${DATABASE_URL:-postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit_dev?schema=public}
 
 volumes:
   postgres-dev-data:

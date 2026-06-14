@@ -37,6 +37,8 @@ case "${environment}" in
     default_app_port="8062"
     default_postgres_db="nextjs_starter_kit"
     default_postgres_user="nextjs_starter_kit"
+    default_postgres_password="nextjs_starter_kit"
+    default_database_url="postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit?schema=public"
     ;;
   development | dev)
     default_env_file=".env.development"
@@ -45,6 +47,8 @@ case "${environment}" in
     default_app_port="8060"
     default_postgres_db="nextjs_starter_kit_dev"
     default_postgres_user="nextjs_starter_kit"
+    default_postgres_password="nextjs_starter_kit"
+    default_database_url="postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit_dev?schema=public"
     ;;
   *)
     echo "Unknown environment: ${environment}" >&2
@@ -71,8 +75,11 @@ if [[ ! -f "${compose_file}" ]]; then
 fi
 
 mkdir -p "$(dirname "${env_file}")"
-touch "${env_file}"
-chmod 600 "${env_file}"
+
+if [[ ! -f "${env_file}" ]]; then
+  echo "Missing env file: ${env_file}" >&2
+  exit 1
+fi
 
 has_env_key() {
   local key="$1"
@@ -114,6 +121,8 @@ ensure_default_env() {
 ensure_default_env APP_PORT "${default_app_port}"
 ensure_default_env POSTGRES_DB "${default_postgres_db}"
 ensure_default_env POSTGRES_USER "${default_postgres_user}"
+ensure_default_env POSTGRES_PASSWORD "${default_postgres_password}"
+ensure_default_env DATABASE_URL "${default_database_url}"
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "docker command is required." >&2

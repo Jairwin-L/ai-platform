@@ -156,6 +156,8 @@ jobs:
           APP_PORT: ${{ vars.APP_PORT || (github.event_name == 'pull_request_target' && '8062' || '8060') }}
           POSTGRES_DB: ${{ vars.POSTGRES_DB || (github.event_name == 'pull_request_target' && 'nextjs_starter_kit' || 'nextjs_starter_kit_dev') }}
           POSTGRES_USER: ${{ vars.POSTGRES_USER || 'nextjs_starter_kit' }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || vars.POSTGRES_PASSWORD || 'nextjs_starter_kit' }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL || (github.event_name == 'pull_request_target' && 'postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit?schema=public' || 'postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit_dev?schema=public') }}
           IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
           MIGRATE_IMAGE: ${{ needs.build.outputs.image_tag }}-migrate
         run: |
@@ -171,10 +173,12 @@ jobs:
           : "${MIGRATE_IMAGE:?Missing migration image tag}"
           : "${GHCR_READ_TOKEN:?Missing GHCR token}"
 
+          runtime_env="$(mktemp)"
+          remote_env_tmp="/tmp/nextjs-starter-kit-${DEPLOY_ENVIRONMENT}-${DEPLOY_SHA}.env"
           remote_script="$(mktemp)"
-          trap 'rm -f "${remote_script}"' EXIT
+          trap 'rm -f "${runtime_env}" "${remote_script}"' EXIT
 
-          write_export() {
+          write_env() {
             local key="$1"
             local value="$2"
 
@@ -184,29 +188,34 @@ jobs:
             fi
 
             value=${value//\'/\'\\\'\'}
-            printf "export %s='%s'\n" "${key}" "${value}"
+            printf "%s='%s'\n" "${key}" "${value}" >> "${runtime_env}"
           }
+
+          write_env APP_PORT "${APP_PORT}"
+          write_env APP_IMAGE "${IMAGE_TAG}"
+          write_env MIGRATE_IMAGE "${MIGRATE_IMAGE}"
+          write_env POSTGRES_DB "${POSTGRES_DB}"
+          write_env POSTGRES_USER "${POSTGRES_USER}"
+          write_env POSTGRES_PASSWORD "${POSTGRES_PASSWORD}"
+          write_env DATABASE_URL "${DATABASE_URL}"
 
           {
             echo "set -euo pipefail"
-            write_export DEPLOY_PATH "${DEPLOY_PATH}"
-            write_export DEPLOY_ENV_FILE "${DEPLOY_ENV_FILE}"
-            write_export COMPOSE_PROJECT_NAME "${COMPOSE_PROJECT_NAME}"
-            write_export DEPLOY_ENVIRONMENT "${DEPLOY_ENVIRONMENT}"
-            write_export IMAGE_TAG "${IMAGE_TAG}"
-            write_export MIGRATE_IMAGE "${MIGRATE_IMAGE}"
-            write_export APP_PORT "${APP_PORT}"
-            write_export POSTGRES_DB "${POSTGRES_DB}"
-            write_export POSTGRES_USER "${POSTGRES_USER}"
             echo 'cd "${DEPLOY_PATH}"'
+            echo 'mv "${REMOTE_ENV_TMP}" "${DEPLOY_ENV_FILE}"'
+            echo 'chmod 600 "${DEPLOY_ENV_FILE}"'
             echo 'chmod +x scripts/deploy-compose.sh'
             echo 'if [ ! -x scripts/deploy-compose.sh ]; then echo "Missing executable script: scripts/deploy-compose.sh" && exit 1; fi'
-            echo 'scripts/deploy-compose.sh "${DEPLOY_ENVIRONMENT}" "${IMAGE_TAG}"'
+            echo 'DEPLOY_ENV_FILE="${DEPLOY_ENV_FILE}" COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME}" scripts/deploy-compose.sh "${DEPLOY_ENVIRONMENT}" "${IMAGE_TAG}"'
           } > "${remote_script}"
 
           ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT}" \
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
             "mkdir -p '${DEPLOY_PATH}/scripts'"
+
+          scp -i ~/.ssh/deploy_key -P "${DEPLOY_PORT}" \
+            "${runtime_env}" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${remote_env_tmp}"
 
           scp -i ~/.ssh/deploy_key -P "${DEPLOY_PORT}" \
             docker-compose.prod.yml \
@@ -226,4 +235,4 @@ jobs:
 
           ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT}" \
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            'bash -s' < "${remote_script}"
+            "DEPLOY_PATH='${DEPLOY_PATH}' DEPLOY_ENV_FILE='${DEPLOY_ENV_FILE}' COMPOSE_PROJECT_NAME='${COMPOSE_PROJECT_NAME}' DEPLOY_ENVIRONMENT='${DEPLOY_ENVIRONMENT}' IMAGE_TAG='${IMAGE_TAG}' REMOTE_ENV_TMP='${remote_env_tmp}' bash -s" < "${remote_script}"
