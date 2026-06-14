@@ -14,6 +14,7 @@ Optional environment variables:
   COMPOSE_FILE           Override Compose file. Defaults to docker-compose.prod.yml or docker-compose.dev.yml.
   COMPOSE_SERVICE        Override Compose service. Defaults to app.
   MIGRATE_IMAGE          Override migration image. Defaults to APP_IMAGE-migrate.
+  PRISMA_SYNC_COMMAND    Override Prisma sync command. Defaults to "vp run prisma:push:deploy".
 
 Examples:
   APP_IMAGE=ghcr.io/jairwin-l/nextjs-starter-kit:latest scripts/deploy-compose.sh production
@@ -39,6 +40,7 @@ case "${environment}" in
     default_postgres_user="nextjs_starter_kit"
     default_postgres_password="nextjs_starter_kit"
     default_database_url="postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit?schema=public"
+    default_prisma_sync_command="vp run prisma:push:deploy"
     ;;
   development | dev)
     default_env_file=".env.development"
@@ -49,6 +51,7 @@ case "${environment}" in
     default_postgres_user="nextjs_starter_kit"
     default_postgres_password="nextjs_starter_kit"
     default_database_url="postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit_dev?schema=public"
+    default_prisma_sync_command="vp run prisma:push:deploy"
     ;;
   *)
     echo "Unknown environment: ${environment}" >&2
@@ -68,6 +71,7 @@ compose_service="${COMPOSE_SERVICE:-app}"
 env_file="${DEPLOY_ENV_FILE:-${default_env_file}}"
 project_name="${COMPOSE_PROJECT_NAME:-${default_project_name}}"
 migrate_image="${MIGRATE_IMAGE:-${image}-migrate}"
+prisma_sync_command="${PRISMA_SYNC_COMMAND:-${default_prisma_sync_command}}"
 
 if [[ ! -f "${compose_file}" ]]; then
   echo "Missing compose file: ${compose_file}" >&2
@@ -136,6 +140,7 @@ echo "  project: ${project_name}"
 echo "  env:     ${env_file}"
 echo "  compose: ${compose_file}"
 echo "  service: ${compose_service}"
+echo "  prisma:  ${prisma_sync_command}"
 
 compose() {
   COMPOSE_PROJECT_NAME="${project_name}" APP_IMAGE="${image}" MIGRATE_IMAGE="${migrate_image}" \
@@ -145,7 +150,7 @@ compose() {
 COMPOSE_PROJECT_NAME="${project_name}" APP_IMAGE="${image}" MIGRATE_IMAGE="${migrate_image}" \
   docker compose --env-file "${env_file}" -f "${compose_file}" pull "${compose_service}" migrate
 
-compose run --rm migrate
+compose run --rm migrate sh -lc "${prisma_sync_command}"
 
 compose up -d --no-build "${compose_service}"
 

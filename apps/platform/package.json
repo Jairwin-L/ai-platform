@@ -26,6 +26,7 @@
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:deploy": "prisma migrate deploy",
+    "prisma:push:deploy": "prisma db push",
     "prisma:push": "dotenv -e .env -- prisma db push",
     "prisma:studio": "dotenv -e .env -- prisma studio",
     "prisma:migrate": "dotenv -e .env -- prisma migrate dev",
