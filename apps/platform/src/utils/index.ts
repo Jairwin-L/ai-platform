@@ -5,3 +5,4 @@
  */
 
 export { isArray } from './is-array';
+export { fileTypeValid } from './file';

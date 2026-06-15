@@ -665,6 +665,59 @@
           }
         }
       }
+    },
+    "/api/upload/presigned": {
+      "post": {
+        "tags": ["Upload"],
+        "summary": "Generate presigned upload URLs for Cloudflare R2",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["files"],
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "maxItems": 20,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "fileName": {
+                          "type": "string"
+                        },
+                        "fileType": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "path": {
+                    "type": "string"
+                  },
+                  "expiresIn": {
+                    "type": "integer",
+                    "default": 3600,
+                    "maximum": 604800
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Presigned URLs generated successfully"
+          },
+          "400": {
+            "description": "Parameter error or unsupported file type"
+          },
+          "500": {
+            "description": "Failed to generate presigned URLs"
+          }
+        }
+      }
     }
   }
 }

@@ -158,6 +158,10 @@ jobs:
           POSTGRES_USER: ${{ vars.POSTGRES_USER || 'nextjs_starter_kit' }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || vars.POSTGRES_PASSWORD || 'nextjs_starter_kit' }}
           DATABASE_URL: ${{ secrets.DATABASE_URL || (github.event_name == 'pull_request_target' && 'postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit?schema=public' || 'postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit_dev?schema=public') }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ENDPOINT_URL: ${{ vars.R2_ENDPOINT_URL || secrets.R2_ENDPOINT_URL }}
+          R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME || secrets.R2_BUCKET_NAME }}
           IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
           MIGRATE_IMAGE: ${{ needs.build.outputs.image_tag }}-migrate
         run: |
@@ -172,6 +176,10 @@ jobs:
           : "${IMAGE_TAG:?Missing image tag}"
           : "${MIGRATE_IMAGE:?Missing migration image tag}"
           : "${GHCR_READ_TOKEN:?Missing GHCR token}"
+          : "${R2_ACCESS_KEY_ID:?Missing required secret R2_ACCESS_KEY_ID}"
+          : "${R2_SECRET_ACCESS_KEY:?Missing required secret R2_SECRET_ACCESS_KEY}"
+          : "${R2_ENDPOINT_URL:?Missing required variable or secret R2_ENDPOINT_URL}"
+          : "${R2_BUCKET_NAME:?Missing required variable or secret R2_BUCKET_NAME}"
 
           runtime_env="$(mktemp)"
           remote_env_tmp="/tmp/nextjs-starter-kit-${DEPLOY_ENVIRONMENT}-${DEPLOY_SHA}.env"
@@ -198,6 +206,10 @@ jobs:
           write_env POSTGRES_USER "${POSTGRES_USER}"
           write_env POSTGRES_PASSWORD "${POSTGRES_PASSWORD}"
           write_env DATABASE_URL "${DATABASE_URL}"
+          write_env R2_ACCESS_KEY_ID "${R2_ACCESS_KEY_ID}"
+          write_env R2_SECRET_ACCESS_KEY "${R2_SECRET_ACCESS_KEY}"
+          write_env R2_ENDPOINT_URL "${R2_ENDPOINT_URL}"
+          write_env R2_BUCKET_NAME "${R2_BUCKET_NAME}"
 
           {
             echo "set -euo pipefail"
