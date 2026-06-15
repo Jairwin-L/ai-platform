@@ -626,6 +626,107 @@
         }
       }
     },
+    "/api/compress/sharp": {
+      "post": {
+        "tags": ["Compress"],
+        "summary": "Compress an image with sharp",
+        "description": "Returns a compressed binary image. Error path returns standard JSON error.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Compressed image binary",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No file provided or unsupported file type"
+          },
+          "500": {
+            "description": "Compression failed"
+          }
+        }
+      }
+    },
+    "/api/compress/tinify": {
+      "post": {
+        "tags": ["Compress"],
+        "summary": "Compress an image with TinyPNG",
+        "description": "Returns a compressed binary image. Error path returns standard JSON error.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Compressed image binary",
+            "content": {
+              "image/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No file provided, unsupported file type, or TinyPNG rejected the image"
+          },
+          "429": {
+            "description": "TinyPNG account quota or API key issue"
+          },
+          "500": {
+            "description": "Compression failed"
+          },
+          "502": {
+            "description": "Failed to connect to TinyPNG"
+          },
+          "503": {
+            "description": "TinyPNG service error"
+          }
+        }
+      }
+    },
     "/api/demo": {
       "get": {
         "tags": ["Demo"],
@@ -680,7 +781,7 @@
                 "properties": {
                   "files": {
                     "type": "array",
-                    "maxItems": 20,
+                    "maxItems": 5,
                     "items": {
                       "type": "object",
                       "properties": {

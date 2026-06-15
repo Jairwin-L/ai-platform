@@ -30,6 +30,7 @@ export const FILE_ERROR = {
   NOT_FOUND: { code: 60003, message: 'File does not exist' },
   TYPE_NOT_SUPPORTED: { code: 60004, message: 'Unsupported file type' },
   SIZE_EXCEEDED: { code: 60005, message: 'File size exceeds the limit' },
+  COMPRESS_FAILED: { code: 60006, message: 'File compression failed' },
   STORAGE_ERROR: { code: 60007, message: 'Storage service error' },
 } as const;
 

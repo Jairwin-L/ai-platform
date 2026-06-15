@@ -1,14 +1,22 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { App, Button, Empty, Image, Input, Progress, Upload } from 'antd';
+import { App, Button, Empty, Image, Progress, Select, Upload } from 'antd';
 import type { UploadFile, UploadProps } from 'antd';
 import { getFileLink } from '@/utils/link';
 import { fileTypeValid } from '@/utils/file';
+import { compressImage } from '@/utils/compress-image';
+import type { CompressStrategy } from '@/utils/compress-image';
 import { formatFileSize, requestPresignedUrls, uploadWithPresignedUrl } from '@/utils/r2-upload';
 import styles from './page.module.scss';
 
 const { Dragger } = Upload;
+const MAX_UPLOAD_FILE_COUNT = 5;
+
+interface UploadListFile extends UploadFile {
+  compressedSize?: number;
+  originalSize?: number;
+}
 
 function getTodayPath(): string {
   const now = new Date();
@@ -19,14 +27,14 @@ function getTodayPath(): string {
   return `upload/${year}/${month}/${day}`;
 }
 
-function getFileObject(file: UploadFile): File | null {
+function getFileObject(file: UploadListFile): File | null {
   return file.originFileObj instanceof File ? file.originFileObj : null;
 }
 
 export default function Page() {
   const { message } = App.useApp();
-  const [fileList, setFileList] = useState<UploadFile[]>([]);
-  const [uploadPath, setUploadPath] = useState(getTodayPath);
+  const [fileList, setFileList] = useState<UploadListFile[]>([]);
+  const [compressStrategy, setCompressStrategy] = useState<CompressStrategy>('sharp');
   const [uploading, setUploading] = useState(false);
   const previewUrls = useRef(new Map<string, string>());
 
@@ -40,6 +48,7 @@ export default function Page() {
     multiple: true,
     accept: 'image/*',
     fileList,
+    maxCount: MAX_UPLOAD_FILE_COUNT,
     showUploadList: false,
     beforeUpload: async (file) => {
       const valid = await fileTypeValid(file);
@@ -52,11 +61,29 @@ export default function Page() {
       return false;
     },
     onChange: ({ fileList: nextFileList }) => {
-      setFileList(nextFileList);
+      if (nextFileList.length > MAX_UPLOAD_FILE_COUNT) {
+        message.warning(`单批最多选择 ${MAX_UPLOAD_FILE_COUNT} 个文件`);
+      }
+
+      setFileList((current) => {
+        const currentByUid = new Map(current.map((item) => [item.uid, item]));
+
+        return nextFileList.slice(0, MAX_UPLOAD_FILE_COUNT).map((item) => {
+          const currentItem = currentByUid.get(item.uid);
+          const originalSize = currentItem?.originalSize ?? item.size;
+
+          return {
+            ...currentItem,
+            ...item,
+            compressedSize: currentItem?.compressedSize,
+            originalSize,
+          };
+        });
+      });
     },
   };
 
-  function getPreviewUrl(file: UploadFile): string | undefined {
+  function getPreviewUrl(file: UploadListFile): string | undefined {
     const fileObject = getFileObject(file);
     if (!fileObject) return undefined;
 
@@ -90,7 +117,17 @@ export default function Page() {
     setFileList([]);
   }
 
-  function collectEntries(items: UploadFile[]): Array<{ uid: string; file: File }> {
+  function getSizeComparison(file: UploadListFile): string {
+    if (typeof file.compressedSize !== 'number') {
+      return `原始大小 ${formatFileSize(file.originalSize ?? file.size)}`;
+    }
+
+    return `压缩前 ${formatFileSize(file.originalSize ?? file.size)} / 压缩后 ${formatFileSize(
+      file.compressedSize,
+    )}`;
+  }
+
+  function collectEntries(items: UploadListFile[]): Array<{ uid: string; file: File }> {
     return items.flatMap((item) => {
       const file = getFileObject(item);
       return file ? [{ uid: item.uid, file }] : [];
@@ -99,6 +136,11 @@ export default function Page() {
 
   async function runUpload(entries: Array<{ uid: string; file: File }>): Promise<void> {
     if (entries.length === 0) return;
+
+    if (entries.length > MAX_UPLOAD_FILE_COUNT) {
+      message.warning(`单批最多上传 ${MAX_UPLOAD_FILE_COUNT} 个文件`);
+      return;
+    }
 
     setUploading(true);
 
@@ -111,12 +153,64 @@ export default function Page() {
         ),
       );
 
+      const compressionResults = await Promise.allSettled(
+        entries.map(async ({ uid, file }) => {
+          setFileList((current) =>
+            current.map((item) => (item.uid === uid ? { ...item, percent: 5 } : item)),
+          );
+
+          const compressed = await compressImage(file, compressStrategy);
+
+          setFileList((current) =>
+            current.map((item) =>
+              item.uid === uid
+                ? {
+                    ...item,
+                    compressedSize: compressed.size,
+                    originalSize: item.originalSize ?? file.size,
+                    percent: 10,
+                  }
+                : item,
+            ),
+          );
+
+          return { uid, file: compressed };
+        }),
+      );
+      const compressedEntries = compressionResults.flatMap((result) =>
+        result.status === 'fulfilled' ? [result.value] : [],
+      );
+      const compressionFailedUids = new Set(
+        compressionResults.flatMap((result, index) =>
+          result.status === 'rejected' ? [entries[index].uid] : [],
+        ),
+      );
+
+      if (compressionFailedUids.size > 0) {
+        setFileList((current) =>
+          current.map((item) =>
+            compressionFailedUids.has(item.uid)
+              ? {
+                  ...item,
+                  status: 'error',
+                  error: new Error('Compression failed'),
+                }
+              : item,
+          ),
+        );
+      }
+
+      if (compressedEntries.length === 0) {
+        message.warning('图片压缩失败');
+        return;
+      }
+
       const presignedUrls = await requestPresignedUrls(
-        entries.map((entry) => entry.file),
-        uploadPath,
+        compressedEntries.map((entry) => entry.file),
+        getTodayPath(),
       );
       const results = await Promise.allSettled(
-        entries.map(async ({ uid, file }, index) => {
+        compressedEntries.map(async ({ uid, file }, index) => {
           const presignedUrl = presignedUrls[index];
 
           if (!presignedUrl) {
@@ -124,8 +218,11 @@ export default function Page() {
           }
 
           await uploadWithPresignedUrl(file, presignedUrl, ({ progress }) => {
+            const uploadProgress = Math.min(100, Math.round(20 + progress * 0.8));
             setFileList((current) =>
-              current.map((item) => (item.uid === uid ? { ...item, percent: progress } : item)),
+              current.map((item) =>
+                item.uid === uid ? { ...item, percent: uploadProgress } : item,
+              ),
             );
           });
 
@@ -142,11 +239,11 @@ export default function Page() {
       );
       const failedUids = new Set(
         results.flatMap((result, index) =>
-          result.status === 'rejected' ? [entries[index].uid] : [],
+          result.status === 'rejected' ? [compressedEntries[index].uid] : [],
         ),
       );
 
-      if (failedUids.size > 0) {
+      if (failedUids.size > 0 || compressionFailedUids.size > 0) {
         setFileList((current) =>
           current.map((item) =>
             failedUids.has(item.uid)
@@ -210,12 +307,15 @@ export default function Page() {
 
       <div className={styles.options}>
         <label className={styles.option}>
-          <span>上传路径</span>
-          <Input
-            value={uploadPath}
+          <span>压缩方式</span>
+          <Select<CompressStrategy>
+            value={compressStrategy}
             disabled={uploading}
-            onChange={(event) => setUploadPath(event.target.value)}
-            placeholder={getTodayPath()}
+            options={[
+              { label: 'Sharp 本地压缩', value: 'sharp' },
+              { label: 'TinyPNG 压缩', value: 'tinify' },
+            ]}
+            onChange={setCompressStrategy}
           />
         </label>
       </div>
@@ -224,7 +324,7 @@ export default function Page() {
         <div className={styles.dropzone}>
           <p className={styles.dropTitle}>拖拽图片到这里</p>
           <p className={styles.dropDescription}>
-            支持 jpg、png、gif、webp、avif，单批最多 20 个文件。
+            支持 jpg、png、gif、webp、avif，单批最多 {MAX_UPLOAD_FILE_COUNT} 个文件。
           </p>
           <Button type="primary">选择文件</Button>
         </div>
@@ -247,7 +347,7 @@ export default function Page() {
           <Button
             type="primary"
             loading={uploading}
-            disabled={fileList.length === 0 || !uploadPath.trim()}
+            disabled={fileList.length === 0}
             onClick={onSubmit}
           >
             开始上传
@@ -271,7 +371,7 @@ export default function Page() {
                   ) : null}
                   <div className={styles.info}>
                     <p>{file.name}</p>
-                    <span>{formatFileSize(file.size)}</span>
+                    <span className={styles.sizeComparison}>{getSizeComparison(file)}</span>
                     {uploadedUrl ? (
                       <em>
                         <a href={uploadedUrl} target="_blank" rel="noreferrer">

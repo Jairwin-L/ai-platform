@@ -13,7 +13,7 @@ export const runtime = 'nodejs';
 const DEFAULT_EXPIRES_IN = 60 * 60;
 const MAX_EXPIRES_IN = 60 * 60 * 24 * 7;
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
-const MAX_FILE_COUNT = 20;
+const MAX_FILE_COUNT = 5;
 const ALLOWED_MIME_TYPES = new Set([
   'image/jpeg',
   'image/jpg',
@@ -197,7 +197,7 @@ function getRejectedReason(reason: unknown): string {
  *             properties:
  *               files:
  *                 type: array
- *                 maxItems: 20
+ *                 maxItems: 5
  *                 items:
  *                   type: object
  *                   properties:
