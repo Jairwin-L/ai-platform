@@ -18,17 +18,17 @@
 
 1. 正确性优先：先保证功能和行为正确，再考虑重构。
 2. 最小改动优先：仅修改和需求直接相关的文件与代码路径。
-3. 可验证优先：改动后要执行最小必要检查，并明确结果。
+3. 可验证优先：改动后要说明建议用户手动执行的最小必要检查。
 4. 与现有风格一致：遵守当前项目 Vite+ lint/format、Prettier、Stylelint 规范。
 
 ## 3. 执行流程
 
 1. 先理解需求与影响范围，再动手改代码。
 2. 先查现有实现（`src/app/` 路由、`src/services/` 请求封装、`src/components/` 组件、`src/utils/`、`src/lib/`），优先复用。
-3. 修改完成后运行与改动范围匹配的必要校验命令；不要求每次都执行全量 lint。
+3. 修改完成后默认不主动执行构建、lint、test、`vp check` 等生成构建和代码检测相关命令；仅列出建议用户手动执行的最小必要校验命令。用户明确要求执行时再运行。
 4. 公开仓库在提交、发布或用户要求检查时，需要检查是否包含隐私或敏感数据；重点覆盖 `.env*`、部署配置、GitHub Actions、Docker/Compose、源码、文档、Git 跟踪文件与必要的 Git 历史。
 5. 隐私与敏感数据检查至少关注：密钥、token、密码、私钥、真实服务器地址、数据库连接串、Webhook、第三方服务凭证、个人邮箱/手机号、内部业务地址与生产环境配置；发现风险时先报告并给出最小修复建议。
-6. 检测到用户明确提出“提交代码”指令时，需要在必要校验通过后提交代码。
+6. 检测到用户明确提出“提交代码”指令时，默认不主动执行构建、lint、test、`vp check` 等校验命令；应先提示建议用户手动校验，用户确认提交后再提交代码。若用户明确要求 Codex 执行校验，则在校验通过后提交代码。
 7. 提交说明必须参考 [conventional-changelog/commitlint](https://github.com/conventional-changelog/commitlint) 的 Conventional Commits 风格，格式为 `type(scope?): subject`；`scope` 可选，`subject` 必须使用简洁英文说明本次改动。
 8. commit 内容必须使用英文，不使用中文提交说明。
 9. 常用提交类型包括：`feat`、`fix`、`docs`、`style`、`refactor`、`perf`、`test`、`build`、`ci`、`chore`、`revert`。
@@ -36,7 +36,7 @@
 
 - 改了哪些文件
 - 为什么这样改
-- 校验命令和结果
+- 建议用户手动执行的校验命令；如用户明确要求 Codex 执行，则说明执行结果
 - 未覆盖的风险（如果有）
 
 ## 4. 常用命令基线
@@ -52,13 +52,13 @@
 - 测试：`vp test`；CI 统一使用 `vp run verify`
 - Vite+ 帮助：`vp help`
 
-当改动涉及以下范围时，至少执行：
+当改动涉及以下范围时，默认仅建议用户手动执行对应命令；用户明确要求 Codex 执行时再运行：
 
-- TS 类型、公共工具函数、路由、`next.config.ts`、`tsconfig.json` 等构建配置 -> `vp check`；影响面较大时再执行 `vp run build`
-- 样式文件（`*.css`、`*.less`、`*.scss`） -> `vp run lint` 或更小范围的 Stylelint 检查
-- `vite.config.ts`、`package.json`、依赖与工具链配置 -> `vp install` + `vp check`，必要时执行 `vp env doctor`
-- `Dockerfile`、`docker-compose*.yml`、`.github/workflows/deploy.yml` 或 `scripts/deploy-compose.sh` -> 检查对应 Docker / GitHub Actions / Compose 流程，必要时执行针对性构建或脚本校验
-- 新增或修改测试后 -> `vp test`
+- TS 类型、公共工具函数、路由、`next.config.ts`、`tsconfig.json` 等构建配置 -> 建议 `vp check`；影响面较大时建议 `vp run build`
+- 样式文件（`*.css`、`*.less`、`*.scss`） -> 建议 `vp run lint` 或更小范围的 Stylelint 检查
+- `vite.config.ts`、`package.json`、依赖与工具链配置 -> 建议 `vp install` + `vp check`，必要时建议 `vp env doctor`
+- `Dockerfile`、`docker-compose*.yml`、`.github/workflows/deploy.yml` 或 `scripts/deploy-compose.sh` -> 建议检查对应 Docker / GitHub Actions / Compose 流程，必要时建议针对性构建或脚本校验
+- 新增或修改测试后 -> 建议 `vp test`
 
 ## 5. 代码修改约束
 
@@ -100,8 +100,8 @@
 
 1. 需求对应功能已实现且逻辑自洽。
 2. 相关文件改动最小且与需求直接相关。
-3. 已执行与改动范围匹配的必要检查命令，并报告结果；仅在改动影响面较大、涉及共享代码或用户明确要求时执行全量检查。
-4. 若改动涉及路由、配置、共享组件或工具函数，已执行对应的构建、类型或 lint 检查。
+3. 已说明与改动范围匹配、建议用户手动执行的必要检查命令；仅在用户明确要求时由 Codex 执行并报告结果。
+4. 若改动涉及路由、配置、共享组件或工具函数，已说明建议用户手动执行的构建、类型或 lint 检查；用户明确要求时再执行。
 5. 输出包含变更摘要与潜在风险说明（若无风险也应明确“未发现明显风险”）。
 
 <!--VITE PLUS START-->
@@ -115,7 +115,7 @@ Docs are local at `node_modules/vite-plus/docs` or online at https://viteplus.de
 ## Review Checklist
 
 - [ ] Run `vp install` after pulling remote changes and before getting started.
-- [ ] Run `vp check` and `vp test` to format, lint, type check and test changes.
+- [ ] User manually runs `vp check` and `vp test` to format, lint, type check and test changes, unless explicitly asking Codex to run them.
 - [ ] Check if there are `vite.config.ts` tasks or `package.json` scripts necessary for validation, run via `vp run <script>`.
 - [ ] If setup, runtime, or package-manager behavior looks wrong, run `vp env doctor` and include its output when asking for help.
 
