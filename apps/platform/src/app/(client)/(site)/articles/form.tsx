@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Alert, Button, Form, Input, Space, Switch, Typography } from 'antd';
+import { SimpleEditor } from '@/components/editor';
 import {
   type Article,
   type ArticleFormValues,
@@ -13,6 +14,15 @@ import {
 import styles from './form.module.scss';
 
 const { Title, Text } = Typography;
+
+function getEditorText(html?: string): string {
+  return (html || '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .trim();
+}
 
 interface ArticleFormProps {
   mode: 'create' | 'edit';
@@ -157,9 +167,18 @@ export default function ArticleForm(props: ArticleFormProps) {
             <Form.Item
               label="内容"
               name="content"
-              rules={[{ required: true, message: '请输入内容' }]}
+              className={styles.editorItem}
+              rules={[
+                {
+                  validator: async (_, value?: string) => {
+                    if (!getEditorText(value)) {
+                      throw new Error('请输入内容');
+                    }
+                  },
+                },
+              ]}
             >
-              <Input.TextArea rows={10} placeholder="请输入文章正文" />
+              <SimpleEditor />
             </Form.Item>
 
             <Form.Item label="发布状态" name="published" valuePropName="checked">

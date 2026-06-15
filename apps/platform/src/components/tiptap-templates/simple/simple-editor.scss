@@ -1,0 +1,69 @@
+@import '../../../styles/tiptap-variables.scss';
+@import '../../../styles/tiptap-keyframe-animations.scss';
+
+.tiptap.ProseMirror {
+  font-family: 'DM Sans', sans-serif;
+  height: 100% !important;
+}
+
+.content-wrapper {
+  height: calc(100% - var(--tt-toolbar-height));
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    display: block;
+    width: 0.5rem;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--tt-scrollbar-color);
+    border-radius: 4px;
+  }
+
+  /* Firefox scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--tt-scrollbar-color) transparent;
+}
+
+.simple-editor-content,
+.simple-editor-viewer-content {
+  width: 100%;
+  height: 100%;
+  margin: 0 auto;
+}
+.simple-editor-viewer-container {
+  .simple-editor-viewer-content {
+    .ProseMirror-trailingBreak {
+      display: none;
+    }
+    .tiptap.ProseMirror img {
+      max-width: min(700px, 100%);
+      width: auto;
+      height: auto;
+    }
+  }
+}
+
+.simple-editor-content .tiptap.ProseMirror {
+  min-height: 100%;
+  padding: 1rem;
+  cursor: text;
+}
+
+.simple-editor-loading {
+  display: grid;
+  min-height: 200px;
+  place-items: center;
+  color: var(--tt-gray-dark-a-700);
+  font-size: 0.875rem;
+}
+
+@media screen and (max-width: 480px) {
+  .simple-editor-content .tiptap.ProseMirror {
+    padding: 1rem 1.5rem;
+  }
+}

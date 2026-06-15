@@ -35,6 +35,31 @@
   margin-bottom: 0 !important;
 }
 
+.editorItem {
+  :global(.content-wrapper) {
+    min-height: 22rem;
+    border: 1px solid #d9d9d9;
+    border-top: 0;
+    border-radius: 0 0 0.5rem 0.5rem;
+  }
+
+  :global(.tiptap-toolbar) {
+    border: 1px solid #d9d9d9;
+    border-radius: 0.5rem 0.5rem 0 0;
+  }
+
+  :global(.simple-editor-content .tiptap.ProseMirror) {
+    min-height: 22rem;
+    padding: 1rem;
+  }
+
+  :global(.simple-editor-content .tiptap.ProseMirror p.is-editor-empty:first-child::before) {
+    color: #94a3b8;
+    content: attr(data-placeholder);
+    pointer-events: none;
+  }
+}
+
 @media (min-width: 640px) {
   .page {
     padding-right: 1.5rem;
