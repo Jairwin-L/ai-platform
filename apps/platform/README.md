@@ -89,10 +89,10 @@ ENABLE_API_DOCS="true"
 
 ## 本地开发
 
-同步数据库结构：
+同步数据库结构并写入基础角色/权限数据：
 
 ```bash
-vp run prisma:push
+vp run prisma:setup
 ```
 
 启动开发服务：
@@ -124,6 +124,9 @@ vp run lint:fix         # 格式化并自动修复
 vp run openapi:generate # 生成 public/openapi.json
 vp run prisma:generate  # 生成 Prisma Client
 vp run prisma:push      # 根据 schema 推送数据库结构
+vp run prisma:seed      # 写入基础角色/权限数据
+vp run prisma:setup     # 推送数据库结构并执行 seed
+vp run prisma:bootstrap-admin # 为 BOOTSTRAP_ADMIN_EMAIL 指定用户授予管理员角色
 vp run prisma:migrate   # 创建并执行本地迁移
 vp run prisma:studio    # 打开 Prisma Studio
 vp run verify           # CI 校验

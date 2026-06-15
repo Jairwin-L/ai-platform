@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { ZodError } from 'zod';
-import { getPrisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { updateArticleSchema } from '@/lib/article-schema';
 import {
   COMMON_ERROR,
@@ -213,7 +213,6 @@ const getArticleHandler = async (_request: NextRequest, context: ApiContext) => 
       return createErrorResponse(COMMON_ERROR.PARAM_ERROR, 'Article id is required', null, 400);
     }
 
-    const prisma = getPrisma();
     const article = await prisma.article.findUnique({ where: { id } });
 
     if (!article) {
@@ -236,7 +235,6 @@ const updateArticleHandler = async (request: NextRequest, context: ApiContext) =
 
     const body = await request.json();
     const payload = updateArticleSchema.parse(body);
-    const prisma = getPrisma();
     const article = await prisma.article.update({
       where: { id },
       data: payload,
@@ -278,7 +276,6 @@ const deleteArticleHandler = async (_request: NextRequest, context: ApiContext) 
       return createErrorResponse(COMMON_ERROR.PARAM_ERROR, 'Article id is required', null, 400);
     }
 
-    const prisma = getPrisma();
     await prisma.article.delete({ where: { id } });
 
     return createSuccessResponse({ id }, '文章已删除');

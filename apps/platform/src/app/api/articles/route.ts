@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { ZodError } from 'zod';
-import { getPrisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { queryArticles } from './query';
 import { articleQuerySchema, createArticleSchema } from '@/lib/article-schema';
 import {
@@ -159,7 +159,6 @@ const createArticleHandler = async (request: NextRequest) => {
   try {
     const body = await request.json();
     const payload = createArticleSchema.parse(body);
-    const prisma = getPrisma();
     const article = await prisma.article.create({
       data: payload,
     });

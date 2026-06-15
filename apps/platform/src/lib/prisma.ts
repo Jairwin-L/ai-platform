@@ -33,3 +33,14 @@ export function getPrisma() {
 
   return globalForPrisma.prisma;
 }
+
+const prismaProxyTarget: PrismaClient = Object.create(null);
+
+export const prisma = new Proxy(prismaProxyTarget, {
+  get(_target, prop) {
+    const client = getPrisma();
+    const value = Reflect.get(client, prop, client);
+
+    return typeof value === 'function' ? value.bind(client) : value;
+  },
+});

@@ -1,5 +1,5 @@
 import type { Article as PrismaArticle, Prisma } from '@prisma/client';
-import { getPrisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 export interface ArticleQueryParams {
   cursor?: string | null;
@@ -31,7 +31,6 @@ function getArticleWhere(keyword: string): Prisma.ArticleWhereInput {
 }
 
 export async function queryArticles(params: ArticleQueryParams): Promise<ArticleQueryResult> {
-  const prisma = getPrisma();
   const where = getArticleWhere(params.keyword ?? '');
   const { cursor, limit } = params;
   const articles = await prisma.article.findMany({

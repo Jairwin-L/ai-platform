@@ -1,0 +1,164 @@
+import type { NextRequest } from 'next/server';
+import type { PermissionType, Prisma } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import {
+  DATA_ERROR,
+  createErrorResponse,
+  createPaginatedResponse,
+  createSuccessResponse,
+  withApiHandler,
+  type ApiHandler,
+} from '@/lib/server';
+
+interface PermissionNode {
+  id: number;
+  name: string;
+  code: string;
+  parent_id: number | null;
+  type: PermissionType;
+  description: string | null;
+  created_at?: Date;
+  updated_at?: Date;
+  children?: PermissionNode[];
+}
+
+function buildPermissionTree(permissions: PermissionNode[]): PermissionNode[] {
+  const nodeMap = new Map<number, PermissionNode>();
+  const roots: PermissionNode[] = [];
+
+  for (const permission of permissions) {
+    nodeMap.set(permission.id, { ...permission, children: [] });
+  }
+
+  for (const permission of permissions) {
+    const node = nodeMap.get(permission.id)!;
+
+    if (permission.parent_id && nodeMap.has(permission.parent_id)) {
+      nodeMap.get(permission.parent_id)!.children!.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+
+  return roots;
+}
+
+function getPositiveInteger(value: string | null, fallback: number): number {
+  const parsed = value ? Number.parseInt(value, 10) : fallback;
+
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function getPermissionType(value: string): PermissionType | undefined {
+  const allowed = new Set(['system', 'page', 'module', 'operation', 'data']);
+
+  return allowed.has(value) ? (value as PermissionType) : undefined;
+}
+
+/**
+ * @openapi
+ * /api/permissions:
+ *   get:
+ *     tags:
+ *       - Permissions
+ *     summary: Get permissions list
+ *   post:
+ *     tags:
+ *       - Permissions
+ *     summary: Create new permission
+ */
+const getPermissionsHandler: ApiHandler = async (request: NextRequest) => {
+  const { searchParams } = request.nextUrl;
+  const page = getPositiveInteger(searchParams.get('page'), 1);
+  const pageSize = getPositiveInteger(searchParams.get('pageSize'), 10);
+  const searchTerm = searchParams.get('searchTerm') || '';
+  const type = searchParams.get('type') || '';
+  const tree = searchParams.get('tree') === 'true';
+  const skip = (page - 1) * pageSize;
+  const where: Prisma.PermissionsWhereInput = {};
+
+  if (searchTerm) {
+    where.OR = [
+      { name: { contains: searchTerm, mode: 'insensitive' } },
+      { code: { contains: searchTerm, mode: 'insensitive' } },
+      { description: { contains: searchTerm, mode: 'insensitive' } },
+    ];
+  }
+
+  if (type && type !== 'all') {
+    const permissionType = getPermissionType(type);
+    if (permissionType) {
+      where.type = permissionType;
+    }
+  }
+
+  try {
+    const total = await prisma.permissions.count({ where });
+    const permissions = await prisma.permissions.findMany({
+      where,
+      skip,
+      take: pageSize,
+      orderBy: { id: 'asc' },
+    });
+
+    if (tree) {
+      return createPaginatedResponse(
+        buildPermissionTree(permissions),
+        total,
+        page,
+        pageSize,
+        'Article permission tree loaded',
+      );
+    }
+
+    return createPaginatedResponse(
+      permissions,
+      total,
+      page,
+      pageSize,
+      'Article permissions loaded',
+    );
+  } catch (error) {
+    return createErrorResponse(
+      DATA_ERROR.QUERY_FAILED,
+      'Unable to load article permissions',
+      error,
+      500,
+    );
+  }
+};
+
+const createPermissionHandler: ApiHandler = async (request: NextRequest) => {
+  let body: Prisma.PermissionsUncheckedCreateInput;
+
+  try {
+    body = (await request.json()) as Prisma.PermissionsUncheckedCreateInput;
+  } catch (error) {
+    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, 'Request JSON is invalid', error, 400);
+  }
+
+  try {
+    const permission = await prisma.permissions.create({ data: body });
+
+    return createSuccessResponse(permission, 'Article permission created', 201);
+  } catch (error) {
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
+      return createErrorResponse(
+        DATA_ERROR.DUPLICATE_ENTRY,
+        'Article permission code must be unique',
+        error,
+        409,
+      );
+    }
+
+    return createErrorResponse(
+      DATA_ERROR.CREATE_FAILED,
+      'Unable to create article permission',
+      error,
+      500,
+    );
+  }
+};
+
+export const GET = withApiHandler(getPermissionsHandler);
+export const POST = withApiHandler(createPermissionHandler);

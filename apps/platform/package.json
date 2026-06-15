@@ -29,6 +29,8 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:push:deploy": "prisma db push",
     "prisma:push": "dotenv -e .env -- prisma db push",
+    "prisma:seed": "dotenv -e .env -- prisma db seed",
+    "prisma:setup": "vp run prisma:push && vp run prisma:seed",
     "prisma:studio": "dotenv -e .env -- prisma studio",
     "prisma:migrate": "dotenv -e .env -- prisma migrate dev",
     "start": "next start --port 8062",
