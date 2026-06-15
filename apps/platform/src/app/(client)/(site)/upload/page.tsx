@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { App, Button, Empty, Image, Progress, Select, Upload } from 'antd';
+import { App, Button, Empty, Progress, Select, Upload } from 'antd';
+import Image from 'next/image';
 import type { UploadFile, UploadProps } from 'antd';
 import { getFileLink } from '@/utils/link';
 import { fileTypeValid } from '@/utils/file';
@@ -115,16 +116,6 @@ export default function Page() {
     previewUrls.current.forEach((url) => URL.revokeObjectURL(url));
     previewUrls.current.clear();
     setFileList([]);
-  }
-
-  function getSizeComparison(file: UploadListFile): string {
-    if (typeof file.compressedSize !== 'number') {
-      return `原始大小 ${formatFileSize(file.originalSize ?? file.size)}`;
-    }
-
-    return `压缩前 ${formatFileSize(file.originalSize ?? file.size)} / 压缩后 ${formatFileSize(
-      file.compressedSize,
-    )}`;
   }
 
   function collectEntries(items: UploadListFile[]): Array<{ uid: string; file: File }> {
@@ -360,6 +351,9 @@ export default function Page() {
           {fileList.map((file) => {
             const uploadedUrl = typeof file.response === 'string' ? getFileLink(file.response) : '';
             const previewUrl = uploadedUrl || getPreviewUrl(file);
+            const originalSize = file.originalSize ?? file.size ?? 0;
+            const compressedSize = file.compressedSize ?? file.size ?? 0;
+            const isCompressed = originalSize > compressedSize;
 
             return (
               <li key={file.uid} className={styles.item}>
@@ -371,7 +365,15 @@ export default function Page() {
                   ) : null}
                   <div className={styles.info}>
                     <p>{file.name}</p>
-                    <span className={styles.sizeComparison}>{getSizeComparison(file)}</span>
+                    {isCompressed ? (
+                      <span className={styles.compressInfo}>
+                        {formatFileSize(originalSize)} → {formatFileSize(compressedSize)} (-
+                        {Math.round((1 - compressedSize / originalSize) * 100)}
+                        %)
+                      </span>
+                    ) : (
+                      <span>{formatFileSize(file.size)}</span>
+                    )}
                     {uploadedUrl ? (
                       <em>
                         <a href={uploadedUrl} target="_blank" rel="noreferrer">
