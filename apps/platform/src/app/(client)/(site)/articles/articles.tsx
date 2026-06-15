@@ -93,45 +93,6 @@ export default function ArticlesClient({ initialData, initialKeyword }: Articles
     }
   }, [cursor, hasMore, keyword, limit]);
 
-  useEffect(() => {
-    const loader = loaderRef.current;
-
-    if (!loader) {
-      return undefined;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          fetchMoreArticles().catch((error: unknown) => {
-            console.error(`error----->：`, error);
-          });
-        }
-      },
-      { rootMargin: '100px' },
-    );
-
-    observer.observe(loader);
-
-    return () => {
-      observer.unobserve(loader);
-    };
-  }, [fetchMoreArticles]);
-
-  useEffect(() => {
-    setKeyword(initialKeyword);
-    setArticles(initialData.data);
-    setCursor(initialData.pagination.nextCursor);
-    setLimit(initialData.pagination.limit);
-    setHasMore(initialData.pagination.hasMore);
-  }, [
-    initialData.data,
-    initialData.pagination.hasMore,
-    initialData.pagination.limit,
-    initialData.pagination.nextCursor,
-    initialKeyword,
-  ]);
-
   const updateRoute = (nextKeyword: string) => {
     const search = new URLSearchParams();
 
@@ -222,6 +183,44 @@ export default function ArticlesClient({ initialData, initialKeyword }: Articles
       ),
     },
   ];
+  useEffect(() => {
+    const loader = loaderRef.current;
+
+    if (!loader) {
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          fetchMoreArticles().catch((error: unknown) => {
+            console.error(`error----->：`, error);
+          });
+        }
+      },
+      { rootMargin: '100px' },
+    );
+
+    observer.observe(loader);
+
+    return () => {
+      observer.unobserve(loader);
+    };
+  }, [fetchMoreArticles]);
+
+  useEffect(() => {
+    setKeyword(initialKeyword);
+    setArticles(initialData.data);
+    setCursor(initialData.pagination.nextCursor);
+    setLimit(initialData.pagination.limit);
+    setHasMore(initialData.pagination.hasMore);
+  }, [
+    initialData.data,
+    initialData.pagination.hasMore,
+    initialData.pagination.limit,
+    initialData.pagination.nextCursor,
+    initialKeyword,
+  ]);
 
   return (
     <main className={styles.page}>

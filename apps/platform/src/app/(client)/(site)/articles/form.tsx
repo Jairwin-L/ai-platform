@@ -20,7 +20,8 @@ interface ArticleFormProps {
   articleId?: string;
 }
 
-export default function ArticleForm({ mode, article, articleId }: ArticleFormProps) {
+export default function ArticleForm(props: ArticleFormProps) {
+  const { mode, article, articleId } = props;
   const router = useRouter();
   const [form] = Form.useForm<ArticleFormValues>();
   const [submitting, setSubmitting] = useState(false);
@@ -28,33 +29,6 @@ export default function ArticleForm({ mode, article, articleId }: ArticleFormPro
   const [loadingArticle, setLoadingArticle] = useState(mode === 'edit' && !article);
   const [errorMessage, setErrorMessage] = useState('');
   const isEdit = mode === 'edit';
-
-  useEffect(() => {
-    if (!isEdit || currentArticle || !articleId) {
-      return;
-    }
-
-    setLoadingArticle(true);
-    setErrorMessage('');
-
-    getArticle(articleId)
-      .then((nextArticle) => {
-        setCurrentArticle(nextArticle);
-        form.setFieldsValue({
-          title: nextArticle.title,
-          slug: nextArticle.slug,
-          summary: nextArticle.summary,
-          content: nextArticle.content,
-          published: nextArticle.published,
-        });
-      })
-      .catch((error) => {
-        setErrorMessage(error instanceof Error ? error.message : '文章加载失败');
-      })
-      .finally(() => {
-        setLoadingArticle(false);
-      });
-  }, [articleId, currentArticle, form, isEdit]);
 
   const onFinish = async (values: ArticleFormValues) => {
     setSubmitting(true);
@@ -85,6 +59,33 @@ export default function ArticleForm({ mode, article, articleId }: ArticleFormPro
       setSubmitting(false);
     }
   };
+  useEffect(() => {
+    async function fetchArticle() {
+      if (!isEdit || currentArticle || !articleId) {
+        return;
+      }
+
+      setLoadingArticle(true);
+      setErrorMessage('');
+
+      try {
+        const nextArticle = await getArticle(articleId);
+        setCurrentArticle(nextArticle);
+        form.setFieldsValue({
+          title: nextArticle.title,
+          slug: nextArticle.slug,
+          summary: nextArticle.summary,
+          content: nextArticle.content,
+          published: nextArticle.published,
+        });
+      } catch (error) {
+        setErrorMessage(error instanceof Error ? error.message : '文章加载失败');
+      } finally {
+        setLoadingArticle(false);
+      }
+    }
+    fetchArticle();
+  }, [articleId, currentArticle, form, isEdit]);
 
   return (
     <main className={styles.page}>
