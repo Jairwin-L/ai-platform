@@ -1,0 +1,24 @@
+model Roles {
+  id               Int               @id @default(autoincrement())
+  name             String            @unique
+  description      String?
+  is_system        Boolean           @default(false)
+  created_at       DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime          @default(now()) @db.Timestamptz(6)
+  role_permissions RolePermissions[]
+  user_roles       UserRoles[]
+
+  @@map("roles")
+}
+
+model RolePermissions {
+  id            Int         @id @default(autoincrement())
+  role_id       Int
+  permission_id Int
+  created_at    DateTime    @default(now()) @db.Timestamptz(6)
+  permission    Permissions @relation(fields: [permission_id], references: [id])
+  role          Roles       @relation(fields: [role_id], references: [id])
+
+  @@unique([role_id, permission_id])
+  @@map("role_permissions")
+}

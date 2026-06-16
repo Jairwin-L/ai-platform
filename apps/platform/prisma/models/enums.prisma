@@ -1,0 +1,15 @@
+enum UserStatusType {
+  active
+  pending
+  restricted
+  banned
+  inactive
+}
+
+enum PermissionType {
+  system
+  page
+  module
+  operation
+  data
+}
