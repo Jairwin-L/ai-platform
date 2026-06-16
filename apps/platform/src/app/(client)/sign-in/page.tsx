@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, Form, Input, Tabs, Typography } from 'antd';
 import type { FormInstance } from 'antd';
+import { VERIFICATION_CODE_TTL_SECONDS } from '@/constants';
 import { requestVerificationCode, signInWithCode, signInWithPassword } from '@/services/auth';
 import styles from './page.module.scss';
 
@@ -20,12 +21,14 @@ interface CodeSignInValues {
 
 async function requestCode(
   form: FormInstance,
+  setCountdown: (seconds: number) => void,
   setLoading: (loading: boolean) => void,
 ): Promise<void> {
   try {
     const values = await form.validateFields(['email']);
     setLoading(true);
     await requestVerificationCode(values.email, 'sign-in');
+    setCountdown(VERIFICATION_CODE_TTL_SECONDS);
   } catch {
     // Validation and request errors are surfaced by Ant Design/alova.
   } finally {
@@ -39,7 +42,20 @@ export default function SignInPage() {
   const [codeForm] = Form.useForm<CodeSignInValues>();
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [codeLoading, setCodeLoading] = useState(false);
+  const [codeCountdown, setCodeCountdown] = useState(0);
   const [codeRequestLoading, setCodeRequestLoading] = useState(false);
+
+  useEffect(() => {
+    if (codeCountdown <= 0) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setCodeCountdown((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [codeCountdown]);
 
   async function onPasswordFinish(values: PasswordSignInValues): Promise<void> {
     setPasswordLoading(true);
@@ -144,6 +160,7 @@ export default function SignInPage() {
                     </Form.Item>
                     <div className={styles.codeRow}>
                       <Form.Item
+                        extra="验证码 1 分钟内有效"
                         label="验证码"
                         name="code"
                         rules={[
@@ -154,10 +171,13 @@ export default function SignInPage() {
                         <Input autoComplete="one-time-code" placeholder="6 位验证码" />
                       </Form.Item>
                       <Button
+                        disabled={codeCountdown > 0}
                         loading={codeRequestLoading}
-                        onClick={() => requestCode(codeForm, setCodeRequestLoading)}
+                        onClick={() =>
+                          requestCode(codeForm, setCodeCountdown, setCodeRequestLoading)
+                        }
                       >
-                        获取验证码
+                        {codeCountdown > 0 ? `${codeCountdown} 秒后重发` : '获取验证码'}
                       </Button>
                     </div>
                     <Button

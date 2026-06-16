@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { VERIFICATION_CODE_TTL_SECONDS } from '@/constants';
 import { redisDel, redisGet, redisSetEx } from './redis';
 
 export type AuthCodePurpose = 'sign-in' | 'sign-up';
@@ -9,7 +10,7 @@ interface StoredVerificationCode {
   expiresAt: number;
 }
 
-const CODE_TTL_SECONDS = 10 * 60;
+const CODE_TTL_SECONDS = VERIFICATION_CODE_TTL_SECONDS;
 const MAX_VERIFY_ATTEMPTS = 5;
 
 function getCodeSecret(): string {

@@ -51,7 +51,7 @@ function buildVerificationEmailHtml(code: string, purpose: AuthCodePurpose): str
       <h2 style="margin:0 0 16px;">${escapeHtml(APP_NAME)} 验证码</h2>
       <p>你正在使用邮箱验证码${escapedPurpose}。</p>
       <p style="font-size:28px;font-weight:700;letter-spacing:4px;margin:24px 0;">${escapedCode}</p>
-      <p>验证码 10 分钟内有效，请勿转发给他人。</p>
+      <p>验证码 1 分钟内有效，请勿转发给他人。</p>
       <p style="color:#6b7280;font-size:13px;">如果不是你本人操作，可以忽略这封邮件。</p>
     </div>
   `;
@@ -63,7 +63,7 @@ function buildVerificationEmailText(code: string, purpose: AuthCodePurpose): str
     '',
     `你正在使用邮箱验证码${getPurposeText(purpose)}。`,
     `验证码：${code}`,
-    '验证码 10 分钟内有效，请勿转发给他人。',
+    '验证码 1 分钟内有效，请勿转发给他人。',
     '如果不是你本人操作，可以忽略这封邮件。',
   ].join('\n');
 }

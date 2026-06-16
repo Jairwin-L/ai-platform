@@ -57,5 +57,5 @@ export const POST = withApiHandler(async (request: NextRequest) => {
     throw error;
   }
 
-  return createSuccessResponse(null, 'Verification code sent');
+  return createSuccessResponse(null, '验证码已发送，1 分钟内有效');
 });
