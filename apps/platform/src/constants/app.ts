@@ -1,1 +1,1 @@
-export const APP_NAME = 'Nextjs Blank Template';
+export const APP_NAME = 'Nextjs Starter Kit';

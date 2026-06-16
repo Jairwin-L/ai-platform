@@ -8,7 +8,7 @@ import {
   DATA_ERROR,
   createErrorResponse,
   createSuccessResponse,
-  withApiHandler,
+  withPermissionApiHandler,
 } from '@/lib/server';
 
 function getValidationMessage(error: ZodError) {
@@ -187,5 +187,5 @@ const createArticleHandler = async (request: NextRequest) => {
   }
 };
 
-export const GET = withApiHandler(listArticlesHandler);
-export const POST = withApiHandler(createArticleHandler);
+export const GET = withPermissionApiHandler(['ARTICLES:VIEW'], listArticlesHandler);
+export const POST = withPermissionApiHandler(['ARTICLES:ADD'], createArticleHandler);

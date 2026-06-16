@@ -31,6 +31,7 @@
     "prisma:push": "dotenv -e .env -- prisma db push",
     "prisma:seed": "dotenv -e .env -- prisma db seed",
     "prisma:setup": "vp run prisma:push && vp run prisma:seed",
+    "prisma:bootstrap-admin": "dotenv -e .env -- tsx prisma/bootstrap-admin.ts",
     "prisma:studio": "dotenv -e .env -- prisma studio",
     "prisma:migrate": "dotenv -e .env -- prisma migrate dev",
     "start": "next start --port 8062",

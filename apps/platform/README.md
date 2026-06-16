@@ -64,6 +64,17 @@ vp install
 DATABASE_URL="postgresql://user:password@localhost:5432/nextjs_starter_kit?schema=public"
 ```
 
+登录注册功能还需要验证码签名密钥：
+
+```bash
+AUTH_CODE_SECRET="change-me"
+RESEND_API_KEY="re_xxx"
+RESEND_FROM_EMAIL="no-reply@example.com"
+```
+
+Redis 由项目 Docker Compose 部署，应用容器默认通过`redis://redis:6379/0` 访问 Compose 网络中的 Redis 服务，无需额外配置`REDIS_URL`。`AUTH_CODE_SECRET` 用于验证码 HMAC hash，生产环境必须配置为随机密钥。
+邮箱验证码通过 Resend 发送到用户邮箱，接口不会返回验证码明文。
+
 生产环境 API 文档默认隐藏。如需开放 `/api/doc`，配置：
 
 ```bash
@@ -78,6 +89,9 @@ ENABLE_API_DOCS="true"
 - `POSTGRES_DB`
 - `POSTGRES_USER`
 - `POSTGRES_PASSWORD`
+- `AUTH_CODE_SECRET`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
 - `DEPLOY_HOST`
 - `DEPLOY_PORT`
 - `DEPLOY_USER`
@@ -106,6 +120,8 @@ vp run dev
 常用页面：
 
 - `/`：首页入口
+- `/sign-in`：登录页面
+- `/sign-up`：注册页面
 - `/demo`：请求示例页面
 - `/articles`：文章管理
 - `/articles/new`：新增文章

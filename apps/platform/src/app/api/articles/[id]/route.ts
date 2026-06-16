@@ -7,7 +7,7 @@ import {
   DATA_ERROR,
   createErrorResponse,
   createSuccessResponse,
-  withApiHandler,
+  withPermissionApiHandler,
   type ApiContext,
 } from '@/lib/server';
 
@@ -288,6 +288,6 @@ const deleteArticleHandler = async (_request: NextRequest, context: ApiContext) 
   }
 };
 
-export const GET = withApiHandler(getArticleHandler);
-export const PUT = withApiHandler(updateArticleHandler);
-export const DELETE = withApiHandler(deleteArticleHandler);
+export const GET = withPermissionApiHandler(['ARTICLES:VIEW'], getArticleHandler);
+export const PUT = withPermissionApiHandler(['ARTICLES:EDIT'], updateArticleHandler);
+export const DELETE = withPermissionApiHandler(['ARTICLES:DELETE'], deleteArticleHandler);
