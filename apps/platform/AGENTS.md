@@ -68,6 +68,7 @@
 - 避免重复实现：已有工具函数（`src/utils/`）、请求封装（`src/utils/alova.ts`、`src/services/`）、组件可复用时不要新增平行实现。
 - 单文件代码行数上限：每个页面（`src/app/**/page.tsx`、`layout.tsx` 等）、每个组件文件不得超过 500 行（含注释与空行）；超过时必须按职责拆分为子组件 / 子模块，不允许通过删注释、压行等方式绕过该限制。
 - App Router 中区分 Server Component / Client Component，需要 `"use client"` 时务必显式声明，且只在确有客户端交互时使用。
+- CSS Module 多词类名必须使用 kebab-case，并通过 bracket notation 访问，例如 `.auth-page` 对应 `styles["auth-page"]`；单词类名保持不变，例如 `.auth` 对应 `styles.auth`。
 - `useEffect` 只能写在组件 `return` 的 DOM 节点之前。
 - 涉及密钥/凭证只能通过环境变量读取，禁止硬编码或提交到仓库。
 - 多个异步任务并发执行时，只使用 `Promise.allSettled`，不使用 `Promise.all`；必须显式处理 `fulfilled` 与 `rejected` 两种状态，并根据业务语义决定是否中断后续流程。

@@ -167,7 +167,7 @@ export default function ArticleForm(props: ArticleFormProps) {
             <Form.Item
               label="内容"
               name="content"
-              className={styles.editorItem}
+              className={styles['editor-item']}
               rules={[
                 {
                   validator: async (_, value?: string) => {
@@ -185,7 +185,7 @@ export default function ArticleForm(props: ArticleFormProps) {
               <Switch checkedChildren="发布" unCheckedChildren="草稿" />
             </Form.Item>
 
-            <Form.Item className={styles.formActions}>
+            <Form.Item className={styles['form-actions']}>
               <Space>
                 <Button
                   type="primary"

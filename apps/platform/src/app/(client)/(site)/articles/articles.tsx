@@ -255,7 +255,7 @@ export default function ArticlesClient({ initialData, initialKeyword }: Articles
           pagination={false}
         />
         <div ref={loaderRef} className={styles.loader} />
-        <div className={styles.loadStatus}>
+        <div className={styles['load-status']}>
           {isLoadingMore ? <Text type="secondary">加载中...</Text> : null}
           {!hasMore && !isLoadingMore ? <Text type="secondary">没有更多文章了</Text> : null}
         </div>

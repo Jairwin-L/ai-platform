@@ -313,8 +313,8 @@ export default function Page() {
 
       <Dragger {...uploadProps} className={styles.dragger}>
         <div className={styles.dropzone}>
-          <p className={styles.dropTitle}>拖拽图片到这里</p>
-          <p className={styles.dropDescription}>
+          <p className={styles['drop-title']}>拖拽图片到这里</p>
+          <p className={styles['drop-description']}>
             支持 jpg、png、gif、webp、avif，单批最多 {MAX_UPLOAD_FILE_COUNT} 个文件。
           </p>
           <Button type="primary">选择文件</Button>
@@ -357,7 +357,7 @@ export default function Page() {
 
             return (
               <li key={file.uid} className={styles.item}>
-                <div className={styles.itemMain}>
+                <div className={styles['item-main']}>
                   {previewUrl ? (
                     <div className={styles.thumb}>
                       <Image src={previewUrl} alt={file.name} width={64} height={64} />
@@ -366,7 +366,7 @@ export default function Page() {
                   <div className={styles.info}>
                     <p>{file.name}</p>
                     {isCompressed ? (
-                      <span className={styles.compressInfo}>
+                      <span className={styles['compress-info']}>
                         {formatFileSize(originalSize)} → {formatFileSize(compressedSize)} (-
                         {Math.round((1 - compressedSize / originalSize) * 100)}
                         %)
@@ -383,7 +383,7 @@ export default function Page() {
                     ) : null}
                   </div>
                 </div>
-                <div className={styles.itemSide}>
+                <div className={styles['item-side']}>
                   {typeof file.percent === 'number' && file.status !== 'done' ? (
                     <Progress
                       type="circle"

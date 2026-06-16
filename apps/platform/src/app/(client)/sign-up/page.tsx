@@ -65,10 +65,10 @@ export default function SignUpPage() {
   }
 
   return (
-    <main className={styles.authPage}>
-      <section className={styles.authShell}>
+    <main className={styles['auth-page']}>
+      <section className={styles['auth-shell']}>
         <div className={styles.brand}>
-          <div className={styles.brandMark}>N</div>
+          <div className={styles['brand-mark']}>N</div>
           <Typography.Title level={2}>注册账号</Typography.Title>
         </div>
 
@@ -95,7 +95,7 @@ export default function SignUpPage() {
             >
               <Input.Password autoComplete="new-password" placeholder="至少 8 位密码" />
             </Form.Item>
-            <div className={styles.codeRow}>
+            <div className={styles['code-row']}>
               <Form.Item
                 extra="验证码 1 分钟内有效"
                 label="验证码"
@@ -126,7 +126,7 @@ export default function SignUpPage() {
           </Form>
         </div>
 
-        <p className={styles.switchLink}>
+        <p className={styles['switch-link']}>
           已有账号？<Link href="/sign-in">返回登录</Link>
         </p>
       </section>

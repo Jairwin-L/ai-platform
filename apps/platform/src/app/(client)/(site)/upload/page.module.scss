@@ -54,12 +54,12 @@
   padding: 28px 12px;
 }
 
-.dropTitle {
+.drop-title {
   font-size: 18px;
   font-weight: 600;
 }
 
-.dropDescription {
+.drop-description {
   max-width: 520px;
   line-height: 1.6;
   text-align: center;
@@ -103,7 +103,7 @@
   padding: 14px;
 }
 
-.itemMain {
+.item-main {
   display: flex;
   flex: 1;
   align-items: center;
@@ -149,7 +149,7 @@
     font-size: 13px;
   }
 
-  .compressInfo {
+  .compress-info {
     color: rgb(0 0 0 / 65%);
   }
 
@@ -165,7 +165,7 @@
   }
 }
 
-.itemSide {
+.item-side {
   display: flex;
   flex-shrink: 0;
   align-items: center;
@@ -191,7 +191,7 @@
     flex-direction: column;
   }
 
-  .itemSide {
+  .item-side {
     width: 100%;
     justify-content: flex-end;
   }

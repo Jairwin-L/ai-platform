@@ -86,10 +86,10 @@ export default function SignInPage() {
   }
 
   return (
-    <main className={styles.authPage}>
-      <section className={styles.authShell}>
+    <main className={styles['auth-page']}>
+      <section className={styles['auth-shell']}>
         <div className={styles.brand}>
-          <div className={styles.brandMark}>N</div>
+          <div className={styles['brand-mark']}>N</div>
           <Typography.Title level={2}>登录账号</Typography.Title>
         </div>
 
@@ -158,7 +158,7 @@ export default function SignInPage() {
                     >
                       <Input autoComplete="email" placeholder="name@example.com" />
                     </Form.Item>
-                    <div className={styles.codeRow}>
+                    <div className={styles['code-row']}>
                       <Form.Item
                         extra="验证码 1 分钟内有效"
                         label="验证码"
@@ -195,7 +195,7 @@ export default function SignInPage() {
           />
         </div>
 
-        <p className={styles.switchLink}>
+        <p className={styles['switch-link']}>
           还没有账号？<Link href="/sign-up">注册账号</Link>
         </p>
       </section>
