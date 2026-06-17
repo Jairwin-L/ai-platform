@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { APP_NAME } from '@/constants';
+import { AccountMenu } from './account-menu';
 import styles from './layout.module.scss';
 
 export default function SiteLayout({
@@ -18,7 +19,7 @@ export default function SiteLayout({
           <div className={styles.links}>
             <Link href="/articles">文章</Link>
             <Link href="/upload">上传</Link>
-            <Link href="/account/me">我的账号</Link>
+            <AccountMenu />
           </div>
         </nav>
       </header>

@@ -6,11 +6,11 @@ import type { ApiContext, ApiMiddleware } from '../types';
 
 export const authSessionMiddleware: ApiMiddleware = async (
   req: NextRequest,
-  context: ApiContext,
+  ctx: ApiContext,
   next: () => Promise<NextResponse>,
 ) => {
   const token = req.cookies.get(getSessionCookieName())?.value;
-  context.user = (await getAuthUserBySessionToken(token)) ?? undefined;
+  ctx.user = (await getAuthUserBySessionToken(token)) ?? undefined;
 
   return next();
 };

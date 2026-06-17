@@ -7,6 +7,7 @@ export interface AuthUser {
   emailVerified: boolean | null;
   id: string;
   nickName: string | null;
+  picture: string | null;
   status: string;
 }
 

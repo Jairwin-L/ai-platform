@@ -196,7 +196,7 @@ export default defineConfig({
       ],
       'no-useless-concat': 'error',
       'no-useless-return': 'error',
-      'no-void': 'error',
+      'no-void': 'warn',
       'prefer-promise-reject-errors': [
         'warn',
         {

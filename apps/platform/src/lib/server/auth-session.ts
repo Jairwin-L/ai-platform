@@ -12,6 +12,7 @@ export interface AuthPayload {
     emailVerified: boolean | null;
     id: string;
     nickName: string | null;
+    picture: string | null;
     status: string;
   };
 }
@@ -90,6 +91,7 @@ export function toAuthPayload(user: AuthUser): AuthPayload {
       email: user.email ?? null,
       emailVerified: user.emailVerified ?? null,
       nickName: user.nickName ?? null,
+      picture: user.picture ?? null,
       status: user.status ?? 'active',
     },
     roles: user.roles ?? [],
@@ -182,6 +184,7 @@ export async function getAuthUserBySessionToken(token?: string | null): Promise<
     email: session.user.email ?? undefined,
     emailVerified: session.user.email_verified ?? undefined,
     nickName: session.user.nick_name ?? undefined,
+    picture: session.user.picture ?? undefined,
     status: session.user.status,
     roles: Array.from(roles),
     permissions: Array.from(permissions),
