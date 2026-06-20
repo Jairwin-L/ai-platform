@@ -15,5 +15,5 @@ export const GET = withApiHandler(async (request: NextRequest) => {
     return createErrorResponse(AUTH_ERROR.UNAUTHORIZED, undefined, null, 401);
   }
 
-  return createSuccessResponse(toAuthPayload(user), 'Current user loaded');
+  return createSuccessResponse(toAuthPayload(user));
 });
