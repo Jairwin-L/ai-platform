@@ -4,15 +4,13 @@ import {
   AppstoreOutlined,
   DashboardOutlined,
   LogoutOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  SafetyCertificateOutlined,
   SettingOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
-import { Avatar, Button, Dropdown, Layout, Menu, type MenuProps, Tooltip } from 'antd';
+import { ConfigProvider, Dropdown, Layout, Menu, type MenuProps } from 'antd';
 import { usePathname, useRouter } from 'next/navigation';
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
+import { APP_NAME } from '@/constants';
 import { usePermission } from '@/hooks/use-permission';
 import styles from './admin-shell.module.scss';
 
@@ -36,24 +34,12 @@ const menuItems: MenuProps['items'] = [
   },
 ];
 
-function getSelectedKey(pathname: string): string {
-  if (pathname === '/admin') {
-    return pathname;
-  }
-
-  if (pathname.startsWith('/admin/users')) {
-    return '/admin/users';
-  }
-
-  if (pathname.startsWith('/admin/permissions')) {
-    return '/admin/permissions';
-  }
-
+function getOpenKeys(pathname: string): string[] {
   if (pathname.startsWith('/admin/system-settings')) {
-    return '/admin/system-settings';
+    return ['settings'];
   }
 
-  return '/admin/roles';
+  return pathname === '/admin' ? [] : ['accounts'];
 }
 
 export function AdminShell({ children }: { children: ReactNode }) {
@@ -61,85 +47,117 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { user } = usePermission();
   const [collapsed, setCollapsed] = useState(false);
-  const selectedKey = getSelectedKey(pathname);
-  const openKeys = useMemo(() => {
-    if (pathname.startsWith('/admin/system-settings')) {
-      return ['settings'];
+  const [openKeys, setOpenKeys] = useState<string[]>(() => getOpenKeys(pathname));
+  // const selectedKey = getSelectedKey(pathname);
+  // const selectedKey = pathname;
+  const displayName = user?.nickName || user?.email || '管理员';
+
+  useEffect(() => {
+    if (!collapsed) {
+      setOpenKeys(getOpenKeys(pathname));
+    }
+  }, [collapsed, pathname]);
+
+  function onMenuOpenChange(nextOpenKeys: string[]): void {
+    if (nextOpenKeys.length <= 1) {
+      setOpenKeys(nextOpenKeys);
+      return;
     }
 
-    return pathname === '/admin' ? [] : ['accounts'];
-  }, [pathname]);
+    const latestOpenKey = nextOpenKeys.at(-1);
+
+    if (latestOpenKey?.includes(nextOpenKeys[0])) {
+      setOpenKeys(nextOpenKeys);
+      return;
+    }
+
+    setOpenKeys(latestOpenKey ? [latestOpenKey] : []);
+  }
+
+  function onHeaderMenuClick({ key }: { key: string }): void {
+    if (key === 'platform') {
+      router.push('/');
+    }
+  }
+
+  function getPopupContainer(node?: HTMLElement): HTMLElement {
+    const popupContainer = document.querySelector<HTMLElement>('.popup-container') ?? node;
+
+    if (
+      node &&
+      (node.className.includes('ant-select-selector') ||
+        node.className.includes('ant-picker') ||
+        node.className.includes('anticon-history'))
+    ) {
+      return popupContainer ?? document.body;
+    }
+
+    return document.body;
+  }
 
   return (
-    <Layout className={styles.shell} hasSider>
+    <div className={styles['layout-wrap']}>
       <Layout.Sider
-        className={styles.sider}
+        className={styles['sider-container']}
+        collapsible
         collapsed={collapsed}
-        collapsedWidth={72}
         theme="dark"
-        trigger={null}
-        width={248}
+        onCollapse={setCollapsed}
       >
-        <div className={styles.brand}>
-          <span className={styles['brand-mark']} aria-hidden="true">
-            <SafetyCertificateOutlined />
-          </span>
-          {!collapsed && <span>Control Center</span>}
+        <div className={styles['logo-box']}>
+          <img alt="logo" className={styles['logo-img']} src="/globe.svg" />
+          {!collapsed && <span className={styles['logo-text']}>Control Center</span>}
         </div>
         <Menu
-          className={styles.menu}
-          defaultOpenKeys={openKeys}
           items={menuItems}
           mode="inline"
-          selectedKeys={[selectedKey]}
+          openKeys={collapsed ? [] : openKeys}
+          selectedKeys={[pathname]}
           theme="dark"
+          triggerSubMenuAction="click"
           onClick={({ key }) => {
             if (key.startsWith('/')) {
               router.push(key);
             }
           }}
+          onOpenChange={onMenuOpenChange}
         />
       </Layout.Sider>
-
-      <Layout className={styles.main}>
-        <Layout.Header className={styles.header}>
-          <Tooltip title={collapsed ? '展开导航' : '收起导航'}>
-            <Button
-              aria-label={collapsed ? '展开导航' : '收起导航'}
-              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-              type="text"
-              onClick={() => setCollapsed((value) => !value)}
-            />
-          </Tooltip>
-          <div className={styles['header-actions']}>
-            <Button icon={<AppstoreOutlined />} type="text">
-              管理后台
-            </Button>
+      <div className={styles['layout-container']}>
+        <header className={styles['header-container']}>
+          <span />
+          <div className={styles['header-ri']}>
             <Dropdown
               menu={{
                 items: [
-                  { key: 'profile', label: '当前会话' },
                   { key: 'platform', icon: <AppstoreOutlined />, label: '平台' },
                   { type: 'divider' },
                   { key: 'sign-out', icon: <LogoutOutlined />, label: '退出登录', disabled: true },
                 ],
-                onClick: ({ key }) => {
-                  if (key === 'platform') {
-                    router.push('/');
-                  }
-                },
+                onClick: onHeaderMenuClick,
               }}
-              placement="bottomRight"
+              placement="bottom"
             >
-              <Button className={styles.account} type="text">
-                <Avatar size="small">A</Avatar>
-                <span>{user?.nickName || user?.email || '管理员'}</span>
-              </Button>
+              <div className={styles['header-avatar']} onClick={(event) => event.preventDefault()}>
+                <img alt="logo" className={styles['user-avatar']} src="/globe.svg" />
+                <span>{displayName}</span>
+              </div>
             </Dropdown>
           </div>
-        </Layout.Header>
-        <Layout.Content className={styles.content}>{children}</Layout.Content>
-      </Layout>
-    </Layout>
+        </header>
+        <ConfigProvider getPopupContainer={getPopupContainer}>
+          <div className={`${styles['main-container']} popup-container`}>{children}</div>
+        </ConfigProvider>
+        <footer className={styles.footer}>
+          <div className={styles['footer-box']}>
+            <span>{APP_NAME}</span>
+            <span>By</span>
+            <a href="https://www.yuque.com/jairwin/blog" rel="noopener noreferrer" target="_blank">
+              Jairwin
+            </a>
+          </div>
+        </footer>
+      </div>
+    </div>
   );
 }
