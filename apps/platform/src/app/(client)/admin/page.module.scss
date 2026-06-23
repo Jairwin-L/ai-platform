@@ -1,0 +1,56 @@
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.intro {
+  margin-bottom: 24px;
+  padding: 28px 32px;
+  overflow: hidden;
+  border: 1px solid #dfe7f5;
+  border-radius: 16px;
+  background: radial-gradient(circle at 90% 0%, rgb(91 140 255 / 18%), transparent 30%), #fff;
+}
+
+.intro h1 {
+  margin: 10px 0 6px;
+  color: #182230;
+  font-size: 30px;
+  line-height: 1.2;
+}
+
+.intro p {
+  max-width: 620px;
+  color: #667085;
+  font-size: 14px;
+}
+
+.metric {
+  min-height: 226px;
+  border: 1px solid #e7ebf1;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgb(16 24 40 / 4%);
+}
+
+.metric :global(.ant-statistic-title) {
+  color: #667085;
+  font-size: 14px;
+}
+
+.metric :global(.ant-statistic-content) {
+  color: #182230;
+  font-size: 34px;
+  font-weight: 700;
+}
+
+.metric p {
+  min-height: 44px;
+  margin: 16px 0;
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.secondary-row {
+  margin-top: 20px;
+}

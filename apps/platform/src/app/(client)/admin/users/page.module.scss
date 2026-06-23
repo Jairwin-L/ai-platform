@@ -1,0 +1,59 @@
+.card {
+  border: 1px solid #e7ebf1;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgb(16 24 40 / 4%);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.7fr) minmax(0, 1.3fr);
+  gap: 36px;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 300px;
+  padding: 28px;
+  text-align: center;
+  border-radius: 12px;
+  background: #f7faff;
+}
+
+.avatar {
+  margin-bottom: 18px;
+  color: #0d1b2f;
+  background: #c9dcff;
+}
+
+.profile h2 {
+  margin: 0;
+  color: #182230;
+  font-size: 20px;
+}
+
+.profile p {
+  margin: 8px 0 16px;
+  color: #667085;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.empty {
+  padding: 60px 24px;
+  color: #667085;
+  text-align: center;
+}
+
+@media (width <= 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

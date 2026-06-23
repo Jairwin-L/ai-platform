@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@ant-design/nextjs-registry": "^1.0.0",
+    "@ant-design/icons": "^6.1.0",
     "@floating-ui/react": "^0.27.19",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
