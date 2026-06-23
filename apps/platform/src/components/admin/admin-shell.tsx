@@ -17,29 +17,39 @@ import styles from './admin-shell.module.scss';
 const menuItems: MenuProps['items'] = [
   { key: '/admin', icon: <DashboardOutlined />, label: '概览' },
   {
-    key: 'accounts',
-    icon: <TeamOutlined />,
-    label: '账号与访问',
-    children: [
-      { key: '/admin/users', label: '用户' },
-      { key: '/admin/roles', label: '角色' },
-      { key: '/admin/permissions', label: '权限' },
-    ],
-  },
-  {
-    key: 'settings',
+    key: '/admin/system',
     icon: <SettingOutlined />,
-    label: '系统',
-    children: [{ key: '/admin/system-settings', label: '系统设置' }],
+    label: '系统管理',
+    children: [
+      {
+        key: '/admin/access-control',
+        icon: <TeamOutlined />,
+        label: '权限管理',
+        children: [
+          { key: '/admin/users', label: '用户' },
+          { key: '/admin/roles', label: '角色' },
+          { key: '/admin/permissions', label: '权限' },
+        ],
+      },
+      { key: '/admin/settings', label: '系统配置' },
+    ],
   },
 ];
 
 function getOpenKeys(pathname: string): string[] {
-  if (pathname.startsWith('/admin/system-settings')) {
-    return ['settings'];
+  if (pathname.startsWith('/admin/settings')) {
+    return ['/admin/system'];
   }
 
-  return pathname === '/admin' ? [] : ['accounts'];
+  if (
+    pathname.startsWith('/admin/users') ||
+    pathname.startsWith('/admin/roles') ||
+    pathname.startsWith('/admin/permissions')
+  ) {
+    return ['/admin/system', '/admin/access-control'];
+  }
+
+  return [];
 }
 
 export function AdminShell({ children }: { children: ReactNode }) {
@@ -59,19 +69,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   }, [collapsed, pathname]);
 
   function onMenuOpenChange(nextOpenKeys: string[]): void {
-    if (nextOpenKeys.length <= 1) {
-      setOpenKeys(nextOpenKeys);
-      return;
-    }
-
-    const latestOpenKey = nextOpenKeys.at(-1);
-
-    if (latestOpenKey?.includes(nextOpenKeys[0])) {
-      setOpenKeys(nextOpenKeys);
-      return;
-    }
-
-    setOpenKeys(latestOpenKey ? [latestOpenKey] : []);
+    setOpenKeys(nextOpenKeys);
   }
   function onChangeMenu(menuProps: Parameters<NonNullable<MenuProps['onClick']>>[0]) {
     const { key } = menuProps;

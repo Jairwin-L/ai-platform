@@ -110,7 +110,7 @@ export default function AdminPage() {
           <Card className={styles.metric} variant="borderless">
             <Statistic prefix={<SettingOutlined />} title="系统设置" value="已接入" />
             <p>通过安全白名单字段持久化展示和访问策略，不会暴露生产配置。</p>
-            <Link href="/admin/system-settings">
+            <Link href="/admin/settings">
               <Button>打开设置</Button>
             </Link>
           </Card>
