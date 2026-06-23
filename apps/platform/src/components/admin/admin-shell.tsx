@@ -73,6 +73,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
     setOpenKeys(latestOpenKey ? [latestOpenKey] : []);
   }
+  function onChangeMenu(menuProps: Parameters<NonNullable<MenuProps['onClick']>>[0]) {
+    const { key } = menuProps;
+    router.push(key);
+  }
 
   function onHeaderMenuClick({ key }: { key: string }): void {
     if (key === 'platform') {
@@ -115,11 +119,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           selectedKeys={[pathname]}
           theme="dark"
           triggerSubMenuAction="click"
-          onClick={({ key }) => {
-            if (key.startsWith('/')) {
-              router.push(key);
-            }
-          }}
+          onClick={onChangeMenu}
           onOpenChange={onMenuOpenChange}
         />
       </Layout.Sider>
