@@ -31,7 +31,7 @@ const getUserPermissionsHandler: ApiHandler = async (
   const userId = await getUserId(context);
 
   if (!userId) {
-    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, 'User ID is not provided', null, 400);
+    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, '未提供用户 ID', null, 400);
   }
 
   try {
@@ -77,17 +77,9 @@ const getUserPermissionsHandler: ApiHandler = async (
       }
     }
 
-    return createSuccessResponse(
-      Array.from(permissionMap.values()),
-      'User permission retrieval successful',
-    );
+    return createSuccessResponse(Array.from(permissionMap.values()), '用户权限查询成功');
   } catch (error) {
-    return createErrorResponse(
-      DATA_ERROR.QUERY_FAILED,
-      'Unable to load permissions for user',
-      error,
-      500,
-    );
+    return createErrorResponse(DATA_ERROR.QUERY_FAILED, '用户权限查询失败', error, 500);
   }
 };
 

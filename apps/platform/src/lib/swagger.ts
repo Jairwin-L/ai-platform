@@ -23,7 +23,7 @@ export const openApiDefinition = {
         properties: {
           code: { type: 'integer', example: 10004 },
           success: { type: 'boolean', example: false },
-          message: { type: 'string', example: 'Data validation failed' },
+          message: { type: 'string', example: '数据校验失败' },
           errorCode: { type: 'string', example: '10004' },
           errorDetail: { nullable: true },
           data: { nullable: true, example: null },
@@ -116,13 +116,13 @@ export async function getApiDocs(forceGenerate = false) {
     try {
       return JSON.parse(fs.readFileSync(publicPath, 'utf-8'));
     } catch (error) {
-      console.error('Failed to read OpenAPI file, regenerating:', error);
+      console.error('读取 OpenAPI 文件失败，正在重新生成：', error);
     }
   }
 
   if (process.env.NODE_ENV === 'production') {
     throw new Error(
-      'OpenAPI spec file is missing. Run `vp run openapi:generate` during build first.',
+      '缺少 OpenAPI 规范文件，请先在构建期间执行 `vp run openapi:generate`。',
     );
   }
 
@@ -134,7 +134,7 @@ export async function getApiDocs(forceGenerate = false) {
   try {
     fs.writeFileSync(publicPath, JSON.stringify(spec, null, 2), 'utf-8');
   } catch (error) {
-    console.error('Failed to persist OpenAPI file:', error);
+    console.error('写入 OpenAPI 文件失败：', error);
   }
 
   return spec;

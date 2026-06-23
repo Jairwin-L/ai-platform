@@ -15,7 +15,7 @@ function getRedisUrl(): URL {
   const url = process.env.REDIS_URL;
 
   if (!url) {
-    throw new Error('REDIS_URL is not configured');
+    throw new Error('REDIS_URL 未配置');
   }
 
   return new URL(url);
@@ -57,7 +57,7 @@ function parseSimpleResponse(
   }
 
   if (marker === '-') {
-    throw new Error(payload.split('\r\n')[0] || 'Redis command failed');
+    throw new Error(payload.split('\r\n')[0] || 'Redis 命令执行失败');
   }
 
   if (marker === '$') {
@@ -78,7 +78,7 @@ function parseSimpleResponse(
     return { nextOffset: end + 2, value: buffer.subarray(start, end).toString() };
   }
 
-  throw new Error('Unsupported Redis response');
+  throw new Error('不支持的 Redis 响应');
 }
 
 async function runRawRedisCommand(parts: string[]): Promise<RedisValue> {
@@ -90,7 +90,7 @@ async function runRawRedisCommand(parts: string[]): Promise<RedisValue> {
     let expectedReplies = 1;
     const timeout = setTimeout(() => {
       socket.destroy();
-      reject(new Error('Redis command timed out'));
+      reject(new Error('Redis 命令执行超时'));
     }, REDIS_COMMAND_TIMEOUT_MS);
 
     function cleanup(): void {

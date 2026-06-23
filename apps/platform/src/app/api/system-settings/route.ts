@@ -51,12 +51,12 @@ function toSettingsResponse(settings: {
 
 function getStringValue(value: unknown, fieldName: string, maxLength: number): string {
   if (typeof value !== 'string') {
-    throw new Error(`${fieldName} must be a string`);
+    throw new Error(`${fieldName} 必须是字符串`);
   }
 
   const trimmedValue = value.trim();
   if (!trimmedValue || trimmedValue.length > maxLength) {
-    throw new Error(`${fieldName} is invalid`);
+    throw new Error(`${fieldName} 无效`);
   }
 
   return trimmedValue;
@@ -69,7 +69,7 @@ function getOptionalEmail(value: unknown): string | null {
 
   const email = getStringValue(value, 'supportEmail', 254);
   if (!/^\S+@\S+\.\S+$/.test(email)) {
-    throw new Error('supportEmail is invalid');
+    throw new Error('支持邮箱无效');
   }
 
   return email;
@@ -77,7 +77,7 @@ function getOptionalEmail(value: unknown): string | null {
 
 function getBooleanValue(value: unknown, fieldName: string): boolean {
   if (typeof value !== 'boolean') {
-    throw new Error(`${fieldName} must be a boolean`);
+    throw new Error(`${fieldName} 必须是布尔值`);
   }
 
   return value;
@@ -86,7 +86,7 @@ function getBooleanValue(value: unknown, fieldName: string): boolean {
 function getAllowedValue(value: unknown, fieldName: string, allowedValues: Set<string>): string {
   const selectedValue = getStringValue(value, fieldName, 32);
   if (!allowedValues.has(selectedValue)) {
-    throw new Error(`${fieldName} is not supported`);
+    throw new Error(`${fieldName} 不受支持`);
   }
 
   return selectedValue;
@@ -98,7 +98,7 @@ function isMissingSystemSettingsTable(error: unknown): boolean {
 
 function getStorageErrorMessage(error: unknown, fallback: string): string {
   if (isMissingSystemSettingsTable(error)) {
-    return 'System settings storage is not initialized. Run "vp run prisma:push" first.';
+    return '系统设置存储尚未初始化，请先执行“vp run prisma:push”。';
   }
 
   return fallback;
@@ -131,11 +131,11 @@ const getSystemSettingsHandler: ApiHandler = async () => {
       update: {},
     });
 
-    return createSuccessResponse(toSettingsResponse(settings), 'System settings loaded');
+    return createSuccessResponse(toSettingsResponse(settings), '系统设置查询成功');
   } catch (error) {
     return createErrorResponse(
       DATA_ERROR.QUERY_FAILED,
-      getStorageErrorMessage(error, 'Unable to load system settings'),
+      getStorageErrorMessage(error, '系统设置查询失败'),
       error,
       500,
     );
@@ -147,7 +147,7 @@ const updateSystemSettingsHandler: ApiHandler = async (request: NextRequest) => 
   try {
     payload = (await request.json()) as SystemSettingsPayload;
   } catch (error) {
-    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, 'Request JSON is invalid', error, 400);
+    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, '请求 JSON 格式无效', error, 400);
   }
 
   try {
@@ -158,11 +158,11 @@ const updateSystemSettingsHandler: ApiHandler = async (request: NextRequest) => 
       update: { ...data, updated_at: new Date() },
     });
 
-    return createSuccessResponse(toSettingsResponse(settings), 'System settings updated');
+    return createSuccessResponse(toSettingsResponse(settings), '系统设置更新成功');
   } catch (error) {
     return createErrorResponse(
       DATA_ERROR.UPDATE_FAILED,
-      getStorageErrorMessage(error, 'Unable to update system settings'),
+      getStorageErrorMessage(error, '系统设置更新失败'),
       error,
       400,
     );

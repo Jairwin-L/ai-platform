@@ -107,24 +107,13 @@ const getPermissionsHandler: ApiHandler = async (request: NextRequest) => {
         total,
         page,
         pageSize,
-        'Article permission tree loaded',
+        '权限树查询成功',
       );
     }
 
-    return createPaginatedResponse(
-      permissions,
-      total,
-      page,
-      pageSize,
-      'Article permissions loaded',
-    );
+    return createPaginatedResponse(permissions, total, page, pageSize, '权限列表查询成功');
   } catch (error) {
-    return createErrorResponse(
-      DATA_ERROR.QUERY_FAILED,
-      'Unable to load article permissions',
-      error,
-      500,
-    );
+    return createErrorResponse(DATA_ERROR.QUERY_FAILED, '权限列表查询失败', error, 500);
   }
 };
 
@@ -134,29 +123,19 @@ const createPermissionHandler: ApiHandler = async (request: NextRequest) => {
   try {
     body = (await request.json()) as Prisma.PermissionsUncheckedCreateInput;
   } catch (error) {
-    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, 'Request JSON is invalid', error, 400);
+    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, '请求 JSON 格式无效', error, 400);
   }
 
   try {
     const permission = await prisma.permissions.create({ data: body });
 
-    return createSuccessResponse(permission, 'Article permission created', 201);
+    return createSuccessResponse(permission, '权限创建成功', 201);
   } catch (error) {
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
-      return createErrorResponse(
-        DATA_ERROR.DUPLICATE_ENTRY,
-        'Article permission code must be unique',
-        error,
-        409,
-      );
+      return createErrorResponse(DATA_ERROR.DUPLICATE_ENTRY, '权限编码必须唯一', error, 409);
     }
 
-    return createErrorResponse(
-      DATA_ERROR.CREATE_FAILED,
-      'Unable to create article permission',
-      error,
-      500,
-    );
+    return createErrorResponse(DATA_ERROR.CREATE_FAILED, '权限创建失败', error, 500);
   }
 };
 

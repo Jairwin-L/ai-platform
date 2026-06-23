@@ -46,22 +46,22 @@ const SHARP_SUPPORTED_MIME_TYPES = new Set([
  *               type: string
  *               format: binary
  *       400:
- *         description: No file provided or unsupported file type
+ *         description: 未提供文件或文件类型不受支持
  *       500:
- *         description: Compression failed
+ *         description: 压缩失败
  */
 const sharpHandler: ApiHandler = async (request: NextRequest) => {
   const formData = await request.formData();
   const file = formData.get('file') as File | null;
 
   if (!file) {
-    return createErrorResponse(COMMON_ERROR.PARAM_ERROR, 'No file provided', null, 400);
+    return createErrorResponse(COMMON_ERROR.PARAM_ERROR, '未提供文件', null, 400);
   }
 
   if (!SHARP_SUPPORTED_MIME_TYPES.has(file.type)) {
     return createErrorResponse(
       FILE_ERROR.TYPE_NOT_SUPPORTED,
-      `Sharp compression does not support this file type: ${file.type || 'unknown'}`,
+      `Sharp 压缩不支持该文件类型：${file.type || '未知'}`,
       null,
       400,
     );
@@ -78,7 +78,7 @@ const sharpHandler: ApiHandler = async (request: NextRequest) => {
   } catch (error) {
     return createErrorResponse(
       FILE_ERROR.COMPRESS_FAILED,
-      error instanceof Error ? error.message : 'Compression failed',
+      error instanceof Error ? error.message : '压缩失败',
       error,
       500,
     );

@@ -12,13 +12,13 @@ export function createValidationError(message: string) {
 }
 
 export function createDuplicateEmailError() {
-  return createErrorResponse(DATA_ERROR.DUPLICATE_ENTRY, 'Email is already registered', null, 409);
+  return createErrorResponse(DATA_ERROR.DUPLICATE_ENTRY, '该邮箱已注册', null, 409);
 }
 
 export function createEmailNotRegisteredError() {
-  return createErrorResponse(DATA_ERROR.NOT_FOUND, 'Email is not registered', null, 404);
+  return createErrorResponse(DATA_ERROR.NOT_FOUND, '该邮箱未注册', null, 404);
 }
 
 export function createUnavailableAccountError() {
-  return createErrorResponse(AUTH_ERROR.FORBIDDEN, 'Account is unavailable', null, 403);
+  return createErrorResponse(AUTH_ERROR.FORBIDDEN, '账号不可用', null, 403);
 }

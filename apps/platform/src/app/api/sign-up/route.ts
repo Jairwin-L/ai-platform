@@ -30,7 +30,7 @@ export const POST = withApiHandler(async (request: NextRequest) => {
   const parsed = requestSchema.safeParse(await request.json());
 
   if (!parsed.success) {
-    return createValidationError('Invalid sign-up payload');
+    return createValidationError('注册请求参数无效');
   }
 
   const email = normalizeEmail(parsed.data.email);
@@ -43,7 +43,7 @@ export const POST = withApiHandler(async (request: NextRequest) => {
   const codeOk = await verifyCode(email, 'sign-up', parsed.data.code);
 
   if (!codeOk) {
-    return createValidationError('Invalid or expired verification code');
+    return createValidationError('验证码无效或已过期');
   }
 
   try {
@@ -52,15 +52,10 @@ export const POST = withApiHandler(async (request: NextRequest) => {
     const authUser = await getAuthUserBySessionToken(token);
 
     if (!authUser) {
-      return createErrorResponse(
-        DATA_ERROR.CREATE_FAILED,
-        'Failed to create sign-up session',
-        null,
-        500,
-      );
+      return createErrorResponse(DATA_ERROR.CREATE_FAILED, '注册登录状态创建失败', null, 500);
     }
 
-    const response = createSuccessResponse(toAuthPayload(authUser), 'Sign up successful', 201);
+    const response = createSuccessResponse(toAuthPayload(authUser), '注册成功', 201);
     setSessionCookie(response, token);
 
     return response;

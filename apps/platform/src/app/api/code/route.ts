@@ -27,7 +27,7 @@ export const POST = withApiHandler(async (request: NextRequest) => {
   const parsed = requestSchema.safeParse(await request.json());
 
   if (!parsed.success) {
-    return createValidationError('Invalid email or verification purpose');
+    return createValidationError('邮箱或验证码用途无效');
   }
 
   const email = normalizeEmail(parsed.data.email);

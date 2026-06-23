@@ -36,7 +36,7 @@ function delay(ms: number): Promise<void> {
  * @returns {Promise<string>} 压缩错误信息。
  */
 async function getCompressErrorMessage(response: Response): Promise<string> {
-  const fallback = `Compress API error: ${response.status}`;
+  const fallback = `压缩接口错误：${response.status}`;
   const contentType = response.headers.get('Content-Type') || '';
 
   if (!contentType.includes('application/json')) {
@@ -85,11 +85,11 @@ async function compressOnce(file: File, strategy: CompressStrategy): Promise<Fil
 
   const contentType = response.headers.get('Content-Type') || '';
   if (!contentType.startsWith('image/')) {
-    throw new Error(`Unexpected response type: ${contentType}`);
+    throw new Error(`响应类型异常：${contentType}`);
   }
 
   const buffer = await response.arrayBuffer();
-  if (buffer.byteLength === 0) throw new Error('Empty compressed response');
+  if (buffer.byteLength === 0) throw new Error('压缩结果为空');
   if (buffer.byteLength >= file.size) return file;
 
   return new File([buffer], file.name, {
@@ -115,11 +115,11 @@ async function compressWithRetry(
     return await compressOnce(file, strategy);
   } catch (error) {
     if (attempt === MAX_RETRIES) {
-      console.warn(`[compress] failed after ${MAX_RETRIES} attempts, using original:`, error);
+      console.warn(`[compress] 重试 ${MAX_RETRIES} 次后仍失败，使用原图：`, error);
       return file;
     }
 
-    console.warn(`[compress] attempt ${attempt} failed, retrying...`, error);
+    console.warn(`[compress] 第 ${attempt} 次尝试失败，正在重试：`, error);
     await delay(RETRY_DELAY_MS * attempt);
     return compressWithRetry(file, strategy, attempt + 1);
   }

@@ -184,7 +184,7 @@ export default function Page() {
               ? {
                   ...item,
                   status: 'error',
-                  error: new Error('Compression failed'),
+                  error: new Error('压缩失败'),
                 }
               : item,
           ),
@@ -205,7 +205,7 @@ export default function Page() {
           const presignedUrl = presignedUrls[index];
 
           if (!presignedUrl) {
-            throw new Error('Missing presigned URL');
+            throw new Error('缺少预签名上传地址');
           }
 
           await uploadWithPresignedUrl(file, presignedUrl, ({ progress }) => {
@@ -241,7 +241,7 @@ export default function Page() {
               ? {
                   ...item,
                   status: 'error',
-                  error: new Error('Upload failed'),
+                  error: new Error('上传失败'),
                 }
               : item,
           ),

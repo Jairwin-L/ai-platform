@@ -9,7 +9,7 @@ import { createSuccessResponse, withApiHandler } from '@/lib/server';
  *     summary: Get demo greeting
  *     responses:
  *       200:
- *         description: Demo greeting returned successfully
+ *         description: 示例问候语返回成功
  *         content:
  *           application/json:
  *             schema:
@@ -31,4 +31,4 @@ import { createSuccessResponse, withApiHandler } from '@/lib/server';
  *                   type: integer
  *                   format: int64
  */
-export const GET = withApiHandler(async () => createSuccessResponse('Hello', 'Hello'));
+export const GET = withApiHandler(async () => createSuccessResponse('Hello', '请求成功'));

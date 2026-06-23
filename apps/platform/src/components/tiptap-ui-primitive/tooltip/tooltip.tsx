@@ -116,7 +116,7 @@ function useTooltipContext() {
   const context = React.useContext(TooltipContext);
 
   if (context == null) {
-    throw new Error('Tooltip components must be wrapped in <TooltipProvider />');
+    throw new Error('Tooltip 组件必须包裹在 <TooltipProvider /> 中');
   }
 
   return context;

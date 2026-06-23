@@ -60,7 +60,7 @@ function getStorageConfig(): StorageConfig {
   ].filter((name) => !getEnv(name));
 
   if (missing.length > 0) {
-    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+    throw new Error(`缺少必要的环境变量：${missing.join(', ')}`);
   }
 
   return {
@@ -136,7 +136,7 @@ async function createPresignedUrl(
   const fileType = file.fileType?.toLowerCase();
 
   if (fileType && !ALLOWED_MIME_TYPES.has(fileType)) {
-    throw new Error(`Unsupported file type: ${file.fileType}`);
+    throw new Error(`不支持的文件类型：${file.fileType}`);
   }
 
   const fileName = getSafeFileName(file.fileName, fileType);
@@ -213,11 +213,11 @@ function getRejectedReason(reason: unknown): string {
  *                 maximum: 604800
  *     responses:
  *       200:
- *         description: Presigned URLs generated successfully
+ *         description: 预签名上传地址生成成功
  *       400:
- *         description: Parameter error or unsupported file type
+ *         description: 参数错误或文件类型不受支持
  *       500:
- *         description: Failed to generate presigned URLs
+ *         description: 预签名上传地址生成失败
  */
 const createPresignedUrlsHandler = async (request: NextRequest) => {
   let storageConfig: StorageConfig;
@@ -227,7 +227,7 @@ const createPresignedUrlsHandler = async (request: NextRequest) => {
   } catch (error) {
     return createErrorResponse(
       FILE_ERROR.STORAGE_ERROR,
-      error instanceof Error ? error.message : 'Storage misconfigured',
+      error instanceof Error ? error.message : '存储服务配置错误',
       error,
       500,
     );
@@ -237,13 +237,13 @@ const createPresignedUrlsHandler = async (request: NextRequest) => {
   const files = body.files || [];
 
   if (!Array.isArray(files) || files.length === 0) {
-    return createErrorResponse(COMMON_ERROR.PARAM_ERROR, 'files is required', null, 400);
+    return createErrorResponse(COMMON_ERROR.PARAM_ERROR, 'files 不能为空', null, 400);
   }
 
   if (files.length > MAX_FILE_COUNT) {
     return createErrorResponse(
       COMMON_ERROR.PARAM_ERROR,
-      `A maximum of ${MAX_FILE_COUNT} files is allowed per request`,
+      `每次请求最多允许 ${MAX_FILE_COUNT} 个文件`,
       null,
       400,
     );
@@ -255,7 +255,7 @@ const createPresignedUrlsHandler = async (request: NextRequest) => {
     if (fileType && !ALLOWED_MIME_TYPES.has(fileType)) {
       return createErrorResponse(
         FILE_ERROR.TYPE_NOT_SUPPORTED,
-        `Unsupported file type: ${file.fileType}`,
+        `不支持的文件类型：${file.fileType}`,
         null,
         400,
       );
@@ -284,19 +284,19 @@ const createPresignedUrlsHandler = async (request: NextRequest) => {
     );
 
     if (rejectedReasons.length > 0) {
-      throw new Error(rejectedReasons.join('; ') || 'Failed to generate presigned URLs');
+      throw new Error(rejectedReasons.join('；') || '生成预签名上传地址失败');
     }
 
     const data = results.map((result) => {
       if (result.status === 'fulfilled') return result.value;
-      throw new Error('Failed to generate presigned URLs');
+      throw new Error('生成预签名上传地址失败');
     });
 
-    return createSuccessResponse(data, 'Presigned URLs generated successfully');
+    return createSuccessResponse(data, '预签名上传地址生成成功');
   } catch (error) {
     return createErrorResponse(
       FILE_ERROR.UPLOAD_FAILED,
-      error instanceof Error ? error.message : 'Failed to generate presigned URLs',
+      error instanceof Error ? error.message : '生成预签名上传地址失败',
       error,
       500,
     );

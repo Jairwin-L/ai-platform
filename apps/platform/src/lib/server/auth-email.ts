@@ -13,7 +13,7 @@ function getResendApiKey(): string {
   const apiKey = process.env.RESEND_API_KEY;
 
   if (!apiKey) {
-    throw new Error('RESEND_API_KEY is not configured');
+    throw new Error('RESEND_API_KEY 未配置');
   }
 
   return apiKey;
@@ -23,7 +23,7 @@ function getResendFromEmail(): string {
   const fromEmail = process.env.RESEND_FROM_EMAIL;
 
   if (!fromEmail) {
-    throw new Error('RESEND_FROM_EMAIL is not configured');
+    throw new Error('RESEND_FROM_EMAIL 未配置');
   }
 
   return fromEmail;
@@ -91,6 +91,6 @@ export async function sendVerificationCodeEmail(
   const payload = (await response.json()) as ResendEmailResponse;
 
   if (!response.ok || payload.error) {
-    throw new Error(payload.error?.message || 'Failed to send verification email');
+    throw new Error(payload.error?.message || '验证码邮件发送失败');
   }
 }

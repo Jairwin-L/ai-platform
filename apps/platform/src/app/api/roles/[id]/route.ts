@@ -101,7 +101,7 @@ const getRoleHandler: ApiHandler = async (_request: NextRequest, context: ApiCon
   const id = await getRoleId(context);
 
   if (!id) {
-    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, 'Missing role ID in URL', null, 400);
+    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, 'URL 中缺少角色 ID', null, 400);
   }
 
   try {
@@ -115,7 +115,7 @@ const getRoleHandler: ApiHandler = async (_request: NextRequest, context: ApiCon
     });
 
     if (!role) {
-      return createErrorResponse(DATA_ERROR.NOT_FOUND, 'Role not found', null, 404);
+      return createErrorResponse(DATA_ERROR.NOT_FOUND, '角色不存在', null, 404);
     }
 
     const rolePermissions = await prisma.rolePermissions.findMany({
@@ -135,15 +135,10 @@ const getRoleHandler: ApiHandler = async (_request: NextRequest, context: ApiCon
         permissions: permissionTree.permissionIds,
         permissionsTree: permissionTree.treeData,
       },
-      'Role details retrieved successfully',
+      '角色详情查询成功',
     );
   } catch (error) {
-    return createErrorResponse(
-      DATA_ERROR.QUERY_FAILED,
-      'Failed to retrieve role details',
-      error,
-      500,
-    );
+    return createErrorResponse(DATA_ERROR.QUERY_FAILED, '角色详情查询失败', error, 500);
   }
 };
 
@@ -151,7 +146,7 @@ const updateRoleHandler: ApiHandler = async (request: NextRequest, context: ApiC
   const id = await getRoleId(context);
 
   if (!id) {
-    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, 'Missing role ID in URL', null, 400);
+    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, 'URL 中缺少角色 ID', null, 400);
   }
 
   let body: {
@@ -163,7 +158,7 @@ const updateRoleHandler: ApiHandler = async (request: NextRequest, context: ApiC
   try {
     body = (await request.json()) as typeof body;
   } catch (error) {
-    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, 'Request JSON is invalid', error, 400);
+    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, '请求 JSON 格式无效', error, 400);
   }
 
   const { permissions, ...roleData } = body;
@@ -200,23 +195,18 @@ const updateRoleHandler: ApiHandler = async (request: NextRequest, context: ApiC
         ...result,
         id: result.id.toString(),
       },
-      'Role updated successfully',
+      '角色更新成功',
     );
   } catch (error) {
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
-      return createErrorResponse(
-        DATA_ERROR.DUPLICATE_ENTRY,
-        'Article role name must be unique',
-        error,
-        409,
-      );
+      return createErrorResponse(DATA_ERROR.DUPLICATE_ENTRY, '角色名称必须唯一', error, 409);
     }
 
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2025') {
-      return createErrorResponse(DATA_ERROR.NOT_FOUND, 'Role not found', error, 404);
+      return createErrorResponse(DATA_ERROR.NOT_FOUND, '角色不存在', error, 404);
     }
 
-    return createErrorResponse(DATA_ERROR.UPDATE_FAILED, 'Failed to update role', error, 500);
+    return createErrorResponse(DATA_ERROR.UPDATE_FAILED, '角色更新失败', error, 500);
   }
 };
 
@@ -224,20 +214,20 @@ const deleteRoleHandler: ApiHandler = async (_request: NextRequest, context: Api
   const id = await getRoleId(context);
 
   if (!id) {
-    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, 'Missing role ID in URL', null, 400);
+    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, 'URL 中缺少角色 ID', null, 400);
   }
 
   try {
     await prisma.rolePermissions.deleteMany({ where: { role_id: id } });
     await prisma.roles.delete({ where: { id } });
 
-    return createSuccessResponse({ id }, 'Role deleted successfully');
+    return createSuccessResponse({ id }, '角色删除成功');
   } catch (error) {
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2025') {
-      return createErrorResponse(DATA_ERROR.NOT_FOUND, 'Role not found', error, 404);
+      return createErrorResponse(DATA_ERROR.NOT_FOUND, '角色不存在', error, 404);
     }
 
-    return createErrorResponse(DATA_ERROR.DELETE_FAILED, 'Failed to delete role', error, 500);
+    return createErrorResponse(DATA_ERROR.DELETE_FAILED, '角色删除失败', error, 500);
   }
 };
 

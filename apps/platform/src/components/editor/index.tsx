@@ -242,7 +242,7 @@ export const SimpleEditor = React.forwardRef(
           limit: 20,
           upload: handleImageUpload,
           onError: (error) => {
-            console.error('Upload failed:', error);
+            console.error('上传失败：', error);
             message.error(error.message || '图片上传失败');
           },
         }),

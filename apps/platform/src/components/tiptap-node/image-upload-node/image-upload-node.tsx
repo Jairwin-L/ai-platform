@@ -33,9 +33,7 @@ function useFileUpload(options: UploadOptions) {
 
   const uploadFile = async (file: File): Promise<string | null> => {
     if (file.size > options.maxSize) {
-      const error = new Error(
-        `File size exceeds maximum allowed (${options.maxSize / 1024 / 1024}MB)`,
-      );
+      const error = new Error(`文件大小超过允许的最大值（${options.maxSize / 1024 / 1024}MB）`);
       options.onError?.(error);
       return null;
     }
@@ -54,7 +52,7 @@ function useFileUpload(options: UploadOptions) {
 
     try {
       if (!options.upload) {
-        throw new Error('Upload function is not defined');
+        throw new Error('未定义上传方法');
       }
 
       const url = await options.upload(
@@ -71,7 +69,7 @@ function useFileUpload(options: UploadOptions) {
         abortController.signal,
       );
 
-      if (!url) throw new Error('Upload failed: No URL returned');
+      if (!url) throw new Error('上传失败：未返回地址');
 
       if (!abortController.signal.aborted) {
         setFileItem((prev) => {
@@ -98,7 +96,7 @@ function useFileUpload(options: UploadOptions) {
             progress: 0,
           };
         });
-        options.onError?.(error instanceof Error ? error : new Error('Upload failed'));
+        options.onError?.(error instanceof Error ? error : new Error('上传失败'));
       }
       return null;
     }
@@ -106,20 +104,18 @@ function useFileUpload(options: UploadOptions) {
 
   const uploadFiles = async (files: File[]): Promise<string | null> => {
     if (!files || files.length === 0) {
-      options.onError?.(new Error('No files to upload'));
+      options.onError?.(new Error('没有可上传的文件'));
       return null;
     }
 
     if (options.limit && files.length > options.limit) {
-      options.onError?.(
-        new Error(`Maximum ${options.limit} file${options.limit === 1 ? '' : 's'} allowed`),
-      );
+      options.onError?.(new Error(`最多允许上传 ${options.limit} 个文件`));
       return null;
     }
 
     const file = files[0];
     if (!file) {
-      options.onError?.(new Error('File is undefined'));
+      options.onError?.(new Error('文件不存在'));
       return null;
     }
 
@@ -337,11 +333,11 @@ export const ImageUploadNode: React.FC<NodeViewProps> = (props) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { files } = e.target;
     if (!files || files.length === 0) {
-      extension.options.onError?.(new Error('No file selected'));
+      extension.options.onError?.(new Error('未选择文件'));
       return;
     }
     handleUpload(Array.from(files)).catch((error: unknown) => {
-      extension.options.onError?.(error instanceof Error ? error : new Error('Upload failed'));
+      extension.options.onError?.(error instanceof Error ? error : new Error('上传失败'));
     });
   };
 
@@ -353,7 +349,7 @@ export const ImageUploadNode: React.FC<NodeViewProps> = (props) => {
       const filename = files[0]?.name.replace(/\.[^/.]+$/, '') || 'unknown';
 
       if (pos === undefined) {
-        extension.options.onError?.(new Error('Image upload position is unavailable'));
+        extension.options.onError?.(new Error('图片上传位置不可用'));
         return;
       }
 

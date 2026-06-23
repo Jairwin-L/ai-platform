@@ -103,7 +103,7 @@ async function parseSuccessResponse(
   const data = await response.json();
 
   if (isApiResponse(data) && !data.success) {
-    const message = data.message || 'Request failed';
+    const message = data.message || '请求失败';
     showGlobalErrorMessage(message);
     throw new Error(message);
   }

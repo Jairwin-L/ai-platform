@@ -47,7 +47,7 @@ const DropdownMenuContext = React.createContext<ContextType | null>(null);
 function useDropdownMenuContext() {
   const context = React.useContext(DropdownMenuContext);
   if (!context) {
-    throw new Error('DropdownMenu components must be wrapped in <DropdownMenu />');
+    throw new Error('DropdownMenu 组件必须包裹在 <DropdownMenu /> 中');
   }
   return context;
 }

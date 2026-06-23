@@ -27,7 +27,7 @@ export function requirePermission(...required: string[]): ApiMiddleware {
     if (!ok) {
       return createErrorResponse(
         AUTH_ERROR.FORBIDDEN,
-        `Missing permission: ${required.join(', ')}`,
+        `缺少权限：${required.join(', ')}`,
         null,
         403,
       );
@@ -49,7 +49,7 @@ export function requireRole(...required: string[]): ApiMiddleware {
     if (!ok) {
       return createErrorResponse(
         AUTH_ERROR.FORBIDDEN,
-        `Required role: ${required.join(', ')}`,
+        `需要以下角色之一：${required.join(', ')}`,
         null,
         403,
       );

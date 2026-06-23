@@ -73,7 +73,7 @@ export async function requestPresignedUrls(
   const result = (await response.json()) as PresignedResponse;
 
   if (!response.ok || !result.success || !result.data) {
-    throw new Error(result.message || 'Failed to generate presigned URLs');
+    throw new Error(result.message || '生成预签名上传地址失败');
   }
 
   return result.data;
@@ -96,11 +96,11 @@ export function uploadWithPresignedUrl(
   abortSignal?: AbortSignal,
 ): Promise<void> {
   if (file.size > presignedUrl.maxFileSize) {
-    throw new Error(`File size exceeds ${presignedUrl.maxFileSize} bytes`);
+    throw new Error(`文件大小超过 ${presignedUrl.maxFileSize} 字节限制`);
   }
 
   if (abortSignal?.aborted) {
-    throw new Error('Upload aborted');
+    throw new Error('上传已中止');
   }
 
   return new Promise<void>((resolve, reject) => {
@@ -129,15 +129,15 @@ export function uploadWithPresignedUrl(
         resolve();
         return;
       }
-      reject(new Error(`Upload failed with status ${xhr.status}`));
+      reject(new Error(`上传失败，状态码：${xhr.status}`));
     });
     xhr.addEventListener('error', () => {
       removeAbortListener();
-      reject(new Error('Upload network error'));
+      reject(new Error('上传网络错误'));
     });
     xhr.addEventListener('abort', () => {
       removeAbortListener();
-      reject(new Error('Upload aborted'));
+      reject(new Error('上传已中止'));
     });
 
     xhr.open('PUT', presignedUrl.url);

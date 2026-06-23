@@ -11,7 +11,7 @@ export const POST = withApiHandler(async (request: NextRequest) => {
 
   await revokeUserSession(token);
 
-  const response = createSuccessResponse(null, 'Sign out successful');
+  const response = createSuccessResponse(null, '退出登录成功');
   clearSessionCookie(response);
 
   return response;

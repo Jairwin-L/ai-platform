@@ -88,9 +88,9 @@ const getUsersHandler: ApiHandler = async (request: NextRequest) => {
       roles: user.user_roles.map((userRole) => userRole.role),
     }));
 
-    return createPaginatedResponse(data, total, page, pageSize, 'Users loaded');
+    return createPaginatedResponse(data, total, page, pageSize, '用户列表查询成功');
   } catch (error) {
-    return createErrorResponse(DATA_ERROR.QUERY_FAILED, 'Unable to load users', error, 500);
+    return createErrorResponse(DATA_ERROR.QUERY_FAILED, '用户列表查询失败', error, 500);
   }
 };
 

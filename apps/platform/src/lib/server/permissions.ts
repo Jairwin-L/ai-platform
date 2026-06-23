@@ -17,7 +17,7 @@ export async function isAdmin(userId?: string): Promise<boolean> {
 
     return Boolean(adminRole);
   } catch (error) {
-    console.error('Unable to verify administrator access:', error);
+    console.error('无法验证管理员访问权限：', error);
     return false;
   }
 }
@@ -56,7 +56,7 @@ export async function hasPermission(
 
     return false;
   } catch (error) {
-    console.error(`Unable to verify permission ${permissionCode}:`, error);
+    console.error(`无法验证权限 ${permissionCode}：`, error);
     return false;
   }
 }
@@ -93,7 +93,7 @@ export async function getUserPermissions(userId?: string): Promise<string[]> {
 
     return Array.from(permissions);
   } catch (error) {
-    console.error('Unable to load user permission codes:', error);
+    console.error('无法加载用户权限编码：', error);
     return [];
   }
 }

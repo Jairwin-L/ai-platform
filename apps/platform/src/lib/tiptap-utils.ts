@@ -99,19 +99,19 @@ export function waitForImageLoad(url: string, abortSignal?: AbortSignal): Promis
   if (typeof window === 'undefined') return Promise.resolve();
 
   if (abortSignal?.aborted) {
-    return Promise.reject(new Error('Upload cancelled'));
+    return Promise.reject(new Error('上传已取消'));
   }
 
   return new Promise<void>((resolve, reject) => {
     const image = new Image();
     const timer = window.setTimeout(() => {
       cleanup();
-      reject(new Error('Uploaded image is not accessible'));
+      reject(new Error('上传后的图片无法访问'));
     }, IMAGE_LOAD_TIMEOUT);
 
     function abortLoad(): void {
       cleanup();
-      reject(new Error('Upload cancelled'));
+      reject(new Error('上传已取消'));
     }
 
     function cleanup(): void {
@@ -127,7 +127,7 @@ export function waitForImageLoad(url: string, abortSignal?: AbortSignal): Promis
     };
     image.onerror = () => {
       cleanup();
-      reject(new Error('Uploaded image is not accessible'));
+      reject(new Error('上传后的图片无法访问'));
     };
 
     abortSignal?.addEventListener('abort', abortLoad, { once: true });
@@ -151,23 +151,23 @@ export async function handleImageUpload(
   abortSignal?: AbortSignal,
 ): Promise<string> {
   if (!file) {
-    throw new Error('No file provided');
+    throw new Error('未提供文件');
   }
 
   if (abortSignal?.aborted) {
-    throw new Error('Upload cancelled');
+    throw new Error('上传已取消');
   }
 
   const compressed = await compressImage(file, 'sharp');
 
   if (abortSignal?.aborted) {
-    throw new Error('Upload cancelled');
+    throw new Error('上传已取消');
   }
 
   const [presignedUrl] = await requestPresignedUrls([compressed], buildEditorUploadPath());
 
   if (!presignedUrl) {
-    throw new Error('Failed to generate upload URL');
+    throw new Error('生成上传地址失败');
   }
 
   await uploadWithPresignedUrl(
@@ -181,7 +181,7 @@ export async function handleImageUpload(
   );
 
   if (abortSignal?.aborted) {
-    throw new Error('Upload cancelled');
+    throw new Error('上传已取消');
   }
 
   const imageUrl = buildLoadableImageUrl(getFileLink(presignedUrl.key));

@@ -57,7 +57,7 @@ export async function fetchArticleList(params: ArticleListParams): Promise<Artic
       pagination: result.pagination,
     };
   } catch (error) {
-    console.error('articles retrieval failed', error);
+    console.error('文章查询失败：', error);
 
     return createEmptyArticleList(params);
   }

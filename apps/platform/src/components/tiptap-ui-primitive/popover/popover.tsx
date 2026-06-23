@@ -44,7 +44,7 @@ const PopoverContext = React.createContext<PopoverContextValue | null>(null);
 function usePopoverContext() {
   const context = React.useContext(PopoverContext);
   if (!context) {
-    throw new Error('Popover components must be wrapped in <Popover />');
+    throw new Error('Popover 组件必须包裹在 <Popover /> 中');
   }
   return context;
 }

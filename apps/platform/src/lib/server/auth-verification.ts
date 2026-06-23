@@ -17,7 +17,7 @@ function getCodeSecret(): string {
   const secret = process.env.AUTH_CODE_SECRET ?? process.env.AUTH_SECRET;
 
   if (!secret && process.env.NODE_ENV === 'production') {
-    throw new Error('AUTH_CODE_SECRET is not configured');
+    throw new Error('AUTH_CODE_SECRET 未配置');
   }
 
   return secret ?? 'nextjs-starter-kit-auth-code';

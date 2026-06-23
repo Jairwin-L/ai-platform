@@ -49,7 +49,7 @@ function getErrorCode(error: unknown) {
  *         description: Search keyword matched against title, slug and summary
  *     responses:
  *       200:
- *         description: Article list returned successfully
+ *         description: 文章列表查询成功
  *         content:
  *           application/json:
  *             schema:
@@ -64,7 +64,7 @@ function getErrorCode(error: unknown) {
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: Query successful
+ *                   example: 查询成功
  *                 data:
  *                   $ref: '#/components/schemas/ArticleListData'
  *                 timestamp:
@@ -77,7 +77,7 @@ function getErrorCode(error: unknown) {
  *             schema:
  *               $ref: '#/components/schemas/ApiErrorResponse'
  *       500:
- *         description: Failed to query articles
+ *         description: 文章列表查询失败
  *         content:
  *           application/json:
  *             schema:
@@ -94,7 +94,7 @@ function getErrorCode(error: unknown) {
  *             $ref: '#/components/schemas/ArticleFormInput'
  *     responses:
  *       201:
- *         description: Article created successfully
+ *         description: 文章创建成功
  *         content:
  *           application/json:
  *             schema:
@@ -122,13 +122,13 @@ function getErrorCode(error: unknown) {
  *             schema:
  *               $ref: '#/components/schemas/ApiErrorResponse'
  *       409:
- *         description: Slug already exists
+ *         description: Slug 已存在
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ApiErrorResponse'
  *       500:
- *         description: Failed to create article
+ *         description: 文章创建失败
  *         content:
  *           application/json:
  *             schema:
@@ -140,7 +140,7 @@ const listArticlesHandler = async (request: NextRequest) => {
     const { cursor, limit, keyword } = articleQuerySchema.parse(searchParams);
     const result = await queryArticles({ cursor, limit, keyword });
 
-    return createSuccessResponse(result, 'Query successful');
+    return createSuccessResponse(result, '查询成功');
   } catch (error) {
     if (error instanceof ZodError) {
       return createErrorResponse(
@@ -151,7 +151,7 @@ const listArticlesHandler = async (request: NextRequest) => {
       );
     }
 
-    return createErrorResponse(DATA_ERROR.QUERY_FAILED, 'Failed to query articles', error, 500);
+    return createErrorResponse(DATA_ERROR.QUERY_FAILED, '文章查询失败', error, 500);
   }
 };
 
@@ -183,7 +183,7 @@ const createArticleHandler = async (request: NextRequest) => {
       );
     }
 
-    return createErrorResponse(DATA_ERROR.CREATE_FAILED, 'Failed to create article', error, 500);
+    return createErrorResponse(DATA_ERROR.CREATE_FAILED, '文章创建失败', error, 500);
   }
 };
 

@@ -39,14 +39,14 @@ const codeSignInSchema = z
 const requestSchema = z.discriminatedUnion('method', [passwordSignInSchema, codeSignInSchema]);
 
 function createInvalidCredentialsResponse() {
-  return createErrorResponse(AUTH_ERROR.UNAUTHORIZED, 'Invalid email or credentials', null, 401);
+  return createErrorResponse(AUTH_ERROR.UNAUTHORIZED, '邮箱或登录凭证错误', null, 401);
 }
 
 export const POST = withApiHandler(async (request: NextRequest) => {
   const parsed = requestSchema.safeParse(await request.json());
 
   if (!parsed.success) {
-    return createValidationError('Invalid sign-in payload');
+    return createValidationError('登录请求参数无效');
   }
 
   const email = normalizeEmail(parsed.data.email);
@@ -83,7 +83,7 @@ export const POST = withApiHandler(async (request: NextRequest) => {
     return createInvalidCredentialsResponse();
   }
 
-  const response = createSuccessResponse(toAuthPayload(authUser), 'Sign in successful');
+  const response = createSuccessResponse(toAuthPayload(authUser), '登录成功');
   setSessionCookie(response, token);
 
   return response;

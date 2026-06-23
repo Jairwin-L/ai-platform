@@ -44,7 +44,7 @@ async function getArticleId(context: ApiContext) {
  *         description: Article id
  *     responses:
  *       200:
- *         description: Article detail returned successfully
+ *         description: 文章详情查询成功
  *         content:
  *           application/json:
  *             schema:
@@ -59,26 +59,26 @@ async function getArticleId(context: ApiContext) {
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: Query successful
+ *                   example: 查询成功
  *                 data:
  *                   $ref: '#/components/schemas/Article'
  *                 timestamp:
  *                   type: integer
  *                   format: int64
  *       400:
- *         description: Article id is required
+ *         description: 文章 ID 不能为空
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ApiErrorResponse'
  *       404:
- *         description: Article not found
+ *         description: 文章不存在
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ApiErrorResponse'
  *       500:
- *         description: Failed to query article
+ *         description: 文章查询失败
  *         content:
  *           application/json:
  *             schema:
@@ -99,11 +99,11 @@ async function getArticleId(context: ApiContext) {
  *       content:
  *         application/json:
  *           schema:
- *             description: Partial article fields; at least one field is required
+ *             description: 至少需要提交一个文章字段
  *             $ref: '#/components/schemas/ArticleUpdateInput'
  *     responses:
  *       200:
- *         description: Article updated successfully
+ *         description: 文章更新成功
  *         content:
  *           application/json:
  *             schema:
@@ -125,25 +125,25 @@ async function getArticleId(context: ApiContext) {
  *                   type: integer
  *                   format: int64
  *       400:
- *         description: Article id is required or validation failure
+ *         description: 文章 ID 不能为空或参数校验失败
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ApiErrorResponse'
  *       404:
- *         description: Article not found
+ *         description: 文章不存在
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ApiErrorResponse'
  *       409:
- *         description: Slug already exists
+ *         description: Slug 已存在
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ApiErrorResponse'
  *       500:
- *         description: Failed to update article
+ *         description: 文章更新失败
  *         content:
  *           application/json:
  *             schema:
@@ -161,7 +161,7 @@ async function getArticleId(context: ApiContext) {
  *         description: Article id
  *     responses:
  *       200:
- *         description: Article deleted successfully
+ *         description: 文章删除成功
  *         content:
  *           application/json:
  *             schema:
@@ -187,19 +187,19 @@ async function getArticleId(context: ApiContext) {
  *                   type: integer
  *                   format: int64
  *       400:
- *         description: Article id is required
+ *         description: 文章 ID 不能为空
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ApiErrorResponse'
  *       404:
- *         description: Article not found
+ *         description: 文章不存在
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ApiErrorResponse'
  *       500:
- *         description: Failed to delete article
+ *         description: 文章删除失败
  *         content:
  *           application/json:
  *             schema:
@@ -210,7 +210,7 @@ const getArticleHandler = async (_request: NextRequest, context: ApiContext) => 
     const id = await getArticleId(context);
 
     if (!id) {
-      return createErrorResponse(COMMON_ERROR.PARAM_ERROR, 'Article id is required', null, 400);
+      return createErrorResponse(COMMON_ERROR.PARAM_ERROR, '文章 ID 不能为空', null, 400);
     }
 
     const article = await prisma.article.findUnique({ where: { id } });
@@ -219,9 +219,9 @@ const getArticleHandler = async (_request: NextRequest, context: ApiContext) => 
       return createErrorResponse(DATA_ERROR.NOT_FOUND, '文章不存在', null, 404);
     }
 
-    return createSuccessResponse(article, 'Query successful');
+    return createSuccessResponse(article, '查询成功');
   } catch (error) {
-    return createErrorResponse(DATA_ERROR.QUERY_FAILED, 'Failed to query article', error, 500);
+    return createErrorResponse(DATA_ERROR.QUERY_FAILED, '文章查询失败', error, 500);
   }
 };
 
@@ -230,7 +230,7 @@ const updateArticleHandler = async (request: NextRequest, context: ApiContext) =
     const id = await getArticleId(context);
 
     if (!id) {
-      return createErrorResponse(COMMON_ERROR.PARAM_ERROR, 'Article id is required', null, 400);
+      return createErrorResponse(COMMON_ERROR.PARAM_ERROR, '文章 ID 不能为空', null, 400);
     }
 
     const body = await request.json();
@@ -264,7 +264,7 @@ const updateArticleHandler = async (request: NextRequest, context: ApiContext) =
       return createErrorResponse(DATA_ERROR.NOT_FOUND, '文章不存在', error, 404);
     }
 
-    return createErrorResponse(DATA_ERROR.UPDATE_FAILED, 'Failed to update article', error, 500);
+    return createErrorResponse(DATA_ERROR.UPDATE_FAILED, '文章更新失败', error, 500);
   }
 };
 
@@ -273,7 +273,7 @@ const deleteArticleHandler = async (_request: NextRequest, context: ApiContext) 
     const id = await getArticleId(context);
 
     if (!id) {
-      return createErrorResponse(COMMON_ERROR.PARAM_ERROR, 'Article id is required', null, 400);
+      return createErrorResponse(COMMON_ERROR.PARAM_ERROR, '文章 ID 不能为空', null, 400);
     }
 
     await prisma.article.delete({ where: { id } });
@@ -284,7 +284,7 @@ const deleteArticleHandler = async (_request: NextRequest, context: ApiContext) 
       return createErrorResponse(DATA_ERROR.NOT_FOUND, '文章不存在', error, 404);
     }
 
-    return createErrorResponse(DATA_ERROR.DELETE_FAILED, 'Failed to delete article', error, 500);
+    return createErrorResponse(DATA_ERROR.DELETE_FAILED, '文章删除失败', error, 500);
   }
 };
 

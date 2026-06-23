@@ -25,7 +25,7 @@ function getOptionalText(value: unknown): string | null | undefined {
   }
 
   if (typeof value !== 'string') {
-    throw new TypeError('User fields must be strings or null');
+    throw new TypeError('用户字段必须为字符串或 null');
   }
 
   return value.trim() || null;
@@ -37,12 +37,12 @@ function getRoleIds(value: unknown): number[] | undefined {
   }
 
   if (!Array.isArray(value)) {
-    throw new TypeError('roleIds must be an array');
+    throw new TypeError('roleIds 必须为数组');
   }
 
   const ids = value.map((item) => Number(item));
   if (ids.some((id) => !Number.isInteger(id) || id <= 0)) {
-    throw new TypeError('roleIds must contain positive integers');
+    throw new TypeError('roleIds 必须包含正整数');
   }
 
   return Array.from(new Set(ids));
@@ -67,7 +67,7 @@ const getUserHandler = async (request: NextRequest, context: ApiContext) => {
     const userId = await getUserId(context);
 
     if (!userId) {
-      return createErrorResponse(COMMON_ERROR.PARAM_ERROR, 'User id is required', null, 400);
+      return createErrorResponse(COMMON_ERROR.PARAM_ERROR, '用户 ID 不能为空', null, 400);
     }
 
     const currentUserId = await getCurrentUserId(request);
@@ -77,14 +77,9 @@ const getUserHandler = async (request: NextRequest, context: ApiContext) => {
       return createErrorResponse(DATA_ERROR.NOT_FOUND, '用户不存在', null, 404);
     }
 
-    return createSuccessResponse(user, 'User details retrieved successfully');
+    return createSuccessResponse(user, '用户详情查询成功');
   } catch (error) {
-    return createErrorResponse(
-      DATA_ERROR.QUERY_FAILED,
-      'Failed to retrieve user details',
-      error,
-      500,
-    );
+    return createErrorResponse(DATA_ERROR.QUERY_FAILED, '用户详情查询失败', error, 500);
   }
 };
 
@@ -92,20 +87,20 @@ const updateUserHandler = async (request: NextRequest, context: ApiContext) => {
   const userId = await getUserId(context);
 
   if (!userId) {
-    return createErrorResponse(COMMON_ERROR.PARAM_ERROR, 'User id is required', null, 400);
+    return createErrorResponse(COMMON_ERROR.PARAM_ERROR, '用户 ID 不能为空', null, 400);
   }
 
   let body: Record<string, unknown>;
   try {
     body = (await request.json()) as Record<string, unknown>;
   } catch (error) {
-    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, 'Request JSON is invalid', error, 400);
+    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, '请求 JSON 格式无效', error, 400);
   }
 
   try {
     const { status } = body;
     if (status !== undefined && (typeof status !== 'string' || !userStatuses.has(status))) {
-      return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, 'Invalid user status', null, 422);
+      return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, '用户状态无效', null, 422);
     }
 
     const roleIds = getRoleIds(body.roleIds);
@@ -135,7 +130,7 @@ const updateUserHandler = async (request: NextRequest, context: ApiContext) => {
       if (roleIds !== undefined) {
         const roleCount = await transaction.roles.count({ where: { id: { in: roleIds } } });
         if (roleCount !== roleIds.length) {
-          throw new TypeError('One or more roles do not exist');
+          throw new TypeError('一个或多个角色不存在');
         }
 
         await transaction.userRoles.deleteMany({ where: { user_id: userId } });
@@ -150,26 +145,21 @@ const updateUserHandler = async (request: NextRequest, context: ApiContext) => {
     });
 
     const user = await getUserProfile(userId);
-    return createSuccessResponse(user, 'User updated successfully');
+    return createSuccessResponse(user, '用户更新成功');
   } catch (error) {
     if (error instanceof TypeError) {
       return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, error.message, null, 422);
     }
 
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
-      return createErrorResponse(
-        DATA_ERROR.DUPLICATE_ENTRY,
-        'Username is already in use',
-        null,
-        409,
-      );
+      return createErrorResponse(DATA_ERROR.DUPLICATE_ENTRY, '用户名已被使用', null, 409);
     }
 
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2025') {
-      return createErrorResponse(DATA_ERROR.NOT_FOUND, 'User does not exist', null, 404);
+      return createErrorResponse(DATA_ERROR.NOT_FOUND, '用户不存在', null, 404);
     }
 
-    return createErrorResponse(DATA_ERROR.UPDATE_FAILED, 'Failed to update user', error, 500);
+    return createErrorResponse(DATA_ERROR.UPDATE_FAILED, '用户更新失败', error, 500);
   }
 };
 

@@ -13,7 +13,7 @@ function createPrismaClient() {
   const connectionString = process.env.DATABASE_URL;
 
   if (!connectionString) {
-    throw new Error('DATABASE_URL is not configured');
+    throw new Error('DATABASE_URL 未配置');
   }
 
   const pool = globalForPrisma.prismaPool ?? new Pool({ connectionString });

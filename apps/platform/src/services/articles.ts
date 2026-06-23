@@ -46,7 +46,7 @@ function assertApiResponse<T>(response: unknown): ApiResponse<T> {
   const result = response as ApiResponse<T>;
 
   if (!result.success) {
-    throw new Error(result.message || 'Request failed');
+    throw new Error(result.message || '请求失败');
   }
 
   return result;

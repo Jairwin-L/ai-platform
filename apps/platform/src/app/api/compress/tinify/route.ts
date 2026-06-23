@@ -33,7 +33,7 @@ async function compressWithTinify(
 ): Promise<{ data: Buffer; mime: string }> {
   const apiKey = process.env.TINYPNG_API_KEY;
   if (!apiKey || apiKey === 'change-me') {
-    throw new Error('TinyPNG API key is not configured');
+    throw new Error('TinyPNG API 密钥未配置');
   }
 
   tinify.key = apiKey;
@@ -71,28 +71,28 @@ async function compressWithTinify(
  *               type: string
  *               format: binary
  *       400:
- *         description: No file provided, unsupported file type, or TinyPNG rejected the image
+ *         description: 未提供文件、文件类型不受支持或 TinyPNG 拒绝处理该图片
  *       429:
- *         description: TinyPNG account quota or API key issue
+ *         description: TinyPNG 账户配额或 API 密钥存在问题
  *       502:
- *         description: Failed to connect to TinyPNG
+ *         description: 连接 TinyPNG 失败
  *       503:
- *         description: TinyPNG service error
+ *         description: TinyPNG 服务错误
  *       500:
- *         description: Compression failed
+ *         description: 压缩失败
  */
 const tinifyHandler: ApiHandler = async (request: NextRequest) => {
   const formData = await request.formData();
   const file = formData.get('file') as File | null;
 
   if (!file) {
-    return createErrorResponse(COMMON_ERROR.PARAM_ERROR, 'No file provided', null, 400);
+    return createErrorResponse(COMMON_ERROR.PARAM_ERROR, '未提供文件', null, 400);
   }
 
   if (!TINIFY_SUPPORTED_MIME_TYPES.has(file.type)) {
     return createErrorResponse(
       FILE_ERROR.TYPE_NOT_SUPPORTED,
-      `TinyPNG does not support this file type: ${file.type || 'unknown'}`,
+      `TinyPNG 不支持该文件类型：${file.type || '未知'}`,
       null,
       400,
     );
@@ -109,7 +109,7 @@ const tinifyHandler: ApiHandler = async (request: NextRequest) => {
   } catch (error) {
     return createErrorResponse(
       FILE_ERROR.COMPRESS_FAILED,
-      error instanceof Error ? error.message : 'Compression failed',
+      error instanceof Error ? error.message : '压缩失败',
       error,
       getTinifyErrorStatus(error),
     );

@@ -25,7 +25,7 @@ function serialize<T>(payload: ApiResponse<T> | PaginatedResponse<unknown>) {
 
 export function createSuccessResponse<T>(
   data: T,
-  message = 'Operation successful',
+  message = '操作成功',
   code = 200,
 ): NextResponse<ApiResponse<T>> {
   const body: ApiResponse<T> = {
@@ -44,7 +44,7 @@ export function createPaginatedResponse<T>(
   total: number,
   page: number,
   pageSize: number,
-  message = 'Query successful',
+  message = '查询成功',
 ): NextResponse<PaginatedResponse<T>> {
   const body: PaginatedResponse<T> = {
     code: 200,
