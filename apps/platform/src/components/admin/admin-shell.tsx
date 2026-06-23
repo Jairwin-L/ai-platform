@@ -14,7 +14,14 @@ import { APP_NAME } from '@/constants';
 import { usePermission } from '@/hooks/use-permission';
 import styles from './admin-shell.module.scss';
 
-const menuItems: MenuProps['items'] = [
+interface AdminMenuItem {
+  children?: AdminMenuItem[];
+  icon?: ReactNode;
+  key: string;
+  label: string;
+}
+
+const menuItems: AdminMenuItem[] = [
   { key: '/admin', icon: <DashboardOutlined />, label: '概览' },
   {
     key: '/admin/system',
@@ -36,20 +43,35 @@ const menuItems: MenuProps['items'] = [
   },
 ];
 
-function getOpenKeys(pathname: string): string[] {
-  if (pathname.startsWith('/admin/settings')) {
-    return ['/admin/system'];
+function getMenuPaths(items: AdminMenuItem[], parentKeys: string[] = []): string[][] {
+  return items.flatMap((menuItem) => {
+    const menuPath = [...parentKeys, menuItem.key];
+
+    return menuItem.children ? getMenuPaths(menuItem.children, menuPath) : [menuPath];
+  });
+}
+
+const menuPaths = getMenuPaths(menuItems);
+
+function getCurrentMenuPath(pathname: string): string[] | undefined {
+  const menuSelectedKey = pathname.match(/^(.*)\/(?:create|edit)(?:\/|$)/);
+  const selectedPathname = menuSelectedKey?.[1] ?? pathname;
+  let currentMenuPath: string[] | undefined;
+
+  for (const menuPath of menuPaths) {
+    const menuKey = menuPath.at(-1);
+
+    if (
+      menuKey &&
+      (selectedPathname === menuKey ||
+        (menuKey !== '/admin' && selectedPathname.startsWith(`${menuKey}/`))) &&
+      (!currentMenuPath || menuKey.length > currentMenuPath.at(-1)!.length)
+    ) {
+      currentMenuPath = menuPath;
+    }
   }
 
-  if (
-    pathname.startsWith('/admin/users') ||
-    pathname.startsWith('/admin/roles') ||
-    pathname.startsWith('/admin/permissions')
-  ) {
-    return ['/admin/system', '/admin/access-control'];
-  }
-
-  return [];
+  return currentMenuPath;
 }
 
 export function AdminShell({ children }: { children: ReactNode }) {
@@ -57,14 +79,14 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { user } = usePermission();
   const [collapsed, setCollapsed] = useState(false);
-  const [openKeys, setOpenKeys] = useState<string[]>(() => getOpenKeys(pathname));
-  // const selectedKey = getSelectedKey(pathname);
-  // const selectedKey = pathname;
+  const currentMenuPath = getCurrentMenuPath(pathname);
+  const [openKeys, setOpenKeys] = useState<string[]>(() => currentMenuPath?.slice(0, -1) ?? []);
+  const selectedKey = currentMenuPath?.at(-1);
   const displayName = user?.nickName || user?.email || '管理员';
 
   useEffect(() => {
     if (!collapsed) {
-      setOpenKeys(getOpenKeys(pathname));
+      setOpenKeys(getCurrentMenuPath(pathname)?.slice(0, -1) ?? []);
     }
   }, [collapsed, pathname]);
 
@@ -111,10 +133,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
           {!collapsed && <span className={styles['logo-text']}>Control Center</span>}
         </div>
         <Menu
-          items={menuItems}
+          items={menuItems as MenuProps['items']}
           mode="inline"
           openKeys={collapsed ? [] : openKeys}
-          selectedKeys={[pathname]}
+          selectedKeys={selectedKey ? [selectedKey] : []}
           theme="dark"
           triggerSubMenuAction="click"
           onClick={onChangeMenu}
