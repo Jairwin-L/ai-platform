@@ -13,6 +13,7 @@ import {
 import { Avatar, Button, Dropdown, Layout, Menu, type MenuProps, Tooltip } from 'antd';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ReactNode, useMemo, useState } from 'react';
+import { usePermission } from '@/hooks/use-permission';
 import styles from './admin-shell.module.scss';
 
 const menuItems: MenuProps['items'] = [
@@ -58,6 +59,7 @@ function getSelectedKey(pathname: string): string {
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = usePermission();
   const [collapsed, setCollapsed] = useState(false);
   const selectedKey = getSelectedKey(pathname);
   const openKeys = useMemo(() => {
@@ -117,15 +119,21 @@ export function AdminShell({ children }: { children: ReactNode }) {
               menu={{
                 items: [
                   { key: 'profile', label: '当前会话' },
+                  { key: 'platform', icon: <AppstoreOutlined />, label: '平台' },
                   { type: 'divider' },
                   { key: 'sign-out', icon: <LogoutOutlined />, label: '退出登录', disabled: true },
                 ],
+                onClick: ({ key }) => {
+                  if (key === 'platform') {
+                    router.push('/');
+                  }
+                },
               }}
               placement="bottomRight"
             >
               <Button className={styles.account} type="text">
                 <Avatar size="small">A</Avatar>
-                <span>管理员</span>
+                <span>{user?.nickName || user?.email || '管理员'}</span>
               </Button>
             </Dropdown>
           </div>
