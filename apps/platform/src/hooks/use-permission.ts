@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import type { AuthUser } from '@/services/auth';
 import { useAuthSessionStore } from '@/stores/auth-session';
 import type { UserProfile } from '@/services/users';
@@ -27,13 +27,8 @@ export function usePermission(): PermissionResult {
   const payload = useAuthSessionStore((state) => state.payload);
   const isLoading = useAuthSessionStore((state) => state.isLoading);
   const isReady = useAuthSessionStore((state) => state.isReady);
-  const loadSession = useAuthSessionStore((state) => state.loadSession);
   const clearSession = useAuthSessionStore((state) => state.clearSession);
   const setCurrentUserProfile = useAuthSessionStore((state) => state.setCurrentUserProfile);
-
-  useEffect(() => {
-    loadSession().catch(() => undefined);
-  }, [loadSession]);
 
   const hasPermission = useCallback(
     (code: PermissionCode): boolean => isReady && (payload?.permissions.includes(code) ?? false),

@@ -99,6 +99,14 @@ export function toAuthPayload(user: AuthUser): AuthPayload {
   };
 }
 
+export async function getAuthPayloadBySessionToken(
+  token?: string | null,
+): Promise<AuthPayload | null> {
+  const user = await getAuthUserBySessionToken(token);
+
+  return user ? toAuthPayload(user) : null;
+}
+
 export async function createUserSession(userId: string): Promise<string> {
   const token = createSessionToken();
 

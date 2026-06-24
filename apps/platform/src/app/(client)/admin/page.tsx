@@ -10,36 +10,35 @@ import {
 import { Button, Card, Col, Row, Skeleton, Statistic, Tag } from 'antd';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { usePermission } from '@/hooks/use-permission';
 import { getPermissions, getRoles } from '@/services/admin';
-import { getCurrentUser } from '@/services/auth';
 import styles from './page.module.scss';
 
 interface OverviewData {
   permissionCount: number;
   roleCount: number;
-  signedIn: boolean;
 }
 
-const initialData: OverviewData = { permissionCount: 0, roleCount: 0, signedIn: false };
+const initialData: OverviewData = { permissionCount: 0, roleCount: 0 };
 
 export default function AdminPage() {
   const [data, setData] = useState<OverviewData>(initialData);
   const [loading, setLoading] = useState(true);
+  const { isReady, user } = usePermission();
+  const currentUserStatus = user ? '已验证' : '查看会话';
 
   useEffect(() => {
     async function loadOverview() {
       const results = await Promise.allSettled([
         getRoles({ page: 1, pageSize: 1 }),
         getPermissions({ page: 1, pageSize: 1 }),
-        getCurrentUser(),
       ]);
-      const [rolesResult, permissionsResult, currentUserResult] = results;
+      const [rolesResult, permissionsResult] = results;
 
       setData({
         roleCount: rolesResult.status === 'fulfilled' ? rolesResult.value.total : 0,
         permissionCount:
           permissionsResult.status === 'fulfilled' ? permissionsResult.value.total : 0,
-        signedIn: currentUserResult.status === 'fulfilled',
       });
       setLoading(false);
     }
@@ -98,9 +97,12 @@ export default function AdminPage() {
             <Statistic
               prefix={<UserOutlined />}
               title="当前用户"
-              value={data.signedIn ? '已验证' : '查看会话'}
+              value={isReady ? currentUserStatus : undefined}
+              valueRender={() =>
+                isReady ? currentUserStatus : <Skeleton.Input active size="small" />
+              }
             />
-            <p>通过已有会话和用户详情接口查看当前管理员资料。</p>
+            <p />
             <Link href="/admin/users">
               <Button>查看用户</Button>
             </Link>
