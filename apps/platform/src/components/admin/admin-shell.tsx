@@ -10,9 +10,10 @@ import {
 import { ConfigProvider, Dropdown, Layout, Menu, type MenuProps } from 'antd';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useState } from 'react';
-import { APP_NAME } from '@/constants';
+import { APP_BLACK_LOGO, APP_NAME } from '@/constants';
 import { usePermission } from '@/hooks/use-permission';
 import styles from './admin-shell.module.scss';
+import { APP_WHITE_LOGO } from '@/constants/app';
 
 interface AdminMenuItem {
   children?: AdminMenuItem[];
@@ -129,7 +130,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
         onCollapse={setCollapsed}
       >
         <div className={styles['logo-box']}>
-          <img alt="logo" className={styles['logo-img']} src="/globe.svg" />
+          <img alt={APP_NAME} className={styles['logo-img']} src={APP_WHITE_LOGO} />
           {!collapsed && <span className={styles['logo-text']}>Control Center</span>}
         </div>
         <Menu
@@ -159,7 +160,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               placement="bottom"
             >
               <div className={styles['header-avatar']} onClick={(event) => event.preventDefault()}>
-                <img alt="logo" className={styles['user-avatar']} src="/globe.svg" />
+                <img alt={APP_NAME} className={styles['user-avatar']} src={APP_BLACK_LOGO} />
                 <span>{displayName}</span>
               </div>
             </Dropdown>

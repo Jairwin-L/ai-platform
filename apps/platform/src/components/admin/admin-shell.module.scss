@@ -23,8 +23,9 @@
 
 .logo-img {
   width: 30px;
+  height: 30px;
   margin: 0;
-  animation: round-animate 6s linear infinite;
+  object-fit: contain;
 }
 
 .logo-text {
@@ -73,9 +74,10 @@
 
 .user-avatar {
   width: 30px;
+  height: 30px;
   margin-right: 10px;
   cursor: pointer;
-  animation: round-animate 6s linear infinite;
+  object-fit: contain;
 }
 
 .main-container {
@@ -94,10 +96,4 @@
 
 .footer > a {
   margin: 0 5px;
-}
-
-@keyframes round-animate {
-  to {
-    transform: rotate(1turn);
-  }
 }

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { APP_NAME } from '@/constants';
+import { APP_BLACK_LOGO, APP_NAME } from '@/constants';
 import { AccountMenu } from '../account-menu';
 import styles from './index.module.scss';
 
@@ -23,7 +23,7 @@ export function SiteHeader({ showAuthenticatedLinks }: SiteHeaderProps) {
     <header className={styles['site-header']}>
       <nav className={styles.nav} aria-label="站点导航">
         <Link className={styles.brand} href="/">
-          {APP_NAME}
+          <img alt={APP_NAME} className={styles.logo} src={APP_BLACK_LOGO} />
         </Link>
         <div className={styles.links}>
           {showAuthenticatedLinks ? (

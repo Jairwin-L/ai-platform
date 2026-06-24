@@ -18,17 +18,13 @@
   text-align: center;
 }
 
-.brand-mark {
+.brand-logo {
   width: 44px;
   height: 44px;
-  display: inline-grid;
-  place-items: center;
+  display: block;
   margin-bottom: 12px;
-  border-radius: 12px;
-  background: #172033;
-  color: #fff;
-  font-size: 18px;
-  font-weight: 700;
+  margin-inline: auto;
+  object-fit: contain;
 }
 
 .panel {

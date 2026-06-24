@@ -4,7 +4,7 @@
  * 目的是统一管理对外输出的常量，方便分类
  */
 
-export { APP_NAME } from './app';
+export { APP_BLACK_LOGO, APP_NAME } from './app';
 export { VERIFICATION_CODE_TTL_SECONDS } from './auth';
 export { ALLOW_FILE_TYPE } from './file';
 export { R2_BUCKET_URL } from './r2';

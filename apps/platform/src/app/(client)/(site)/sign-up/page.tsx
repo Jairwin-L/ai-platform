@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button, Form, Input, Typography } from 'antd';
 import type { FormInstance } from 'antd';
-import { VERIFICATION_CODE_TTL_SECONDS } from '@/constants';
+import { APP_BLACK_LOGO, APP_NAME, VERIFICATION_CODE_TTL_SECONDS } from '@/constants';
 import { requestVerificationCode, signUp } from '@/services/auth';
 import { useAuthSessionStore } from '@/stores/auth-session';
 import styles from './page.module.scss';
@@ -70,7 +70,7 @@ export default function SignUpPage() {
     <main className={styles['auth-page']}>
       <section className={styles['auth-shell']}>
         <div className={styles.brand}>
-          <div className={styles['brand-mark']}>N</div>
+          <img alt={APP_NAME} className={styles['brand-logo']} src={APP_BLACK_LOGO} />
           <Typography.Title level={2}>注册账号</Typography.Title>
         </div>
 
