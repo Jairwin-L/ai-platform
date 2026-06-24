@@ -46,7 +46,7 @@ public/           静态资源与生成后的 OpenAPI JSON
 
 ## 环境要求
 
-- Node.js `22.x`
+- Node.js `22.18.0` 或更高的 `22.x` 版本（Cloudflare Pages 由 `.node-version` 固定为 `22.18.0`）
 - Vite+ CLI `vp`
 - pnpm，由 Vite+ 按项目配置使用
 - PostgreSQL，本地开发可使用本机数据(远程服务器数据库/prisma数据库)库或 Docker Compose
