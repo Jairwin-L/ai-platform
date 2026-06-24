@@ -19,6 +19,11 @@
   "scripts": {
     "dev": "next dev --port 8060",
     "build": "vp run openapi:generate && next build",
+    "cf:build": "opennextjs-cloudflare build",
+    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview --env development",
+    "cf:deploy:development": "opennextjs-cloudflare build && opennextjs-cloudflare deploy --env development",
+    "cf:deploy:production": "opennextjs-cloudflare build && opennextjs-cloudflare deploy --env production",
+    "cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "ci:eslint": "vp lint -f json src -o ./.ci/eslint.json",
     "lint": "vp lint . && stylelint --allow-empty-input \"**/*.{css,less,scss}\"",
     "lint:fix": "vp fmt . && vp lint --fix . && stylelint --allow-empty-input --fix \"**/*.{css,less,scss}\"",
@@ -38,8 +43,8 @@
     "start:dev": "next start --port 8060"
   },
   "dependencies": {
-    "@ant-design/nextjs-registry": "^1.0.0",
     "@ant-design/icons": "^6.1.0",
+    "@ant-design/nextjs-registry": "^1.0.0",
     "@floating-ui/react": "^0.27.19",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
@@ -75,6 +80,7 @@
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
+    "@opennextjs/cloudflare": "1.19.11",
     "@types/node": "^24.13.2",
     "@types/pg": "^8.20.0",
     "@types/react": "^19.2.17",
@@ -88,7 +94,8 @@
     "tsx": "^4.22.3",
     "typescript": "^5.9.3",
     "vite-plus": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "wrangler": "4.104.0"
   },
   "commitlint": {
     "extends": [
