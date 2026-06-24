@@ -70,6 +70,7 @@
     "next": "^16.2.9",
     "next-swagger-doc": "^0.4.1",
     "pg": "^8.21.0",
+    "pg-cloudflare": "1.4.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "sharp": "^0.34.5",
