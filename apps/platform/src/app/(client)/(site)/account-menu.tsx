@@ -1,8 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Dropdown } from 'antd';
+import { Dropdown, Skeleton } from 'antd';
 import type { MenuProps } from 'antd';
 import { usePermission } from '@/hooks/use-permission';
 import { signOut } from '@/services/auth';
@@ -19,8 +19,9 @@ function getAvatarText(user: AuthUser | null): string {
 }
 
 export function AccountMenu() {
+  const pathname = usePathname();
   const router = useRouter();
-  const { hasRole, user } = usePermission();
+  const { clearSession, hasRole, isReady, user } = usePermission();
   const [avatarFailed, setAvatarFailed] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -30,7 +31,8 @@ export function AccountMenu() {
   }, [user?.picture]);
 
   function onProfileClick(): void {
-    router.push('/');
+    if (user?.id && pathname.startsWith('/account')) return;
+    router.push(`/account/${user?.id}`);
   }
 
   async function signOutCurrentUser(): Promise<void> {
@@ -38,6 +40,7 @@ export function AccountMenu() {
 
     try {
       await signOut();
+      clearSession();
       router.push('/sign-in');
       router.refresh();
     } catch {
@@ -70,6 +73,15 @@ export function AccountMenu() {
     ...(hasRole('admin') ? [{ key: 'admin', label: '管理系统' }] : []),
     { key: 'sign-out', disabled: signingOut, label: signingOut ? '退出中...' : '退出登录' },
   ];
+
+  if (!isReady) {
+    return (
+      <div aria-label="正在加载账户菜单" className={styles['trigger-skeleton']} role="status">
+        <Skeleton.Avatar active size={28} />
+        <Skeleton.Input active className={styles['skeleton-name']} size="small" />
+      </div>
+    );
+  }
 
   return (
     <Dropdown

@@ -1,12 +1,12 @@
 import type { NextRequest } from 'next/server';
 import { UserStatusType, type Prisma } from '@prisma/client';
 import {
+  AUTH_ERROR,
   COMMON_ERROR,
   DATA_ERROR,
   createErrorResponse,
   createSuccessResponse,
   withApiHandler,
-  withRoleApiHandler,
 } from '@/lib/server';
 import { getAuthUserBySessionToken, getSessionCookieName } from '@/lib/server/auth-session';
 import type { ApiContext } from '@/lib/server/types';
@@ -14,6 +14,7 @@ import { getUserProfile } from '@/lib/server/user-profile';
 import { prisma } from '@/lib/prisma';
 
 const userStatuses = new Set(['active', 'pending', 'restricted', 'banned', 'inactive']);
+const selfEditableFields = new Set(['nick_name', 'bio']);
 
 function getOptionalText(value: unknown): string | null | undefined {
   if (value === undefined) {
@@ -92,12 +93,38 @@ const updateUserHandler = async (request: NextRequest, context: ApiContext) => {
 
   let body: Record<string, unknown>;
   try {
-    body = (await request.json()) as Record<string, unknown>;
+    const payload: unknown = await request.json();
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      throw new TypeError('请求体必须为对象');
+    }
+
+    body = payload as Record<string, unknown>;
   } catch (error) {
     return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, '请求 JSON 格式无效', error, 400);
   }
 
   try {
+    const token = request.cookies.get(getSessionCookieName())?.value;
+    const currentUser = await getAuthUserBySessionToken(token);
+
+    if (!currentUser) {
+      return createErrorResponse(AUTH_ERROR.UNAUTHORIZED, '请先登录', null, 401);
+    }
+
+    const isAdmin = currentUser.roles?.includes('admin') ?? false;
+    if (!isAdmin && currentUser.userId !== userId) {
+      return createErrorResponse(AUTH_ERROR.FORBIDDEN, '无权修改其他用户资料', null, 403);
+    }
+
+    if (!isAdmin && Object.keys(body).some((field) => !selfEditableFields.has(field))) {
+      return createErrorResponse(
+        DATA_ERROR.VALIDATION_FAILED,
+        '包含不允许修改的资料字段',
+        null,
+        422,
+      );
+    }
+
     const { status } = body;
     if (status !== undefined && (typeof status !== 'string' || !userStatuses.has(status))) {
       return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, '用户状态无效', null, 422);
@@ -144,7 +171,7 @@ const updateUserHandler = async (request: NextRequest, context: ApiContext) => {
       await transaction.users.update({ where: { id: userId }, data });
     });
 
-    const user = await getUserProfile(userId);
+    const user = await getUserProfile(userId, currentUser.userId);
     return createSuccessResponse(user, '用户更新成功');
   } catch (error) {
     if (error instanceof TypeError) {
@@ -164,4 +191,4 @@ const updateUserHandler = async (request: NextRequest, context: ApiContext) => {
 };
 
 export const GET = withApiHandler(getUserHandler);
-export const PUT = withRoleApiHandler(['admin'], updateUserHandler);
+export const PUT = withApiHandler(updateUserHandler);

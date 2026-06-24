@@ -23,6 +23,22 @@
   }
 }
 
+.trigger-skeleton {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.45rem;
+}
+
+.skeleton-name {
+  width: 5rem;
+
+  :global(.ant-skeleton-input) {
+    width: 100%;
+  }
+}
+
 .avatar {
   display: inline-flex;
   width: 1.75rem;

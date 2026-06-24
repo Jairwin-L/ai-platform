@@ -7,6 +7,7 @@ import { Button, Form, Input, Tabs, Typography } from 'antd';
 import type { FormInstance } from 'antd';
 import { VERIFICATION_CODE_TTL_SECONDS } from '@/constants';
 import { requestVerificationCode, signInWithCode, signInWithPassword } from '@/services/auth';
+import { useAuthSessionStore } from '@/stores/auth-session';
 import styles from './page.module.scss';
 
 interface PasswordSignInValues {
@@ -38,6 +39,7 @@ async function requestCode(
 
 export default function SignInPage() {
   const router = useRouter();
+  const setPayload = useAuthSessionStore((state) => state.setPayload);
   const [passwordForm] = Form.useForm<PasswordSignInValues>();
   const [codeForm] = Form.useForm<CodeSignInValues>();
   const [passwordLoading, setPasswordLoading] = useState(false);
@@ -61,7 +63,7 @@ export default function SignInPage() {
     setPasswordLoading(true);
 
     try {
-      await signInWithPassword(values);
+      setPayload(await signInWithPassword(values));
       router.push('/');
       router.refresh();
     } catch {
@@ -75,7 +77,7 @@ export default function SignInPage() {
     setCodeLoading(true);
 
     try {
-      await signInWithCode(values);
+      setPayload(await signInWithCode(values));
       router.push('/');
       router.refresh();
     } catch {

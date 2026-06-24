@@ -7,6 +7,7 @@ import { Button, Form, Input, Typography } from 'antd';
 import type { FormInstance } from 'antd';
 import { VERIFICATION_CODE_TTL_SECONDS } from '@/constants';
 import { requestVerificationCode, signUp } from '@/services/auth';
+import { useAuthSessionStore } from '@/stores/auth-session';
 import styles from './page.module.scss';
 
 interface SignUpValues {
@@ -34,6 +35,7 @@ async function requestCode(
 
 export default function SignUpPage() {
   const router = useRouter();
+  const setPayload = useAuthSessionStore((state) => state.setPayload);
   const [form] = Form.useForm<SignUpValues>();
   const [submitLoading, setSubmitLoading] = useState(false);
   const [codeCountdown, setCodeCountdown] = useState(0);
@@ -54,7 +56,7 @@ export default function SignUpPage() {
   async function onFinish(values: SignUpValues): Promise<void> {
     setSubmitLoading(true);
     try {
-      await signUp(values);
+      setPayload(await signUp(values));
       router.push('/');
       router.refresh();
     } catch {
