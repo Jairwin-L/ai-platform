@@ -19,7 +19,7 @@
   "scripts": {
     "dev": "next dev --port 8060",
     "build": "vp run openapi:generate && next build",
-    "cf:build": "vp exec opennextjs-cloudflare build",
+    "cf:build": "vp run prisma:generate && vp exec opennextjs-cloudflare build",
     "cf:preview": "vp run cf:build && vp exec opennextjs-cloudflare preview --env development",
     "cf:deploy:development": "vp run cf:build && vp exec opennextjs-cloudflare deploy --env development",
     "cf:deploy:production": "vp run cf:build && vp exec opennextjs-cloudflare deploy --env production",
