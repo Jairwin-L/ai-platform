@@ -2,7 +2,7 @@ import { type ReactNode } from 'react';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
-import { AntdProvider } from '@/components';
+import { AntdProvider, Wrapper } from '@/components';
 import { APP_NAME } from '@/constants';
 import { getAuthPayloadBySessionToken, getSessionCookieName } from '@/lib/server/auth-session';
 import 'antd/dist/reset.css';
@@ -48,7 +48,9 @@ export default async function RootLayout({
       <meta name="theme-color" content="#fff" />
       <body>
         <AntdRegistry>
-          <AntdProvider initialAuthPayload={initialAuthPayload}>{children}</AntdProvider>
+          <AntdProvider>
+            <Wrapper initialAuthPayload={initialAuthPayload}>{children}</Wrapper>
+          </AntdProvider>
         </AntdRegistry>
       </body>
     </html>

@@ -1,7 +1,11 @@
 import type { NextRequest, NextResponse } from 'next/server';
 import { errorHandlerMiddleware } from './error';
 import { loggerMiddleware } from './logger';
-import { authSessionMiddleware, requirePermission, requireRole } from './auth';
+import {
+  authMiddleware,
+  requirePermission,
+  requireRole,
+} from './auth';
 import type { ApiContext, ApiHandler, ApiMiddleware, RouteParams } from '../types';
 
 export function withMiddleware(middlewares: ApiMiddleware[], handler: ApiHandler): ApiHandler {
@@ -36,7 +40,7 @@ export function withPermissionApiHandler(permissions: string[], handler: ApiHand
     [
       loggerMiddleware,
       errorHandlerMiddleware,
-      authSessionMiddleware,
+      authMiddleware,
       requirePermission(...permissions),
     ],
     handler,
@@ -45,12 +49,23 @@ export function withPermissionApiHandler(permissions: string[], handler: ApiHand
   return adapt(wrapped);
 }
 
+export function withAuthenticatedApiHandler(handler: ApiHandler) {
+  const wrapped = withMiddleware(
+    [loggerMiddleware, errorHandlerMiddleware, authMiddleware],
+    handler,
+  );
+
+  return adapt(wrapped);
+}
+
+export const withAuthApiHandler = withAuthenticatedApiHandler;
+
 export function withRoleApiHandler(roles: string[], handler: ApiHandler) {
   const wrapped = withMiddleware(
     [
       loggerMiddleware,
       errorHandlerMiddleware,
-      authSessionMiddleware,
+      authMiddleware,
       requireRole(...roles),
     ],
     handler,

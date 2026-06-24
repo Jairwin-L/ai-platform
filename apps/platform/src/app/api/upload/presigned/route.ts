@@ -5,7 +5,7 @@ import {
   FILE_ERROR,
   createErrorResponse,
   createSuccessResponse,
-  withApiHandler,
+  withAuthenticatedApiHandler,
 } from '@/lib/server';
 
 export const runtime = 'nodejs';
@@ -216,6 +216,8 @@ function getRejectedReason(reason: unknown): string {
  *         description: 预签名上传地址生成成功
  *       400:
  *         description: 参数错误或文件类型不受支持
+ *       401:
+ *         description: 未登录或登录已失效
  *       500:
  *         description: 预签名上传地址生成失败
  */
@@ -303,4 +305,4 @@ const createPresignedUrlsHandler = async (request: NextRequest) => {
   }
 };
 
-export const POST = withApiHandler(createPresignedUrlsHandler);
+export const POST = withAuthenticatedApiHandler(createPresignedUrlsHandler);

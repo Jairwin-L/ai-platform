@@ -4,13 +4,34 @@ import { getAuthUserBySessionToken, getSessionCookieName } from '../auth-session
 import { createErrorResponse } from '../responses/error';
 import type { ApiContext, ApiMiddleware } from '../types';
 
+async function getRequestAuthUser(request: NextRequest) {
+  const token = request.cookies.get(getSessionCookieName())?.value;
+
+  return getAuthUserBySessionToken(token);
+}
+
 export const authSessionMiddleware: ApiMiddleware = async (
   req: NextRequest,
   ctx: ApiContext,
   next: () => Promise<NextResponse>,
 ) => {
-  const token = req.cookies.get(getSessionCookieName())?.value;
-  ctx.user = (await getAuthUserBySessionToken(token)) ?? undefined;
+  ctx.user = (await getRequestAuthUser(req)) ?? undefined;
+
+  return next();
+};
+
+export const authMiddleware: ApiMiddleware = async (
+  request: NextRequest,
+  context: ApiContext,
+  next: () => Promise<NextResponse>,
+) => {
+  const user = await getRequestAuthUser(request);
+
+  if (!user) {
+    return createErrorResponse(AUTH_ERROR.UNAUTHORIZED, undefined, null, 401);
+  }
+
+  context.user = user;
 
   return next();
 };

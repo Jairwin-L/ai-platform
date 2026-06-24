@@ -2,8 +2,6 @@
 
 import { type ReactNode, useEffect } from 'react';
 import { App, ConfigProvider } from 'antd';
-import type { AuthPayload } from '@/services/auth';
-import { useAuthSessionStore } from '@/stores/auth-session';
 import { setAlovaMessageApi } from '@/utils/alova';
 
 function AlovaMessageBridge() {
@@ -20,23 +18,7 @@ function AlovaMessageBridge() {
   return null;
 }
 
-function AuthSessionInitializer({ initialPayload }: { initialPayload: AuthPayload | null }) {
-  const setPayload = useAuthSessionStore((state) => state.setPayload);
-
-  useEffect(() => {
-    setPayload(initialPayload);
-  }, [initialPayload, setPayload]);
-
-  return null;
-}
-
-export default function AntdProvider({
-  children,
-  initialAuthPayload,
-}: {
-  children: ReactNode;
-  initialAuthPayload: AuthPayload | null;
-}) {
+export default function AntdProvider({ children }: { children: ReactNode }) {
   return (
     <ConfigProvider
       theme={{
@@ -48,7 +30,6 @@ export default function AntdProvider({
     >
       <App>
         <AlovaMessageBridge />
-        <AuthSessionInitializer initialPayload={initialAuthPayload} />
         {children}
       </App>
     </ConfigProvider>
