@@ -254,6 +254,8 @@ vp run cf:deploy:development
 vp run cf:deploy:production
 ```
 
+Cloudflare Dashboard 的 Build command 应配置为 `pnpm exec vp run cf:build`，不要直接使用 `vp run cf:build`。`pnpm exec` 会将项目本地安装的 Vite+ 命令加入 PATH。
+
 `wrangler.jsonc` 目前未声明 R2、D1、KV 或 Images 绑定，因此首次部署不依赖预创建的 Cloudflare 资源。
 
 ## 开发约定
