@@ -35,6 +35,10 @@ export function AccountMenu() {
     router.push(`/account/${user?.id}`);
   }
 
+  function onSignInClick(): void {
+    router.push('/sign-in');
+  }
+
   async function signOutCurrentUser(): Promise<void> {
     setSigningOut(true);
 
@@ -80,6 +84,14 @@ export function AccountMenu() {
         <Skeleton.Avatar active size={28} />
         <Skeleton.Input active className={styles['skeleton-name']} size="small" />
       </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <button className={styles['sign-in-button']} type="button" onClick={onSignInClick}>
+        登录
+      </button>
     );
   }
 
