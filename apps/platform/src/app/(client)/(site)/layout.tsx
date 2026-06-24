@@ -1,10 +1,7 @@
 import type { ReactNode } from 'react';
-import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { APP_NAME } from '@/constants';
 import { getAuthUserBySessionToken, getSessionCookieName } from '@/lib/server/auth-session';
-import { AccountMenu } from './account-menu';
-import styles from './layout.module.scss';
+import { SiteHeader } from './components/site-header';
 
 export default async function SiteLayout({
   children,
@@ -17,22 +14,7 @@ export default async function SiteLayout({
 
   return (
     <>
-      <header className={styles['site-header']}>
-        <nav className={styles.nav} aria-label="站点导航">
-          <Link className={styles.brand} href="/">
-            {APP_NAME}
-          </Link>
-          <div className={styles.links}>
-            {user ? (
-              <>
-                <Link href="/articles">文章</Link>
-                <Link href="/upload">上传</Link>
-              </>
-            ) : null}
-            <AccountMenu />
-          </div>
-        </nav>
-      </header>
+      <SiteHeader showAuthenticatedLinks={Boolean(user)} />
       {children}
     </>
   );

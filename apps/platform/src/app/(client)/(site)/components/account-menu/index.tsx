@@ -7,7 +7,7 @@ import type { MenuProps } from 'antd';
 import { usePermission } from '@/hooks/use-permission';
 import { signOut } from '@/services/auth';
 import type { AuthUser } from '@/services/auth';
-import styles from './account-menu.module.scss';
+import styles from './index.module.scss';
 
 function getDisplayName(user: AuthUser | null): string {
   return user?.nickName || user?.email || '我的账号';

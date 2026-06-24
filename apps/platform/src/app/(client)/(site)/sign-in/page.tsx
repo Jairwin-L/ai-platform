@@ -162,7 +162,6 @@ export default function SignInPage() {
                     </Form.Item>
                     <div className={styles['code-row']}>
                       <Form.Item
-                        extra="验证码 1 分钟内有效"
                         label="验证码"
                         name="code"
                         rules={[
