@@ -41,6 +41,18 @@ jobs:
       contents: read
     env:
       CLOUDFLARE_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || github.event_name == 'pull_request_target' && 'production' || 'development' }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      AUTH_CODE_SECRET: ${{ secrets.AUTH_CODE_SECRET }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      RESEND_FROM_EMAIL: ${{ vars.RESEND_FROM_EMAIL || secrets.RESEND_FROM_EMAIL }}
+      RESEND_FROM_NAME: ${{ vars.RESEND_FROM_NAME || secrets.RESEND_FROM_NAME }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_ENDPOINT_URL: ${{ vars.R2_ENDPOINT_URL || secrets.R2_ENDPOINT_URL }}
+      R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME || secrets.R2_BUCKET_NAME }}
+      TINYPNG_API_KEY: ${{ secrets.TINYPNG_API_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -71,11 +83,39 @@ jobs:
       - name: Build Cloudflare Worker
         run: vp run cf:build
 
+      - name: Validate Cloudflare Worker secrets
+        shell: bash
+        run: |
+          required=(
+            CLOUDFLARE_API_TOKEN
+            CLOUDFLARE_ACCOUNT_ID
+            DATABASE_URL
+            AUTH_CODE_SECRET
+            RESEND_API_KEY
+            RESEND_FROM_EMAIL
+            RESEND_FROM_NAME
+            R2_ACCESS_KEY_ID
+            R2_SECRET_ACCESS_KEY
+            R2_ENDPOINT_URL
+            R2_BUCKET_NAME
+            TINYPNG_API_KEY
+          )
+
+          missing=0
+          for name in "${required[@]}"; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing required GitHub Environment secret or variable: ${name}"
+              missing=1
+            fi
+          done
+
+          exit "${missing}"
+
       - name: Deploy Worker
         uses: cloudflare/wrangler-action@v3
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          apiToken: ${{ env.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: '4.104.0'
           packageManager: pnpm
           command: deploy --env ${{ env.CLOUDFLARE_ENV }}
@@ -91,14 +131,3 @@ jobs:
             R2_ENDPOINT_URL
             R2_BUCKET_NAME
             TINYPNG_API_KEY
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          AUTH_CODE_SECRET: ${{ secrets.AUTH_CODE_SECRET }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
-          RESEND_FROM_NAME: ${{ secrets.RESEND_FROM_NAME }}
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
-          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
-          TINYPNG_API_KEY: ${{ secrets.TINYPNG_API_KEY }}
