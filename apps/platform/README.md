@@ -1,6 +1,6 @@
 # nextjs-starter-kit
 
-基于 Next.js App Router 的业务项目模板，内置 React 19、TypeScript、Sass Module、Ant Design、alova 请求封装、Prisma/PostgreSQL、OpenAPI 文档生成，以及 Docker + GitHub Actions 的部署流程。
+基于 Next.js App Router 的业务项目模板，内置 React 19、TypeScript、Sass Module、Ant Design、alova 请求封装、Prisma/PostgreSQL、OpenAPI 文档生成，以及 Docker 与 Cloudflare Workers 的 GitHub Actions 部署流程。
 
 ## 功能概览
 
@@ -13,6 +13,7 @@
 - Vite+ 统一管理安装、开发、构建、检查、格式化和 CI 校验。
 - Docker 多阶段构建，包含应用镜像和 Prisma 同步镜像。
 - GitHub Actions 自动校验、构建 GHCR 镜像，并通过 SSH + Docker Compose 部署。
+- 独立 GitHub Actions 使用 `cloudflare/wrangler-action` 构建并部署 Cloudflare Workers。
 
 ## 技术栈
 
@@ -45,7 +46,7 @@ public/           静态资源与生成后的 OpenAPI JSON
 
 ## 环境要求
 
-- Node.js `22.x`
+- Node.js `22.18.0` 或更高的 `22.x` 版本（Cloudflare Pages 由 `.node-version` 固定为 `22.18.0`）
 - Vite+ CLI `vp`
 - pnpm，由 Vite+ 按项目配置使用
 - PostgreSQL，本地开发可使用本机数据(远程服务器数据库/prisma数据库)库或 Docker Compose
@@ -81,7 +82,7 @@ Redis 由项目 Docker Compose 部署，应用容器默认通过`redis://redis:6
 ENABLE_API_DOCS="true"
 ```
 
-部署流程还会使用以下变量或 GitHub Secrets：
+Docker / SSH 部署流程使用以下变量或 GitHub Secrets：
 
 - `APP_IMAGE`
 - `MIGRATE_IMAGE`
@@ -98,6 +99,21 @@ ENABLE_API_DOCS="true"
 - `DEPLOY_PATH`
 - `DEPLOY_SSH_KEY`
 - `GHCR_READ_TOKEN`
+
+Cloudflare Workers 部署使用 GitHub Environments：`development` 与 `production`。两个环境均须配置以下 Secrets：
+
+- `CLOUDFLARE_API_TOKEN`（具备对应 Account 的 Workers 编辑权限）
+- `CLOUDFLARE_ACCOUNT_ID`
+- `DATABASE_URL`
+- `AUTH_CODE_SECRET`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `RESEND_FROM_NAME`
+- `R2_ACCESS_KEY_ID`
+- `R2_SECRET_ACCESS_KEY`
+- `R2_ENDPOINT_URL`
+- `R2_BUCKET_NAME`
+- `TINYPNG_API_KEY`
 
 不要提交真实 `.env*`、密钥、Token、私钥或生产连接串。
 
@@ -134,6 +150,10 @@ vp run dev
 vp run dev              # 启动开发服务，端口 8060
 vp run build            # 生成 OpenAPI 文档并构建 Next.js
 vp run start            # 启动生产服务，端口 8062
+vp run cf:build         # 构建 Cloudflare Worker 产物
+vp run cf:preview       # 以 Workers runtime 本地预览
+vp run cf:deploy:development # 手动部署 development Worker
+vp run cf:deploy:production  # 手动部署 production Worker
 vp check                # 代码检查
 vp run lint             # lint 与 stylelint
 vp run lint:fix         # 格式化并自动修复
@@ -201,7 +221,7 @@ docker compose -f docker-compose.prod.yml up -d
 
 ## 部署流程
 
-`.github/workflows/deploy.yml` 会在以下场景触发：
+`.github/workflows/deploy.yml` 保持原有 Docker / GHCR / SSH 发布流程，会在以下场景触发：
 
 - 推送到 `dev` 分支，部署 development 环境。
 - 合并到 `main` 的 Pull Request，部署 production 环境。
@@ -216,18 +236,29 @@ docker compose -f docker-compose.prod.yml up -d
 5. 同步 Compose 文件和部署脚本。
 6. 拉取镜像、执行 Prisma 同步、重启服务。
 
-服务器侧也可以手动执行：
+## Cloudflare Workers 部署
+
+`.github/workflows/deploy-worker.yml` 是独立的 Workers 发布流程，使用 `cloudflare/wrangler-action@v3` 部署 OpenNext 生成的 Worker：
+
+- 推送到 `dev` 分支，执行 `wrangler deploy --env development`，部署 Worker `nextjs-starter-kit-dev`。
+- 推送到 `main` 分支，执行 `wrangler deploy --env production`，部署 Worker `nextjs-starter-kit-prod`。
+- 手动执行工作流时，可在 `development` 与 `production` 中选择目标环境。
+
+提交前需要先在 GitHub 仓库 Settings → Environments 创建两个同名 Environment，并分别配置上面的 Secrets。生产环境可启用 required reviewers，阻止未经批准的生产部署。
+
+本地预览与手动部署命令：
 
 ```bash
-APP_IMAGE=ghcr.io/owner/nextjs-starter-kit:latest \
-scripts/deploy-compose.sh production
+vp run cf:preview
+vp run cf:deploy:development
+vp run cf:deploy:production
 ```
 
-开发环境示例：
+Cloudflare Dashboard 的 Build command 应配置为 `pnpm exec vp run cf:build`，不要直接使用 `vp run cf:build`。`pnpm exec` 会将项目本地安装的 Vite+ 命令加入 PATH；`cf:build` 会先生成 Prisma Client，再构建 Worker。
 
-```bash
-scripts/deploy-compose.sh development ghcr.io/owner/nextjs-starter-kit:dev
-```
+`wrangler.jsonc` 目前未声明 R2、D1、KV 或 Images 绑定，因此首次部署不依赖预创建的 Cloudflare 资源。
+
+项目使用 PostgreSQL 时，`pg-cloudflare` 会作为运行时依赖随 Cloudflare Worker 构建产物一并追踪，以支持 `pg` 在 Workers 环境中的 TCP 连接。
 
 ## 开发约定
 

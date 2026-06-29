@@ -15,6 +15,10 @@ const REMOTE_PATTERNS = [
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // OpenNext's file tracer does not include pg-cloudflare's workerd entry by default.
+  outputFileTracingIncludes: {
+    '**/*': ['./node_modules/pg-cloudflare/dist/**', './node_modules/pg-cloudflare/esm/**'],
+  },
   sassOptions: {
     loadPaths: [root],
     additionalData: [
@@ -33,3 +37,7 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+void import('@opennextjs/cloudflare').then(({ initOpenNextCloudflareForDev }) => {
+  initOpenNextCloudflareForDev();
+});
