@@ -53,6 +53,12 @@ jobs:
           node-version: '22'
           cache: true
 
+      - name: Set up pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.6.0 --activate
+          pnpm --version
+
       - name: Install dependencies
         run: vp install --frozen-lockfile
 
@@ -71,6 +77,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: '4.104.0'
+          packageManager: pnpm
           command: deploy --env ${{ env.CLOUDFLARE_ENV }}
           environment: ${{ env.CLOUDFLARE_ENV }}
           secrets: |
