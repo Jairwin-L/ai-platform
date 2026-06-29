@@ -6,17 +6,17 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
     "directory": ".open-next/assets",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
   },
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "nextjs-starter-kit"
-    }
+      "service": "nextjs-starter-kit",
+    },
   ],
   "vars": {
     "APP_ENV": "local",
-    "NEXTJS_ENV": "development"
+    "NEXTJS_ENV": "development",
   },
   "env": {
     "development": {
@@ -24,26 +24,26 @@
       "services": [
         {
           "binding": "WORKER_SELF_REFERENCE",
-          "service": "nextjs-starter-kit-dev"
-        }
+          "service": "nextjs-starter-kit-dev",
+        },
       ],
       "vars": {
         "APP_ENV": "development",
-        "NEXTJS_ENV": "development"
-      }
+        "NEXTJS_ENV": "development",
+      },
     },
     "production": {
       "name": "nextjs-starter-kit-prod",
       "services": [
         {
           "binding": "WORKER_SELF_REFERENCE",
-          "service": "nextjs-starter-kit-prod"
-        }
+          "service": "nextjs-starter-kit-prod",
+        },
       ],
       "vars": {
         "APP_ENV": "production",
-        "NEXTJS_ENV": "production"
-      }
-    }
-  }
+        "NEXTJS_ENV": "production",
+      },
+    },
+  },
 }
