@@ -37,6 +37,26 @@ async function requestCode(
   }
 }
 
+function getRedirectPath(): string {
+  const redirectUrl = new URLSearchParams(window.location.search).get('redirectUrl');
+
+  if (!redirectUrl || !redirectUrl.startsWith('/') || redirectUrl.startsWith('//')) {
+    return '/';
+  }
+
+  try {
+    const url = new URL(redirectUrl, window.location.origin);
+
+    if (url.origin !== window.location.origin) {
+      return '/';
+    }
+
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return '/';
+  }
+}
+
 export default function SignInPage() {
   const router = useRouter();
   const setPayload = useAuthSessionStore((state) => state.setPayload);
@@ -64,7 +84,7 @@ export default function SignInPage() {
 
     try {
       setPayload(await signInWithPassword(values));
-      router.push('/');
+      router.push(getRedirectPath());
       router.refresh();
     } catch {
       // Request errors are surfaced by alova.
@@ -78,7 +98,7 @@ export default function SignInPage() {
 
     try {
       setPayload(await signInWithCode(values));
-      router.push('/');
+      router.push(getRedirectPath());
       router.refresh();
     } catch {
       // Request errors are surfaced by alova.

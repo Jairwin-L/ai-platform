@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { promisify } from 'node:util';
 import type { NextResponse } from 'next/server';
+import { AUTH_SESSION_COOKIE_NAME } from '@/constants/auth';
 import { prisma } from '@/lib/prisma';
 import type { AuthUser } from './types';
 
@@ -18,7 +19,6 @@ export interface AuthPayload {
 }
 
 const scryptAsync = promisify(crypto.scrypt);
-const SESSION_COOKIE_NAME = 'auth_session';
 const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
 
 function createTokenHash(token: string): string {
@@ -34,7 +34,7 @@ function getSessionExpiresAt(): Date {
 }
 
 export function getSessionCookieName(): string {
-  return SESSION_COOKIE_NAME;
+  return AUTH_SESSION_COOKIE_NAME;
 }
 
 export async function createPasswordHash(password: string): Promise<string> {
@@ -65,7 +65,7 @@ export async function verifyPassword(
 }
 
 export function setSessionCookie(response: NextResponse, token: string): void {
-  response.cookies.set(SESSION_COOKIE_NAME, token, {
+  response.cookies.set(AUTH_SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     maxAge: SESSION_TTL_SECONDS,
     path: '/',
@@ -75,7 +75,7 @@ export function setSessionCookie(response: NextResponse, token: string): void {
 }
 
 export function clearSessionCookie(response: NextResponse): void {
-  response.cookies.set(SESSION_COOKIE_NAME, '', {
+  response.cookies.set(AUTH_SESSION_COOKIE_NAME, '', {
     httpOnly: true,
     maxAge: 0,
     path: '/',

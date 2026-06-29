@@ -5,7 +5,7 @@
  */
 
 export { APP_BLACK_LOGO, APP_NAME } from './app';
-export { VERIFICATION_CODE_TTL_SECONDS } from './auth';
+export { AUTH_SESSION_COOKIE_NAME, VERIFICATION_CODE_TTL_SECONDS } from './auth';
 export { ALLOW_FILE_TYPE } from './file';
 export { R2_BUCKET_URL } from './r2';
 export * from './error-codes';
