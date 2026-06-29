@@ -21,6 +21,13 @@
   "env": {
     "development": {
       "name": "nextjs-starter-kit-dev",
+      "workers_dev": true,
+      "routes": [
+        {
+          "pattern": "nextjs-starter-kit-dev.jairwin.cc",
+          "custom_domain": true,
+        },
+      ],
       "services": [
         {
           "binding": "WORKER_SELF_REFERENCE",
@@ -34,6 +41,13 @@
     },
     "production": {
       "name": "nextjs-starter-kit-prod",
+      "workers_dev": false,
+      "routes": [
+        {
+          "pattern": "nextjs-starter-kit.jairwin.cc",
+          "custom_domain": true,
+        },
+      ],
       "services": [
         {
           "binding": "WORKER_SELF_REFERENCE",
