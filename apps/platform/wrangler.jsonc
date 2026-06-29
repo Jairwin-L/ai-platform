@@ -40,7 +40,7 @@
       },
     },
     "production": {
-      "name": "nextjs-starter-kit-prod",
+      "name": "nextjs-starter-kit",
       "workers_dev": false,
       "routes": [
         {
@@ -51,7 +51,7 @@
       "services": [
         {
           "binding": "WORKER_SELF_REFERENCE",
-          "service": "nextjs-starter-kit-prod",
+          "service": "nextjs-starter-kit",
         },
       ],
       "vars": {

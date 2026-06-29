@@ -241,7 +241,7 @@ docker compose -f docker-compose.prod.yml up -d
 `.github/workflows/deploy-worker.yml` 是独立的 Workers 发布流程，使用 `cloudflare/wrangler-action@v3` 部署 OpenNext 生成的 Worker：
 
 - 推送到 `dev` 分支，执行 `wrangler deploy --env development`，部署 Worker `nextjs-starter-kit-dev`。
-- 推送到 `main` 分支，执行 `wrangler deploy --env production`，部署 Worker `nextjs-starter-kit-prod`。
+- 推送到 `main` 分支，执行 `wrangler deploy --env production`，部署 Worker `nextjs-starter-kit`。
 - 手动执行工作流时，可在 `development` 与 `production` 中选择目标环境。
 
 提交前需要先在 GitHub 仓库 Settings → Environments 创建两个同名 Environment，并分别配置上面的 Secrets。生产环境可启用 required reviewers，阻止未经批准的生产部署。
