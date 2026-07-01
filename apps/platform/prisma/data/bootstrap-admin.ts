@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '../../generated/prisma/client';
 
 const bootstrapAdminEmail = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim();
 const strictMode = process.env.BOOTSTRAP_ADMIN_STRICT === 'true';

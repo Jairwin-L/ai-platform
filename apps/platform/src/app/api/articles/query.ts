@@ -1,4 +1,4 @@
-import type { Article as PrismaArticle, Prisma } from '@prisma/client';
+import type { Article as PrismaArticle, Prisma } from '@/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
 
 export interface ArticleQueryParams {

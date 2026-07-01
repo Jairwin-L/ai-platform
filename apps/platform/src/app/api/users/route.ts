@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { UserStatusType, type Prisma } from '@prisma/client';
+import { UserStatusType, type Prisma } from '@/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
 import {
   DATA_ERROR,

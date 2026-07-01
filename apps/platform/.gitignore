@@ -19,6 +19,7 @@
 
 # production
 /build
+/.postgres-upgrades/
 
 # misc
 .DS_Store
@@ -44,3 +45,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .prisma/
+/generated/

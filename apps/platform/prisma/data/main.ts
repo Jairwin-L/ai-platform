@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '../../generated/prisma/client';
 import { seedPermissions } from './permissions';
 import { assignAdminRolePermissions, assignBasicRolePermissions } from './role-permissions';
 import { seedRoles } from './roles';

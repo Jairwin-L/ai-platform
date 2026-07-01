@@ -4,7 +4,7 @@
  */
 
 import { queryArticles } from '@/app/api/articles/query';
-import type { Article as PrismaArticle } from '@prisma/client';
+import type { Article as PrismaArticle } from '@/generated/prisma/client';
 import type { Article, ArticleListData, ArticleListParams } from '@/services/articles';
 
 /**

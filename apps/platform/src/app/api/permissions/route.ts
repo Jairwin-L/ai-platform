@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import type { PermissionType, Prisma } from '@prisma/client';
+import type { PermissionType, Prisma } from '@/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
 import {
   DATA_ERROR,

@@ -28,7 +28,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_OPTIONS="--max-old-space-size=3072"
 
 COPY . .
-RUN vp run prisma:generate
+RUN DATABASE_URL="postgresql://prisma:prisma@localhost:5432/prisma?schema=public" vp run prisma:generate
 RUN vp run build
 
 FROM deps AS migrator
@@ -38,7 +38,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY prisma ./prisma
 COPY prisma.config.ts ./
-RUN vp run prisma:generate
+RUN DATABASE_URL="postgresql://prisma:prisma@localhost:5432/prisma?schema=public" vp run prisma:generate
 
 CMD ["vp", "run", "prisma:deploy"]
 

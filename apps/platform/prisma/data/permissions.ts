@@ -1,4 +1,4 @@
-import type { PermissionType, PrismaClient } from '@prisma/client';
+import type { PermissionType, PrismaClient } from '../../generated/prisma/client';
 
 interface PermissionData {
   name: string;

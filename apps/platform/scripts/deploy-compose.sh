@@ -14,6 +14,9 @@ Optional environment variables:
   COMPOSE_FILE           Override Compose file. Defaults to docker-compose.prod.yml or docker-compose.dev.yml.
   COMPOSE_SERVICE        Override Compose service. Defaults to app.
   MIGRATE_IMAGE          Override migration image. Defaults to APP_IMAGE-migrate.
+  POSTGRES_IMAGE         Override PostgreSQL image. Defaults to postgres:18-alpine.
+  POSTGRES_OLD_IMAGE     Old PostgreSQL image for major upgrade. Defaults to postgres:16-alpine.
+  POSTGRES_UPGRADE_MODE  Set to "dump-restore" to run PostgreSQL major upgrade before migrations.
   PRISMA_SYNC_COMMAND    Override Prisma sync command. Defaults to "vp run prisma:push:deploy".
 
 Examples:
@@ -39,6 +42,7 @@ case "${environment}" in
     default_postgres_db="nextjs_starter_kit"
     default_postgres_user="nextjs_starter_kit"
     default_postgres_password="nextjs_starter_kit"
+    default_postgres_image="postgres:18-alpine"
     default_database_url="postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit?schema=public"
     default_prisma_sync_command="vp run prisma:push:deploy"
     ;;
@@ -50,6 +54,7 @@ case "${environment}" in
     default_postgres_db="nextjs_starter_kit_dev"
     default_postgres_user="nextjs_starter_kit"
     default_postgres_password="nextjs_starter_kit"
+    default_postgres_image="postgres:18-alpine"
     default_database_url="postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit_dev?schema=public"
     default_prisma_sync_command="vp run prisma:push:deploy"
     ;;
@@ -91,6 +96,54 @@ has_env_key() {
   grep -qE "^${key}[[:space:]]*=" "${env_file}"
 }
 
+read_env_value() {
+  local key="$1"
+  local line
+  local value
+
+  line="$(grep -E "^${key}[[:space:]]*=" "${env_file}" | tail -n 1 || true)"
+  if [[ -z "${line}" ]]; then
+    return 0
+  fi
+
+  value="${line#*=}"
+  if [[ "${value}" == \'*\' && "${value}" == *\' ]]; then
+    value="${value:1:${#value}-2}"
+  fi
+
+  printf '%s' "${value}"
+}
+
+get_postgres_major() {
+  local image="$1"
+
+  if [[ "${image}" =~ postgres:([0-9]+) ]]; then
+    printf '%s' "${BASH_REMATCH[1]}"
+  fi
+}
+
+get_postgres_data_volume() {
+  case "${environment}" in
+    production | prod | main)
+      printf '%s_postgres-prod-data' "${project_name}"
+      ;;
+    *)
+      printf '%s_postgres-dev-data' "${project_name}"
+      ;;
+  esac
+}
+
+get_existing_postgres_major() {
+  local volume_name="$1"
+
+  if ! docker volume inspect "${volume_name}" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  docker run --rm -v "${volume_name}:/pgdata:ro" alpine:3.22 \
+    sh -lc 'cat /pgdata/PG_VERSION 2>/dev/null || true'
+}
+
 append_env() {
   local key="$1"
   local value="$2"
@@ -126,7 +179,15 @@ ensure_default_env APP_PORT "${default_app_port}"
 ensure_default_env POSTGRES_DB "${default_postgres_db}"
 ensure_default_env POSTGRES_USER "${default_postgres_user}"
 ensure_default_env POSTGRES_PASSWORD "${default_postgres_password}"
+ensure_default_env POSTGRES_IMAGE "${default_postgres_image}"
+ensure_default_env POSTGRES_OLD_IMAGE "postgres:16-alpine"
 ensure_default_env DATABASE_URL "${default_database_url}"
+
+postgres_image="${POSTGRES_IMAGE:-$(read_env_value POSTGRES_IMAGE)}"
+postgres_old_image="${POSTGRES_OLD_IMAGE:-$(read_env_value POSTGRES_OLD_IMAGE)}"
+postgres_upgrade_mode="${POSTGRES_UPGRADE_MODE:-$(read_env_value POSTGRES_UPGRADE_MODE)}"
+postgres_image="${postgres_image:-${default_postgres_image}}"
+postgres_old_image="${postgres_old_image:-postgres:16-alpine}"
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "docker command is required." >&2
@@ -141,6 +202,35 @@ echo "  env:     ${env_file}"
 echo "  compose: ${compose_file}"
 echo "  service: ${compose_service}"
 echo "  prisma:  ${prisma_sync_command}"
+
+if [[ -n "${postgres_upgrade_mode}" ]]; then
+  if [[ "${postgres_upgrade_mode}" != "dump-restore" ]]; then
+    echo "Unsupported POSTGRES_UPGRADE_MODE: ${postgres_upgrade_mode}" >&2
+    exit 1
+  fi
+
+  POSTGRES_UPGRADE_MODE="${postgres_upgrade_mode}" \
+    POSTGRES_OLD_IMAGE="${postgres_old_image}" \
+    POSTGRES_IMAGE="${postgres_image}" \
+    APP_IMAGE="${image}" \
+    MIGRATE_IMAGE="${migrate_image}" \
+    DEPLOY_ENV_FILE="${env_file}" \
+    COMPOSE_PROJECT_NAME="${project_name}" \
+    COMPOSE_FILE="${compose_file}" \
+    COMPOSE_SERVICE="${compose_service}" \
+    scripts/upgrade-postgres-compose.sh "${environment}"
+fi
+
+target_postgres_major="$(get_postgres_major "${postgres_image}")"
+existing_postgres_major="$(get_existing_postgres_major "$(get_postgres_data_volume)")"
+
+if [[ -n "${existing_postgres_major}" && -n "${target_postgres_major}" && "${existing_postgres_major}" != "${target_postgres_major}" ]]; then
+  cat >&2 <<EOF
+PostgreSQL data volume was created by PostgreSQL ${existing_postgres_major}, but POSTGRES_IMAGE targets PostgreSQL ${target_postgres_major}.
+Run with POSTGRES_UPGRADE_MODE=dump-restore to migrate the Compose volume, or temporarily set POSTGRES_IMAGE=postgres:${existing_postgres_major}-alpine.
+EOF
+  exit 1
+fi
 
 compose() {
   COMPOSE_PROJECT_NAME="${project_name}" APP_IMAGE="${image}" MIGRATE_IMAGE="${migrate_image}" \
