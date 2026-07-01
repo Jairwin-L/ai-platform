@@ -10,6 +10,13 @@ interface AccountProfileContentProps {
   profile: UserProfile;
 }
 
+const dateTimeFormatter = new Intl.DateTimeFormat('zh-CN', {
+  hour12: false,
+  dateStyle: 'medium',
+  timeStyle: 'short',
+  timeZone: 'Asia/Shanghai',
+});
+
 function getDisplayName(profile: UserProfile): string {
   return profile.nick_name || profile.full_name || profile.user_name || profile.email || profile.id;
 }
@@ -19,11 +26,7 @@ function formatDateTime(value: string | null): string {
     return '未记录';
   }
 
-  return new Date(value).toLocaleString('zh-CN', {
-    hour12: false,
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
+  return dateTimeFormatter.format(new Date(value));
 }
 
 function getInitials(name: string): string {
