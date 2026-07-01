@@ -156,6 +156,117 @@ get_existing_postgres_major() {
     sh -lc 'version_file="$(find /pgdata -maxdepth 4 -type f -name PG_VERSION 2>/dev/null | head -n 1)"; if [ -n "${version_file}" ]; then cat "${version_file}"; fi'
 }
 
+get_image_repository() {
+  local image="$1"
+  local image_without_digest
+  local last_segment
+
+  image_without_digest="${image%%@*}"
+  last_segment="${image_without_digest##*/}"
+
+  if [[ "${last_segment}" == *:* ]]; then
+    printf '%s\n' "${image_without_digest%:*}"
+    return
+  fi
+
+  printf '%s\n' "${image_without_digest}"
+}
+
+get_image_id() {
+  local image="$1"
+
+  docker image inspect --format '{{.Id}}' "${image}" 2>/dev/null || true
+}
+
+get_container_image_ids() {
+  local container_ids
+
+  container_ids="$(docker ps -aq)"
+  if [[ -z "${container_ids}" ]]; then
+    return 0
+  fi
+
+  docker inspect --format '{{.Image}}' ${container_ids} 2>/dev/null || true
+}
+
+is_image_id_in_list() {
+  local image_id="$1"
+  shift
+
+  if [[ -z "${image_id}" ]]; then
+    return 1
+  fi
+
+  local item
+  for item in "$@"; do
+    if [[ "${item}" == "${image_id}" ]]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+cleanup_old_app_images() {
+  local app_repository
+  local migrate_repository
+  local current_app_image_id
+  local current_migrate_image_id
+  local repositories=()
+  local container_image_ids=()
+  local repository
+  local image_ref
+  local image_id
+  local removed_count=0
+
+  app_repository="$(get_image_repository "${image}")"
+  migrate_repository="$(get_image_repository "${migrate_image}")"
+  current_app_image_id="$(get_image_id "${image}")"
+  current_migrate_image_id="$(get_image_id "${migrate_image}")"
+
+  repositories+=("${app_repository}")
+  if [[ "${migrate_repository}" != "${app_repository}" ]]; then
+    repositories+=("${migrate_repository}")
+  fi
+
+  while read -r image_id; do
+    if [[ -n "${image_id}" ]]; then
+      container_image_ids+=("${image_id}")
+    fi
+  done < <(get_container_image_ids)
+
+  echo "Cleaning old app images for repositories: ${repositories[*]}"
+
+  for repository in "${repositories[@]}"; do
+    while read -r image_ref image_id; do
+      if [[ -z "${image_ref}" || -z "${image_id}" ]]; then
+        continue
+      fi
+
+      if [[ "${image_ref}" == "${image}" || "${image_ref}" == "${migrate_image}" ]]; then
+        continue
+      fi
+
+      if [[ "${image_id}" == "${current_app_image_id}" || "${image_id}" == "${current_migrate_image_id}" ]]; then
+        continue
+      fi
+
+      if is_image_id_in_list "${image_id}" "${container_image_ids[@]}"; then
+        echo "Keeping image still used by a container: ${image_ref}"
+        continue
+      fi
+
+      if docker image rm "${image_ref}"; then
+        removed_count=$((removed_count + 1))
+      else
+        echo "Failed to remove old image: ${image_ref}" >&2
+      fi
+    done < <(docker image ls --no-trunc --format '{{.Repository}}:{{.Tag}} {{.ID}}' "${repository}" | sort -u)
+  done
+
+  echo "Removed ${removed_count} old app image tag(s)."
+}
+
 append_env() {
   local key="$1"
   local value="$2"
@@ -267,4 +378,5 @@ compose run --rm \
 
 compose up -d --no-build "${compose_service}"
 
+cleanup_old_app_images
 docker image prune -f
