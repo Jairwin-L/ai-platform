@@ -15,6 +15,7 @@ Optional environment variables:
   COMPOSE_SERVICE        Override Compose service. Defaults to app.
   MIGRATE_IMAGE          Override migration image. Defaults to APP_IMAGE-migrate.
   POSTGRES_IMAGE         Override PostgreSQL image. Defaults to postgres:18-alpine.
+  POSTGRES_DATA_TARGET   PostgreSQL volume mount target. Defaults to /var/lib/postgresql.
   POSTGRES_OLD_IMAGE     Old PostgreSQL image for major upgrade. Defaults to postgres:16-alpine.
   POSTGRES_UPGRADE_MODE  Set to "dump-restore" to run PostgreSQL major upgrade before migrations.
   PRISMA_SYNC_COMMAND    Override Prisma sync command. Defaults to "vp run prisma:push:deploy".
@@ -141,7 +142,7 @@ get_existing_postgres_major() {
   fi
 
   docker run --rm -v "${volume_name}:/pgdata:ro" alpine:3.22 \
-    sh -lc 'cat /pgdata/PG_VERSION 2>/dev/null || true'
+    sh -lc 'version_file="$(find /pgdata -maxdepth 4 -type f -name PG_VERSION 2>/dev/null | head -n 1)"; if [ -n "${version_file}" ]; then cat "${version_file}"; fi'
 }
 
 append_env() {
@@ -180,6 +181,7 @@ ensure_default_env POSTGRES_DB "${default_postgres_db}"
 ensure_default_env POSTGRES_USER "${default_postgres_user}"
 ensure_default_env POSTGRES_PASSWORD "${default_postgres_password}"
 ensure_default_env POSTGRES_IMAGE "${default_postgres_image}"
+ensure_default_env POSTGRES_DATA_TARGET "/var/lib/postgresql"
 ensure_default_env POSTGRES_OLD_IMAGE "postgres:16-alpine"
 ensure_default_env DATABASE_URL "${default_database_url}"
 
@@ -212,6 +214,7 @@ if [[ -n "${postgres_upgrade_mode}" ]]; then
   POSTGRES_UPGRADE_MODE="${postgres_upgrade_mode}" \
     POSTGRES_OLD_IMAGE="${postgres_old_image}" \
     POSTGRES_IMAGE="${postgres_image}" \
+    POSTGRES_DATA_TARGET="${POSTGRES_DATA_TARGET:-$(read_env_value POSTGRES_DATA_TARGET)}" \
     APP_IMAGE="${image}" \
     MIGRATE_IMAGE="${migrate_image}" \
     DEPLOY_ENV_FILE="${env_file}" \

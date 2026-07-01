@@ -16,6 +16,9 @@ Optional environment variables:
   COMPOSE_FILE           Override Compose file. Defaults to docker-compose.prod.yml or docker-compose.dev.yml.
   POSTGRES_OLD_IMAGE     Old PostgreSQL image. Defaults to postgres:16-alpine.
   POSTGRES_IMAGE         Target PostgreSQL image. Defaults to postgres:18-alpine.
+  POSTGRES_OLD_DATA_TARGET
+                         Old PostgreSQL volume mount target. Defaults to /var/lib/postgresql/data.
+  POSTGRES_DATA_TARGET   Target PostgreSQL volume mount target. Defaults to /var/lib/postgresql.
   COMPOSE_SERVICE        Compose app service to stop before dump. Defaults to app.
   POSTGRES_SERVICE       Compose PostgreSQL service. Defaults to postgres.
   POSTGRES_DUMP_DIR      Local dump output directory. Defaults to .postgres-upgrades.
@@ -61,6 +64,8 @@ app_service="${COMPOSE_SERVICE:-app}"
 postgres_service="${POSTGRES_SERVICE:-postgres}"
 old_image="${POSTGRES_OLD_IMAGE:-postgres:16-alpine}"
 target_image="${POSTGRES_IMAGE:-postgres:18-alpine}"
+old_data_target="${POSTGRES_OLD_DATA_TARGET:-/var/lib/postgresql/data}"
+target_data_target="${POSTGRES_DATA_TARGET:-/var/lib/postgresql}"
 dump_dir="${POSTGRES_DUMP_DIR:-.postgres-upgrades}"
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 dump_file="${dump_dir}/${project_name}-${timestamp}.dump"
@@ -86,10 +91,12 @@ mkdir -p "${dump_dir}"
 
 compose() {
   local postgres_image="$1"
-  shift
+  local postgres_data_target="$2"
+  shift 2
   local compose_env=(
     "COMPOSE_PROJECT_NAME=${project_name}"
     "POSTGRES_IMAGE=${postgres_image}"
+    "POSTGRES_DATA_TARGET=${postgres_data_target}"
   )
 
   if [[ -n "${app_image}" ]]; then
@@ -104,17 +111,17 @@ compose() {
 }
 
 echo "Stopping app service before PostgreSQL dump: ${app_service}"
-compose "${old_image}" stop "${app_service}" || true
+compose "${old_image}" "${old_data_target}" stop "${app_service}" || true
 
 echo "Starting old PostgreSQL image for dump: ${old_image}"
-compose "${old_image}" up -d "${postgres_service}"
+compose "${old_image}" "${old_data_target}" up -d "${postgres_service}"
 
 echo "Waiting for old PostgreSQL to become ready."
-compose "${old_image}" exec -T "${postgres_service}" sh -lc \
+compose "${old_image}" "${old_data_target}" exec -T "${postgres_service}" sh -lc \
   'for i in $(seq 1 60); do pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" && exit 0; sleep 2; done; exit 1'
 
 echo "Writing logical dump: ${dump_file}"
-compose "${old_image}" exec -T "${postgres_service}" sh -lc \
+compose "${old_image}" "${old_data_target}" exec -T "${postgres_service}" sh -lc \
   'pg_dump --format=custom --clean --if-exists -U "$POSTGRES_USER" -d "$POSTGRES_DB"' > "${dump_file}"
 
 echo "Creating raw data volume backup: ${backup_volume}"
@@ -126,19 +133,19 @@ docker run --rm \
   sh -lc 'cd /from && tar cf - . | tar xf - -C /to'
 
 echo "Stopping old PostgreSQL and replacing data volume."
-compose "${old_image}" stop "${postgres_service}"
-compose "${old_image}" rm -f "${postgres_service}"
+compose "${old_image}" "${old_data_target}" stop "${postgres_service}"
+compose "${old_image}" "${old_data_target}" rm -f "${postgres_service}"
 docker volume rm "${volume_name}" >/dev/null
 
 echo "Starting target PostgreSQL image: ${target_image}"
-compose "${target_image}" up -d "${postgres_service}"
+compose "${target_image}" "${target_data_target}" up -d "${postgres_service}"
 
 echo "Waiting for target PostgreSQL to become ready."
-compose "${target_image}" exec -T "${postgres_service}" sh -lc \
+compose "${target_image}" "${target_data_target}" exec -T "${postgres_service}" sh -lc \
   'for i in $(seq 1 60); do pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" && exit 0; sleep 2; done; exit 1'
 
 echo "Restoring logical dump into target PostgreSQL."
-compose "${target_image}" exec -T "${postgres_service}" sh -lc \
+compose "${target_image}" "${target_data_target}" exec -T "${postgres_service}" sh -lc \
   'pg_restore --clean --if-exists --no-owner --exit-on-error -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "${dump_file}"
 
 echo "PostgreSQL dump/restore upgrade complete."
