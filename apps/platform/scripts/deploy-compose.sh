@@ -19,6 +19,11 @@ Optional environment variables:
   POSTGRES_OLD_IMAGE     Old PostgreSQL image for major upgrade. Defaults to postgres:16-alpine.
   POSTGRES_UPGRADE_MODE  Set to "dump-restore" to run PostgreSQL major upgrade before migrations.
   PRISMA_SYNC_COMMAND    Override Prisma sync command. Defaults to "vp run prisma:push:deploy".
+  PRISMA_SEED_COMMAND    Override Prisma seed command. Defaults to "vp run prisma:seed:deploy".
+  BOOTSTRAP_ADMIN_EMAIL  Email address that should receive the admin role. May be provided by the env file.
+  BOOTSTRAP_ADMIN_STRICT Set to "true" to fail when BOOTSTRAP_ADMIN_EMAIL user is missing.
+  BOOTSTRAP_ADMIN_COMMAND
+                         Override admin bootstrap command. Defaults to "vp run prisma:bootstrap-admin:deploy".
 
 Examples:
   APP_IMAGE=ghcr.io/jairwin-l/nextjs-starter-kit:latest scripts/deploy-compose.sh production
@@ -46,6 +51,8 @@ case "${environment}" in
     default_postgres_image="postgres:18-alpine"
     default_database_url="postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit?schema=public"
     default_prisma_sync_command="vp run prisma:push:deploy"
+    default_prisma_seed_command="vp run prisma:seed:deploy"
+    default_bootstrap_admin_command="vp run prisma:bootstrap-admin:deploy"
     ;;
   development | dev)
     default_env_file=".env.development"
@@ -58,6 +65,8 @@ case "${environment}" in
     default_postgres_image="postgres:18-alpine"
     default_database_url="postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit_dev?schema=public"
     default_prisma_sync_command="vp run prisma:push:deploy"
+    default_prisma_seed_command="vp run prisma:seed:deploy"
+    default_bootstrap_admin_command="vp run prisma:bootstrap-admin:deploy"
     ;;
   *)
     echo "Unknown environment: ${environment}" >&2
@@ -78,6 +87,8 @@ env_file="${DEPLOY_ENV_FILE:-${default_env_file}}"
 project_name="${COMPOSE_PROJECT_NAME:-${default_project_name}}"
 migrate_image="${MIGRATE_IMAGE:-${image}-migrate}"
 prisma_sync_command="${PRISMA_SYNC_COMMAND:-${default_prisma_sync_command}}"
+prisma_seed_command="${PRISMA_SEED_COMMAND:-${default_prisma_seed_command}}"
+bootstrap_admin_command="${BOOTSTRAP_ADMIN_COMMAND:-${default_bootstrap_admin_command}}"
 
 if [[ ! -f "${compose_file}" ]]; then
   echo "Missing compose file: ${compose_file}" >&2
@@ -188,6 +199,8 @@ ensure_default_env DATABASE_URL "${default_database_url}"
 postgres_image="${POSTGRES_IMAGE:-$(read_env_value POSTGRES_IMAGE)}"
 postgres_old_image="${POSTGRES_OLD_IMAGE:-$(read_env_value POSTGRES_OLD_IMAGE)}"
 postgres_upgrade_mode="${POSTGRES_UPGRADE_MODE:-$(read_env_value POSTGRES_UPGRADE_MODE)}"
+bootstrap_admin_email="${BOOTSTRAP_ADMIN_EMAIL:-$(read_env_value BOOTSTRAP_ADMIN_EMAIL)}"
+bootstrap_admin_strict="${BOOTSTRAP_ADMIN_STRICT:-$(read_env_value BOOTSTRAP_ADMIN_STRICT)}"
 postgres_image="${postgres_image:-${default_postgres_image}}"
 postgres_old_image="${postgres_old_image:-postgres:16-alpine}"
 
@@ -204,6 +217,8 @@ echo "  env:     ${env_file}"
 echo "  compose: ${compose_file}"
 echo "  service: ${compose_service}"
 echo "  prisma:  ${prisma_sync_command}"
+echo "  seed:    ${prisma_seed_command}"
+echo "  admin:   ${bootstrap_admin_command}"
 
 if [[ -n "${postgres_upgrade_mode}" ]]; then
   if [[ "${postgres_upgrade_mode}" != "dump-restore" ]]; then
@@ -244,6 +259,11 @@ COMPOSE_PROJECT_NAME="${project_name}" APP_IMAGE="${image}" MIGRATE_IMAGE="${mig
   docker compose --env-file "${env_file}" -f "${compose_file}" pull "${compose_service}" migrate
 
 compose run --rm migrate sh -lc "${prisma_sync_command}"
+compose run --rm migrate sh -lc "${prisma_seed_command}"
+compose run --rm \
+  -e "BOOTSTRAP_ADMIN_EMAIL=${bootstrap_admin_email}" \
+  -e "BOOTSTRAP_ADMIN_STRICT=${bootstrap_admin_strict}" \
+  migrate sh -lc "${bootstrap_admin_command}"
 
 compose up -d --no-build "${compose_service}"
 

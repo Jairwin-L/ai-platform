@@ -178,6 +178,8 @@ jobs:
           POSTGRES_OLD_IMAGE: ${{ vars.POSTGRES_OLD_IMAGE || 'postgres:16-alpine' }}
           POSTGRES_UPGRADE_MODE: ${{ vars.POSTGRES_UPGRADE_MODE || '' }}
           DATABASE_URL: ${{ secrets.DATABASE_URL || (github.event_name == 'pull_request_target' && 'postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit?schema=public' || 'postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit_dev?schema=public') }}
+          BOOTSTRAP_ADMIN_EMAIL: ${{ vars.BOOTSTRAP_ADMIN_EMAIL || 'jairwin@jairwin.cc' }}
+          BOOTSTRAP_ADMIN_STRICT: ${{ vars.BOOTSTRAP_ADMIN_STRICT || 'true' }}
           AUTH_CODE_SECRET: ${{ secrets.AUTH_CODE_SECRET }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RESEND_FROM_EMAIL: ${{ vars.RESEND_FROM_EMAIL || secrets.RESEND_FROM_EMAIL }}
@@ -237,6 +239,8 @@ jobs:
           write_env POSTGRES_OLD_IMAGE "${POSTGRES_OLD_IMAGE}"
           write_env POSTGRES_UPGRADE_MODE "${POSTGRES_UPGRADE_MODE}"
           write_env DATABASE_URL "${DATABASE_URL}"
+          write_env BOOTSTRAP_ADMIN_EMAIL "${BOOTSTRAP_ADMIN_EMAIL}"
+          write_env BOOTSTRAP_ADMIN_STRICT "${BOOTSTRAP_ADMIN_STRICT}"
           write_env AUTH_CODE_SECRET "${AUTH_CODE_SECRET}"
           write_env RESEND_API_KEY "${RESEND_API_KEY}"
           write_env RESEND_FROM_EMAIL "${RESEND_FROM_EMAIL}"

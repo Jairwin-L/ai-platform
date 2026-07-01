@@ -90,6 +90,8 @@ Docker / SSH 部署流程使用以下变量或 GitHub Secrets：
 - `POSTGRES_DB`
 - `POSTGRES_USER`
 - `POSTGRES_PASSWORD`
+- `BOOTSTRAP_ADMIN_EMAIL`（GitHub Actions 默认写入 `example@email.com`）
+- `BOOTSTRAP_ADMIN_STRICT`（GitHub Actions 默认写入 `true`，指定用户不存在时部署失败）
 - `AUTH_CODE_SECRET`
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL`
@@ -160,8 +162,10 @@ vp run lint:fix         # 格式化并自动修复
 vp run openapi:generate # 生成 public/openapi.json
 vp run prisma:generate  # 生成 Prisma Client
 vp run prisma:push      # 根据 schema 推送数据库结构
+vp run prisma:seed:deploy # 部署环境写入基础角色/权限数据
 vp run prisma:seed      # 写入基础角色/权限数据
 vp run prisma:setup     # 推送数据库结构并执行 seed
+vp run prisma:bootstrap-admin:deploy # 部署环境授予 BOOTSTRAP_ADMIN_EMAIL 管理员角色
 vp run prisma:bootstrap-admin # 为 BOOTSTRAP_ADMIN_EMAIL 指定用户授予管理员角色
 vp run prisma:migrate   # 创建并执行本地迁移
 vp run prisma:studio    # 打开 Prisma Studio
