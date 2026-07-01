@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { getAuthUserBySessionToken, getSessionCookieName } from '@/lib/server/auth-session';
 import { getUserProfile } from '@/lib/server/user-profile';
 import { AccountProfileContent } from './account-profile-content';
@@ -20,21 +20,10 @@ async function getCurrentUserId() {
 
 export default async function Page({ params }: AccountPageProps) {
   const { id } = await params;
-
   if (!id) {
     notFound();
   }
-
   const currentUserId = await getCurrentUserId();
-
-  if (id === 'me') {
-    if (!currentUserId) {
-      redirect('/sign-in');
-    }
-
-    redirect(`/account/${currentUserId}`);
-  }
-
   const profile = await getUserProfile(id, currentUserId);
 
   if (!profile) {

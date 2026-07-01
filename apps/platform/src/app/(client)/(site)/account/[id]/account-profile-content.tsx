@@ -10,23 +10,20 @@ interface AccountProfileContentProps {
   profile: UserProfile;
 }
 
-const dateTimeFormatter = new Intl.DateTimeFormat('zh-CN', {
-  hour12: false,
-  dateStyle: 'medium',
-  timeStyle: 'short',
-  timeZone: 'Asia/Shanghai',
-});
-
 function getDisplayName(profile: UserProfile): string {
   return profile.nick_name || profile.full_name || profile.user_name || profile.email || profile.id;
 }
 
-function formatDateTime(value: string | null): string {
-  if (!value) {
-    return '未记录';
+function getProfileSubtitle(profile: UserProfile): string | null {
+  if (profile.user_name) {
+    return `@${profile.user_name}`;
   }
 
-  return dateTimeFormatter.format(new Date(value));
+  if (profile.is_me) {
+    return profile.email || profile.id;
+  }
+
+  return null;
 }
 
 function getInitials(name: string): string {
@@ -46,6 +43,7 @@ export function AccountProfileContent({ profile }: AccountProfileContentProps) {
   const displayedProfile =
     profile.is_me && currentUserProfile?.id === profile.id ? currentUserProfile : profile;
   const displayName = getDisplayName(displayedProfile);
+  const profileSubtitle = getProfileSubtitle(displayedProfile);
 
   return (
     <main className={styles.page}>
@@ -66,44 +64,10 @@ export function AccountProfileContent({ profile }: AccountProfileContentProps) {
               <h1 className={styles.title}>{displayName}</h1>
               {profile.is_me ? <span className={styles.badge}>我自己</span> : null}
             </div>
-            <p className={styles.subtitle}>
-              {displayedProfile.user_name
-                ? `@${displayedProfile.user_name}`
-                : displayedProfile.email || displayedProfile.id}
-            </p>
+            {profileSubtitle ? <p className={styles.subtitle}>{profileSubtitle}</p> : null}
             <p className={styles.bio}>{displayedProfile.bio || '这个用户还没有填写个人简介。'}</p>
           </div>
         </header>
-
-        <section className={styles.panel}>
-          <h2 className={styles['panel-title']}>基础信息</h2>
-          <dl className={styles.details}>
-            <div>
-              <dt>用户 ID</dt>
-              <dd>{displayedProfile.id}</dd>
-            </div>
-            <div>
-              <dt>邮箱验证</dt>
-              <dd>{displayedProfile.email_verified ? '已验证' : '未验证'}</dd>
-            </div>
-            <div>
-              <dt>状态</dt>
-              <dd>{displayedProfile.status}</dd>
-            </div>
-            <div>
-              <dt>最近登录</dt>
-              <dd>{formatDateTime(displayedProfile.last_login_at)}</dd>
-            </div>
-            <div>
-              <dt>创建时间</dt>
-              <dd>{formatDateTime(displayedProfile.created_at)}</dd>
-            </div>
-            <div>
-              <dt>更新时间</dt>
-              <dd>{formatDateTime(displayedProfile.updated_at)}</dd>
-            </div>
-          </dl>
-        </section>
 
         {profile.is_me ? <AccountProfileForm profile={displayedProfile} /> : null}
       </section>
