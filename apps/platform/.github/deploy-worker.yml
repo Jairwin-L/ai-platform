@@ -1,3 +1,4 @@
+# Stored outside .github/workflows so GitHub Actions will not load it yet.
 name: Deploy Cloudflare Worker
 
 on:
