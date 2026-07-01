@@ -45,7 +45,7 @@ export async function signUp(payload: { code: string; email: string; password: s
     password: payload.password,
   });
 
-  return assertApiResponse<AuthPayload>(response).data;
+  return assertApiResponse<null>(response).data;
 }
 
 export async function signInWithPassword(payload: { email: string; password: string }) {

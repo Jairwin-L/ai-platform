@@ -1,6 +1,5 @@
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { DATA_ERROR } from '@/constants/error-codes';
 import {
   createDuplicateEmailError,
   createValidationError,
@@ -8,13 +7,7 @@ import {
   passwordSchema,
   verificationCodeSchema,
 } from '@/lib/server/auth-route';
-import { createErrorResponse, createSuccessResponse, withApiHandler } from '@/lib/server';
-import {
-  createUserSession,
-  getAuthUserBySessionToken,
-  setSessionCookie,
-  toAuthPayload,
-} from '@/lib/server/auth-session';
+import { createSuccessResponse, withApiHandler } from '@/lib/server';
 import { createEmailUser, findUserByEmail } from '@/lib/server/auth-user';
 import { normalizeEmail, verifyCode } from '@/lib/server/auth-verification';
 
@@ -47,18 +40,9 @@ export const POST = withApiHandler(async (request: NextRequest) => {
   }
 
   try {
-    const user = await createEmailUser({ email, password: parsed.data.password });
-    const token = await createUserSession(user.id);
-    const authUser = await getAuthUserBySessionToken(token);
+    await createEmailUser({ email, password: parsed.data.password });
 
-    if (!authUser) {
-      return createErrorResponse(DATA_ERROR.CREATE_FAILED, '注册登录状态创建失败', null, 500);
-    }
-
-    const response = createSuccessResponse(toAuthPayload(authUser), '注册成功', 201);
-    setSessionCookie(response, token);
-
-    return response;
+    return createSuccessResponse(null, '注册成功，请登录', 201);
   } catch (error) {
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
       return createDuplicateEmailError();

@@ -22,7 +22,7 @@ export const authSessionMiddleware: ApiMiddleware = async (
 
 export const authMiddleware: ApiMiddleware = async (
   request: NextRequest,
-  context: ApiContext,
+  ctx: ApiContext,
   next: () => Promise<NextResponse>,
 ) => {
   const user = await getRequestAuthUser(request);
@@ -31,7 +31,7 @@ export const authMiddleware: ApiMiddleware = async (
     return createErrorResponse(AUTH_ERROR.UNAUTHORIZED, undefined, null, 401);
   }
 
-  context.user = user;
+  ctx.user = user;
 
   return next();
 };
