@@ -33,7 +33,7 @@ export default async function SiteLayout({
           </div>
         </nav>
       </header>
-      {children}
+      <main className={styles['site-main-container']}>{children}</main>
     </>
   );
 }

@@ -83,7 +83,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const currentMenuPath = getCurrentMenuPath(pathname);
   const [openKeys, setOpenKeys] = useState<string[]>(() => currentMenuPath?.slice(0, -1) ?? []);
   const selectedKey = currentMenuPath?.at(-1);
-  const displayName = user?.nickName || user?.email || '管理员';
+  const displayName = user?.nickName || user?.email || '--';
 
   useEffect(() => {
     if (!collapsed) {
@@ -100,7 +100,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   }
 
   function onHeaderMenuClick({ key }: { key: string }): void {
-    if (key === 'platform') {
+    if (key === 'PLATFORM') {
       router.push('/');
     }
   }
@@ -151,9 +151,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
             <Dropdown
               menu={{
                 items: [
-                  { key: 'platform', icon: <AppstoreOutlined />, label: '平台' },
+                  { key: 'PLATFORM', icon: <AppstoreOutlined />, label: '平台' },
                   { type: 'divider' },
-                  { key: 'sign-out', icon: <LogoutOutlined />, label: '退出登录', disabled: true },
+                  { key: 'SIGN_OUT', icon: <LogoutOutlined />, label: '退出登录', disabled: true },
                 ],
                 onClick: onHeaderMenuClick,
               }}

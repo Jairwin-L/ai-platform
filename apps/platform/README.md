@@ -1,6 +1,6 @@
 # nextjs-starter-kit
 
-基于 Next.js App Router 的业务项目模板，内置 React 19、TypeScript、Sass Module、Ant Design、alova 请求封装、Prisma/PostgreSQL、OpenAPI 文档生成，以及 Docker 与 Cloudflare Workers 的 GitHub Actions 部署流程。
+基于 Next.js App Router 的业务项目模板，内置 React 19、TypeScript、Sass Module、Ant Design、alova 请求封装、Prisma/PostgreSQL、OpenAPI 文档生成，以及 Docker 的 GitHub Actions 部署流程。
 
 ## 功能概览
 
@@ -13,7 +13,7 @@
 - Vite+ 统一管理安装、开发、构建、检查、格式化和 CI 校验。
 - Docker 多阶段构建，包含应用镜像和 Prisma 同步镜像。
 - GitHub Actions 自动校验、构建 GHCR 镜像，并通过 SSH + Docker Compose 部署。
-- 独立 GitHub Actions 使用 `cloudflare/wrangler-action` 构建并部署 Cloudflare Workers。
+<!-- - 独立 GitHub Actions 使用 `cloudflare/wrangler-action` 构建并部署 Cloudflare Workers。 -->
 
 ## 技术栈
 
@@ -183,7 +183,7 @@ vp run verify           # CI 校验
 - `PUT /api/articles/{id}`
 - `DELETE /api/articles/{id}`
 
-文章数据模型位于 `prisma/schema.prisma`，主要字段包括：
+文章数据模型位于 `/prisma/models/articles.prisma`，主要字段包括：
 
 - `title`
 - `slug`
@@ -235,12 +235,13 @@ docker compose -f docker-compose.prod.yml up -d
 
 1. 使用 Vite+ 安装依赖并执行 `vp run verify`。
 2. 构建并推送应用镜像到 GHCR。
-3. 构建并推送迁移镜像到 GHCR。
-4. 通过 SSH 登录服务器。
-5. 同步 Compose 文件和部署脚本。
-6. 拉取镜像、执行 Prisma 同步、重启服务。
+3. 通过 SSH 登录服务器。
+4. 同步 Compose 文件和部署脚本。
+5. 拉取镜像、执行 Prisma 同步、重启服务。
 
 ## Cloudflare Workers 部署
+
+> 已实现，但数据库相关未进行关联配置，以GitHub Action为主
 
 `.github/workflows/deploy-worker.yml` 是独立的 Workers 发布流程，使用 `cloudflare/wrangler-action@v3` 部署 OpenNext 生成的 Worker：
 
