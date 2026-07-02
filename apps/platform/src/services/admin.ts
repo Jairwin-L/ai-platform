@@ -64,6 +64,7 @@ export interface PermissionPayload {
 
 export interface SystemSettings {
   allowRegistration: boolean;
+  byokAllowedOrigins: string;
   defaultLanguage: 'en-US' | 'zh-CN';
   displayName: string;
   maintenanceMode: boolean;

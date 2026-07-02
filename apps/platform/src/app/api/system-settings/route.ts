@@ -16,12 +16,14 @@ const DEFAULT_SETTINGS = {
   allow_registration: true,
   maintenance_mode: false,
   session_policy: 'standard',
+  byok_allowed_origins: '',
 };
 const supportedLanguages = new Set(['zh-CN', 'en-US']);
 const supportedSessionPolicies = new Set(['standard', 'strict']);
 
 interface SystemSettingsPayload {
   allowRegistration?: unknown;
+  byokAllowedOrigins?: unknown;
   defaultLanguage?: unknown;
   displayName?: unknown;
   maintenanceMode?: unknown;
@@ -31,6 +33,7 @@ interface SystemSettingsPayload {
 
 function toSettingsResponse(settings: {
   allow_registration: boolean;
+  byok_allowed_origins: string;
   default_language: string;
   display_name: string;
   maintenance_mode: boolean;
@@ -43,6 +46,7 @@ function toSettingsResponse(settings: {
     supportEmail: settings.support_email ?? '',
     defaultLanguage: settings.default_language,
     allowRegistration: settings.allow_registration,
+    byokAllowedOrigins: settings.byok_allowed_origins,
     maintenanceMode: settings.maintenance_mode,
     sessionPolicy: settings.session_policy,
     updatedAt: settings.updated_at,
@@ -92,6 +96,68 @@ function getAllowedValue(value: unknown, fieldName: string, allowedValues: Set<s
   return selectedValue;
 }
 
+function getOptionalStringValue(value: unknown, fieldName: string, maxLength: number): string {
+  if (value === undefined || value === null || value === '') {
+    return '';
+  }
+
+  if (typeof value !== 'string') {
+    throw new Error(`${fieldName} 必须是字符串`);
+  }
+
+  const trimmedValue = value.trim();
+
+  if (trimmedValue.length > maxLength) {
+    throw new Error(`${fieldName} 无效`);
+  }
+
+  return trimmedValue;
+}
+
+function normalizeByokAllowedOrigins(value: unknown): string {
+  const rawValue = getOptionalStringValue(value, 'byokAllowedOrigins', 2000);
+
+  if (!rawValue) {
+    return '';
+  }
+
+  const origins = rawValue
+    .split(/[\n,]/u)
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  const normalizedOrigins: string[] = [];
+
+  for (const origin of origins) {
+    if (origin === '*') {
+      throw new Error('BYOK Origin 不允许使用通配符');
+    }
+
+    let parsed: URL;
+
+    try {
+      parsed = new URL(origin);
+    } catch {
+      throw new Error('BYOK Origin 格式无效');
+    }
+
+    if (
+      parsed.origin !== origin ||
+      parsed.pathname !== '/' ||
+      parsed.search ||
+      parsed.hash ||
+      !['http:', 'https:'].includes(parsed.protocol)
+    ) {
+      throw new Error('BYOK Origin 必须是精确 origin，例如 https://example.com');
+    }
+
+    if (!normalizedOrigins.includes(parsed.origin)) {
+      normalizedOrigins.push(parsed.origin);
+    }
+  }
+
+  return normalizedOrigins.join('\n');
+}
+
 function isMissingSystemSettingsTable(error: unknown): boolean {
   return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2021';
 }
@@ -120,6 +186,7 @@ function validatePayload(payload: SystemSettingsPayload) {
       'sessionPolicy',
       supportedSessionPolicies,
     ),
+    byok_allowed_origins: normalizeByokAllowedOrigins(payload.byokAllowedOrigins),
   };
 }
 

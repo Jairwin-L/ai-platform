@@ -6,6 +6,7 @@ model SystemSettings {
   allow_registration Boolean  @default(true)
   maintenance_mode   Boolean  @default(false)
   session_policy     String   @default("standard")
+  byok_allowed_origins String  @default("")
   created_at         DateTime @default(now()) @db.Timestamptz(6)
   updated_at         DateTime @default(now()) @db.Timestamptz(6)
 

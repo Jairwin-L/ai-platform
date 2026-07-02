@@ -14,6 +14,7 @@ import settingsStyles from './page.module.scss';
 
 interface SettingsValues {
   allowRegistration: boolean;
+  byokAllowedOrigins: string;
   defaultLanguage: 'en-US' | 'zh-CN';
   displayName: string;
   maintenanceMode: boolean;
@@ -26,6 +27,7 @@ const initialValues: SettingsValues = {
   supportEmail: '',
   defaultLanguage: 'zh-CN',
   allowRegistration: true,
+  byokAllowedOrigins: '',
   maintenanceMode: false,
   sessionPolicy: 'standard',
 };
@@ -149,6 +151,18 @@ export default function SystemSettingsPage() {
                           { label: '标准会话', value: 'standard' },
                           { label: '严格会话', value: 'strict' },
                         ]}
+                      />
+                    </Form.Item>
+                    <Divider />
+                    <Form.Item
+                      label="BYOK 允许来源"
+                      name="byokAllowedOrigins"
+                      extra="每行一个精确 Origin，例如 https://example.com；留空会拒绝 BYOK 保存、删除和聊天请求。"
+                    >
+                      <Input.TextArea
+                        autoSize={{ minRows: 3, maxRows: 6 }}
+                        maxLength={2000}
+                        placeholder="https://example.com"
                       />
                     </Form.Item>
                     <Divider />

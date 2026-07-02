@@ -1,4 +1,5 @@
 import type { LogLevel } from './types';
+import { redactSensitiveData, redactText } from '@/lib/ai/security/redact';
 
 const COLORS: Record<LogLevel, string> = {
   trace: '\x1b[90m',
@@ -14,13 +15,13 @@ const RESET = '\x1b[0m';
 function format(level: LogLevel, msg: string, extra?: object) {
   const timestamp = new Date().toISOString();
   const color = COLORS[level];
-  const head = `${color}[${timestamp}] ${level.toUpperCase().padEnd(5)}${RESET} ${msg}`;
+  const head = `${color}[${timestamp}] ${level.toUpperCase().padEnd(5)}${RESET} ${redactText(msg)}`;
 
   if (!extra || Object.keys(extra).length === 0) {
     return head;
   }
 
-  const body = JSON.stringify(extra, null, 2)
+  const body = JSON.stringify(redactSensitiveData(extra), null, 2)
     .split('\n')
     .map((line) => `    ${line}`)
     .join('\n');
