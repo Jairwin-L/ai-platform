@@ -3,7 +3,7 @@ import styles from './page.module.scss';
 function mockFetch(): Promise<string> {
   return new Promise((resolve) => {
     setTimeout(() => {
-      resolve('我是一个页面');
+      resolve('欢迎来到Nextjs Starter Kit平台');
     }, 1500);
   });
 }
@@ -11,8 +11,8 @@ function mockFetch(): Promise<string> {
 export default async function Page() {
   const data = await mockFetch();
   return (
-    <div>
-      <h1 className={styles.title}>main page, {data}</h1>
-    </div>
+    <>
+      <h1 className={styles.title}>Hello, {data}</h1>
+    </>
   );
 }

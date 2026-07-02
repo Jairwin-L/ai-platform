@@ -17,7 +17,7 @@ Optional environment variables:
   POSTGRES_OLD_IMAGE     Old PostgreSQL image. Defaults to postgres:16-alpine.
   POSTGRES_IMAGE         Target PostgreSQL image. Defaults to postgres:18-alpine.
   POSTGRES_OLD_DATA_TARGET
-                         Old PostgreSQL volume mount target. Defaults to /var/lib/postgresql/data.
+                         Old PostgreSQL volume mount target. Defaults to auto-detect.
   POSTGRES_DATA_TARGET   Target PostgreSQL volume mount target. Defaults to /var/lib/postgresql.
   COMPOSE_SERVICE        Compose app service to stop before dump. Defaults to app.
   POSTGRES_SERVICE       Compose PostgreSQL service. Defaults to postgres.
@@ -64,7 +64,7 @@ app_service="${COMPOSE_SERVICE:-app}"
 postgres_service="${POSTGRES_SERVICE:-postgres}"
 old_image="${POSTGRES_OLD_IMAGE:-postgres:16-alpine}"
 target_image="${POSTGRES_IMAGE:-postgres:18-alpine}"
-old_data_target="${POSTGRES_OLD_DATA_TARGET:-/var/lib/postgresql/data}"
+old_data_target="${POSTGRES_OLD_DATA_TARGET:-}"
 target_data_target="${POSTGRES_DATA_TARGET:-/var/lib/postgresql}"
 dump_dir="${POSTGRES_DUMP_DIR:-.postgres-upgrades}"
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -89,6 +89,56 @@ fi
 
 mkdir -p "${dump_dir}"
 
+get_postgres_major() {
+  local image="$1"
+
+  if [[ "${image}" =~ postgres:([0-9]+) ]]; then
+    printf '%s' "${BASH_REMATCH[1]}"
+  fi
+}
+
+get_volume_pg_version_file() {
+  if ! docker volume inspect "${volume_name}" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  docker run --rm -v "${volume_name}:/pgdata:ro" alpine:3.22 \
+    sh -lc 'find /pgdata -maxdepth 4 -type f -name PG_VERSION 2>/dev/null | head -n 1 | sed "s#^/pgdata/##"'
+}
+
+get_existing_postgres_major() {
+  local version_file="$1"
+
+  if [[ -z "${version_file}" ]]; then
+    return 0
+  fi
+
+  docker run --rm -v "${volume_name}:/pgdata:ro" alpine:3.22 \
+    sh -lc 'cat "/pgdata/$1" 2>/dev/null || true' sh "${version_file}"
+}
+
+get_detected_old_data_target() {
+  local version_file="$1"
+  local version_dir
+
+  if [[ -z "${version_file}" ]]; then
+    return 0
+  fi
+
+  version_dir="$(dirname "${version_file}")"
+  case "${version_dir}" in
+    .)
+      printf '/var/lib/postgresql/data'
+      ;;
+    data)
+      printf '/var/lib/postgresql'
+      ;;
+    *)
+      printf '/var/lib/postgresql'
+      ;;
+  esac
+}
+
 compose() {
   local postgres_image="$1"
   local postgres_data_target="$2"
@@ -110,6 +160,78 @@ compose() {
   env "${compose_env[@]}" docker compose --env-file "${env_file}" -f "${compose_file}" "$@"
 }
 
+print_postgres_diagnostics() {
+  local postgres_image="$1"
+  local postgres_data_target="$2"
+  local label="$3"
+  local container_id
+
+  container_id="$(compose "${postgres_image}" "${postgres_data_target}" ps -q "${postgres_service}" 2>/dev/null || true)"
+
+  echo "${label} PostgreSQL did not become ready." >&2
+  if [[ -n "${container_id}" ]]; then
+    echo "Container status:" >&2
+    docker inspect --format '  id={{.Id}} status={{.State.Status}} exitCode={{.State.ExitCode}} error={{.State.Error}}' "${container_id}" >&2 || true
+  fi
+
+  echo "Recent PostgreSQL logs:" >&2
+  compose "${postgres_image}" "${postgres_data_target}" logs --no-color --tail=80 "${postgres_service}" >&2 || true
+}
+
+wait_for_postgres_ready() {
+  local postgres_image="$1"
+  local postgres_data_target="$2"
+  local label="$3"
+  local container_id
+  local status
+
+  for _ in $(seq 1 60); do
+    container_id="$(compose "${postgres_image}" "${postgres_data_target}" ps -q "${postgres_service}" 2>/dev/null || true)"
+    if [[ -n "${container_id}" ]]; then
+      status="$(docker inspect --format '{{.State.Status}}' "${container_id}" 2>/dev/null || true)"
+      if [[ "${status}" == "running" ]] && compose "${postgres_image}" "${postgres_data_target}" exec -T "${postgres_service}" sh -lc 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"' >/dev/null 2>&1; then
+        return 0
+      fi
+
+      if [[ "${status}" == "exited" || "${status}" == "dead" ]]; then
+        break
+      fi
+    fi
+
+    sleep 2
+  done
+
+  print_postgres_diagnostics "${postgres_image}" "${postgres_data_target}" "${label}"
+  return 1
+}
+
+existing_version_file="$(get_volume_pg_version_file)"
+existing_postgres_major="$(get_existing_postgres_major "${existing_version_file}")"
+target_postgres_major="$(get_postgres_major "${target_image}")"
+old_postgres_major="$(get_postgres_major "${old_image}")"
+
+if [[ -z "${existing_postgres_major}" ]]; then
+  echo "No existing PostgreSQL data volume detected; skipping PostgreSQL upgrade."
+  exit 0
+fi
+
+if [[ -n "${target_postgres_major}" && "${existing_postgres_major}" == "${target_postgres_major}" ]]; then
+  echo "PostgreSQL data volume already targets PostgreSQL ${target_postgres_major}; skipping PostgreSQL upgrade."
+  exit 0
+fi
+
+if [[ -n "${old_postgres_major}" && "${existing_postgres_major}" != "${old_postgres_major}" ]]; then
+  cat >&2 <<EOF
+PostgreSQL data volume was created by PostgreSQL ${existing_postgres_major}, but POSTGRES_OLD_IMAGE targets PostgreSQL ${old_postgres_major}.
+Set POSTGRES_OLD_IMAGE=postgres:${existing_postgres_major}-alpine before running POSTGRES_UPGRADE_MODE=dump-restore.
+EOF
+  exit 1
+fi
+
+if [[ -z "${old_data_target}" ]]; then
+  old_data_target="$(get_detected_old_data_target "${existing_version_file}")"
+fi
+
 echo "Stopping app service before PostgreSQL dump: ${app_service}"
 compose "${old_image}" "${old_data_target}" stop "${app_service}" || true
 
@@ -117,8 +239,7 @@ echo "Starting old PostgreSQL image for dump: ${old_image}"
 compose "${old_image}" "${old_data_target}" up -d "${postgres_service}"
 
 echo "Waiting for old PostgreSQL to become ready."
-compose "${old_image}" "${old_data_target}" exec -T "${postgres_service}" sh -lc \
-  'for i in $(seq 1 60); do pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" && exit 0; sleep 2; done; exit 1'
+wait_for_postgres_ready "${old_image}" "${old_data_target}" "Old"
 
 echo "Writing logical dump: ${dump_file}"
 compose "${old_image}" "${old_data_target}" exec -T "${postgres_service}" sh -lc \
@@ -141,8 +262,7 @@ echo "Starting target PostgreSQL image: ${target_image}"
 compose "${target_image}" "${target_data_target}" up -d "${postgres_service}"
 
 echo "Waiting for target PostgreSQL to become ready."
-compose "${target_image}" "${target_data_target}" exec -T "${postgres_service}" sh -lc \
-  'for i in $(seq 1 60); do pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" && exit 0; sleep 2; done; exit 1'
+wait_for_postgres_ready "${target_image}" "${target_data_target}" "Target"
 
 echo "Restoring logical dump into target PostgreSQL."
 compose "${target_image}" "${target_data_target}" exec -T "${postgres_service}" sh -lc \

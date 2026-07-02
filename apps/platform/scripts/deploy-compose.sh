@@ -17,6 +17,8 @@ Optional environment variables:
   POSTGRES_IMAGE         Override PostgreSQL image. Defaults to postgres:18-alpine.
   POSTGRES_DATA_TARGET   PostgreSQL volume mount target. Defaults to /var/lib/postgresql.
   POSTGRES_OLD_IMAGE     Old PostgreSQL image for major upgrade. Defaults to postgres:16-alpine.
+  POSTGRES_OLD_DATA_TARGET
+                         Old PostgreSQL volume mount target. Defaults to auto-detect.
   POSTGRES_UPGRADE_MODE  Set to "dump-restore" to run PostgreSQL major upgrade before migrations.
   PRISMA_SYNC_COMMAND    Override Prisma sync command. Defaults to "vp run prisma:push:deploy".
   PRISMA_SEED_COMMAND    Override Prisma seed command. Defaults to "vp run prisma:seed:deploy".
@@ -309,16 +311,21 @@ ensure_default_env DATABASE_URL "${default_database_url}"
 
 postgres_image="${POSTGRES_IMAGE:-$(read_env_value POSTGRES_IMAGE)}"
 postgres_old_image="${POSTGRES_OLD_IMAGE:-$(read_env_value POSTGRES_OLD_IMAGE)}"
+postgres_old_data_target="${POSTGRES_OLD_DATA_TARGET:-$(read_env_value POSTGRES_OLD_DATA_TARGET)}"
 postgres_upgrade_mode="${POSTGRES_UPGRADE_MODE:-$(read_env_value POSTGRES_UPGRADE_MODE)}"
 bootstrap_admin_email="${BOOTSTRAP_ADMIN_EMAIL:-$(read_env_value BOOTSTRAP_ADMIN_EMAIL)}"
 bootstrap_admin_strict="${BOOTSTRAP_ADMIN_STRICT:-$(read_env_value BOOTSTRAP_ADMIN_STRICT)}"
 postgres_image="${postgres_image:-${default_postgres_image}}"
 postgres_old_image="${postgres_old_image:-postgres:16-alpine}"
+target_postgres_major="$(get_postgres_major "${postgres_image}")"
+old_postgres_major="$(get_postgres_major "${postgres_old_image}")"
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "docker command is required." >&2
   exit 1
 fi
+
+existing_postgres_major="$(get_existing_postgres_major "$(get_postgres_data_volume)")"
 
 echo "Deploying ${environment}"
 echo "  image:   ${image}"
@@ -337,21 +344,35 @@ if [[ -n "${postgres_upgrade_mode}" ]]; then
     exit 1
   fi
 
-  POSTGRES_UPGRADE_MODE="${postgres_upgrade_mode}" \
-    POSTGRES_OLD_IMAGE="${postgres_old_image}" \
-    POSTGRES_IMAGE="${postgres_image}" \
-    POSTGRES_DATA_TARGET="${POSTGRES_DATA_TARGET:-$(read_env_value POSTGRES_DATA_TARGET)}" \
-    APP_IMAGE="${image}" \
-    MIGRATE_IMAGE="${migrate_image}" \
-    DEPLOY_ENV_FILE="${env_file}" \
-    COMPOSE_PROJECT_NAME="${project_name}" \
-    COMPOSE_FILE="${compose_file}" \
-    COMPOSE_SERVICE="${compose_service}" \
-    scripts/upgrade-postgres-compose.sh "${environment}"
-fi
+  if [[ -z "${existing_postgres_major}" ]]; then
+    echo "No existing PostgreSQL data volume detected; skipping PostgreSQL upgrade."
+  elif [[ -n "${target_postgres_major}" && "${existing_postgres_major}" == "${target_postgres_major}" ]]; then
+    echo "PostgreSQL data volume already targets PostgreSQL ${target_postgres_major}; skipping PostgreSQL upgrade."
+  else
+    if [[ -n "${old_postgres_major}" && "${existing_postgres_major}" != "${old_postgres_major}" ]]; then
+      cat >&2 <<EOF
+PostgreSQL data volume was created by PostgreSQL ${existing_postgres_major}, but POSTGRES_OLD_IMAGE targets PostgreSQL ${old_postgres_major}.
+Set POSTGRES_OLD_IMAGE=postgres:${existing_postgres_major}-alpine before running POSTGRES_UPGRADE_MODE=dump-restore.
+EOF
+      exit 1
+    fi
 
-target_postgres_major="$(get_postgres_major "${postgres_image}")"
-existing_postgres_major="$(get_existing_postgres_major "$(get_postgres_data_volume)")"
+    POSTGRES_UPGRADE_MODE="${postgres_upgrade_mode}" \
+      POSTGRES_OLD_IMAGE="${postgres_old_image}" \
+      POSTGRES_OLD_DATA_TARGET="${postgres_old_data_target}" \
+      POSTGRES_IMAGE="${postgres_image}" \
+      POSTGRES_DATA_TARGET="${POSTGRES_DATA_TARGET:-$(read_env_value POSTGRES_DATA_TARGET)}" \
+      APP_IMAGE="${image}" \
+      MIGRATE_IMAGE="${migrate_image}" \
+      DEPLOY_ENV_FILE="${env_file}" \
+      COMPOSE_PROJECT_NAME="${project_name}" \
+      COMPOSE_FILE="${compose_file}" \
+      COMPOSE_SERVICE="${compose_service}" \
+      scripts/upgrade-postgres-compose.sh "${environment}"
+
+    existing_postgres_major="$(get_existing_postgres_major "$(get_postgres_data_volume)")"
+  fi
+fi
 
 if [[ -n "${existing_postgres_major}" && -n "${target_postgres_major}" && "${existing_postgres_major}" != "${target_postgres_major}" ]]; then
   cat >&2 <<EOF
@@ -367,7 +388,9 @@ compose() {
 }
 
 COMPOSE_PROJECT_NAME="${project_name}" APP_IMAGE="${image}" MIGRATE_IMAGE="${migrate_image}" \
-  docker compose --env-file "${env_file}" -f "${compose_file}" pull "${compose_service}" migrate
+  docker compose --env-file "${env_file}" -f "${compose_file}" pull "${compose_service}" migrate postgres
+
+compose up -d --no-build postgres
 
 compose run --rm migrate sh -lc "${prisma_sync_command}"
 compose run --rm migrate sh -lc "${prisma_seed_command}"

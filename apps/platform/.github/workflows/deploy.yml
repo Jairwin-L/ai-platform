@@ -175,7 +175,9 @@ jobs:
           POSTGRES_USER: ${{ vars.POSTGRES_USER || 'nextjs_starter_kit' }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || vars.POSTGRES_PASSWORD || 'nextjs_starter_kit' }}
           POSTGRES_IMAGE: ${{ vars.POSTGRES_IMAGE || 'postgres:18-alpine' }}
+          POSTGRES_DATA_TARGET: ${{ vars.POSTGRES_DATA_TARGET || '/var/lib/postgresql' }}
           POSTGRES_OLD_IMAGE: ${{ vars.POSTGRES_OLD_IMAGE || 'postgres:16-alpine' }}
+          POSTGRES_OLD_DATA_TARGET: ${{ vars.POSTGRES_OLD_DATA_TARGET || '' }}
           POSTGRES_UPGRADE_MODE: ${{ vars.POSTGRES_UPGRADE_MODE || '' }}
           DATABASE_URL: ${{ secrets.DATABASE_URL || (github.event_name == 'pull_request_target' && 'postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit?schema=public' || 'postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit_dev?schema=public') }}
           BOOTSTRAP_ADMIN_EMAIL: ${{ vars.BOOTSTRAP_ADMIN_EMAIL || 'jairwin@jairwin.cc' }}
@@ -236,7 +238,9 @@ jobs:
           write_env POSTGRES_USER "${POSTGRES_USER}"
           write_env POSTGRES_PASSWORD "${POSTGRES_PASSWORD}"
           write_env POSTGRES_IMAGE "${POSTGRES_IMAGE}"
+          write_env POSTGRES_DATA_TARGET "${POSTGRES_DATA_TARGET}"
           write_env POSTGRES_OLD_IMAGE "${POSTGRES_OLD_IMAGE}"
+          write_env POSTGRES_OLD_DATA_TARGET "${POSTGRES_OLD_DATA_TARGET}"
           write_env POSTGRES_UPGRADE_MODE "${POSTGRES_UPGRADE_MODE}"
           write_env DATABASE_URL "${DATABASE_URL}"
           write_env BOOTSTRAP_ADMIN_EMAIL "${BOOTSTRAP_ADMIN_EMAIL}"
