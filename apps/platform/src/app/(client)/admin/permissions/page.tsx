@@ -8,18 +8,7 @@ import {
   SafetyCertificateOutlined,
   SearchOutlined,
 } from '@ant-design/icons';
-import {
-  Alert,
-  App,
-  Button,
-  Input,
-  Popconfirm,
-  Select,
-  Space,
-  Table,
-  Tag,
-  type TableColumnsType,
-} from 'antd';
+import { Button, Input, Popconfirm, Select, Space, Table, Tag, type TableColumnsType } from 'antd';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -46,10 +35,6 @@ const typeLabel: Record<PermissionType, string> = {
   data: '数据',
 };
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '请求未能完成';
-}
-
 function formatDate(value?: string): string {
   if (!value) {
     return '—';
@@ -62,18 +47,15 @@ function formatDate(value?: string): string {
 }
 
 export default function PermissionsPage() {
-  const { message } = App.useApp();
   const [permissions, setPermissions] = useState<AdminPermission[]>([]);
   const [total, setTotal] = useState(0);
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<PermissionType | 'all'>('all');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const loadPermissions = useCallback(async () => {
     setLoading(true);
-    setError(null);
 
     try {
       const result = await getPermissions({
@@ -85,8 +67,8 @@ export default function PermissionsPage() {
       });
       setPermissions(result.data);
       setTotal(result.total);
-    } catch (requestError) {
-      setError(getErrorMessage(requestError));
+    } catch {
+      // 请求错误由 alova 全局提示处理。
     } finally {
       setLoading(false);
     }
@@ -99,10 +81,9 @@ export default function PermissionsPage() {
   async function removePermission(permission: AdminPermission) {
     try {
       await deletePermission(permission.id);
-      message.success('权限已删除');
       await loadPermissions();
-    } catch (requestError) {
-      message.error(getErrorMessage(requestError));
+    } catch {
+      // 请求错误由 alova 全局提示处理。
     }
   }
 
@@ -193,17 +174,6 @@ export default function PermissionsPage() {
           </Button>
         </Link>
       </section>
-
-      {error && (
-        <Alert
-          className={styles.alert}
-          description={error}
-          showIcon
-          title="无法加载权限"
-          type="error"
-        />
-      )}
-
       <section className={styles.panel}>
         <div className={styles.filters}>
           <Input.Search

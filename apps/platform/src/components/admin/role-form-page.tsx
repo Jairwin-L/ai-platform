@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowLeftOutlined, SaveOutlined, TeamOutlined } from '@ant-design/icons';
-import { Alert, App, Button, Form, Input, Skeleton, Switch, TreeSelect } from 'antd';
+import { Button, Form, Input, Skeleton, Switch, TreeSelect } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -34,10 +34,6 @@ const defaultRoleValues: RoleFormValues = {
   permissions: [],
 };
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '请求未能完成';
-}
-
 function getPermissionTree(nodes: AdminPermission[]): PermissionTreeNode[] {
   return nodes.map((permission) => ({
     title: `${permission.name} · ${permission.code}`,
@@ -47,19 +43,15 @@ function getPermissionTree(nodes: AdminPermission[]): PermissionTreeNode[] {
 }
 
 export function RoleFormPage({ roleId }: { roleId?: string }) {
-  const { message } = App.useApp();
   const router = useRouter();
   const [form] = Form.useForm<RoleFormValues>();
   const [permissionTree, setPermissionTree] = useState<PermissionTreeNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const isEditing = Boolean(roleId);
 
   const loadForm = useCallback(async () => {
     setLoading(true);
-    setError(null);
-
     if (!roleId) {
       const [permissionResult] = await Promise.allSettled([
         getPermissions({ page: 1, pageSize: 1000, tree: true }),
@@ -67,8 +59,6 @@ export function RoleFormPage({ roleId }: { roleId?: string }) {
 
       if (permissionResult.status === 'fulfilled') {
         setPermissionTree(getPermissionTree(permissionResult.value.data));
-      } else {
-        setError(getErrorMessage(permissionResult.reason));
       }
       form.setFieldsValue(defaultRoleValues);
     } else {
@@ -85,14 +75,10 @@ export function RoleFormPage({ roleId }: { roleId?: string }) {
           is_system: role.is_system,
           permissions: role.permissions ?? [],
         });
-      } else {
-        setError(getErrorMessage(roleResult.reason));
       }
 
       if (permissionResult.status === 'fulfilled') {
         setPermissionTree(getPermissionTree(permissionResult.value.data));
-      } else {
-        setError(getErrorMessage(permissionResult.reason));
       }
     }
 
@@ -115,14 +101,12 @@ export function RoleFormPage({ roleId }: { roleId?: string }) {
     try {
       if (roleId) {
         await updateRole(roleId, payload);
-        message.success('角色已更新');
       } else {
         await createRole(payload);
-        message.success('角色已创建');
       }
       router.push('/admin/roles');
-    } catch (requestError) {
-      message.error(getErrorMessage(requestError));
+    } catch {
+      // 请求错误由 alova 全局提示处理。
     } finally {
       setSaving(false);
     }
@@ -143,17 +127,6 @@ export function RoleFormPage({ roleId }: { roleId?: string }) {
         </h1>
         <p>{isEditing ? '更新角色信息和授权范围。' : '创建角色并选择对应的权限范围。'}</p>
       </section>
-
-      {error && (
-        <Alert
-          className={styles.alert}
-          description={error}
-          showIcon
-          title="无法加载表单数据"
-          type="error"
-        />
-      )}
-
       <section className={styles.panel}>
         {loading && <Skeleton active paragraph={{ rows: 8 }} />}
         <Form

@@ -2,8 +2,6 @@
 
 import { DeleteOutlined, KeyOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import {
-  Alert,
-  App,
   Button,
   Form,
   Input,
@@ -57,10 +55,6 @@ const statusOptions: Array<{ color: string; label: string; value: AiCredentialSt
   { color: 'red', label: '无效', value: 'invalid' },
 ];
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '请求未能完成';
-}
-
 function getProviderOption(providerOptions: AiProviderOption[], provider: AiCredentialProvider) {
   return providerOptions.find((item) => item.value === provider);
 }
@@ -107,7 +101,6 @@ function hasBlankCharacter(value: string): boolean {
 }
 
 export default function AiSettingsPage() {
-  const { message } = App.useApp();
   const [form] = Form.useForm<CredentialFormValues>();
   const [credentials, setCredentials] = useState<AiCredential[]>([]);
   const [providerOptions, setProviderOptions] = useState<AiProviderOption[]>([]);
@@ -115,12 +108,9 @@ export default function AiSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    setError(null);
-
     const [credentialsResult, providerOptionsResult] = await Promise.allSettled([
       getAiCredentials(),
       getAiProviderOptions(),
@@ -130,17 +120,12 @@ export default function AiSettingsPage() {
       setCredentials(credentialsResult.value);
     } else {
       setCredentials([]);
-      setError(getErrorMessage(credentialsResult.reason));
     }
 
     if (providerOptionsResult.status === 'fulfilled') {
       setProviderOptions(providerOptionsResult.value);
     } else {
       setProviderOptions([]);
-
-      if (credentialsResult.status === 'fulfilled') {
-        setError(`无法加载 AI Provider 配置：${getErrorMessage(providerOptionsResult.reason)}`);
-      }
     }
 
     setLoading(false);
@@ -174,12 +159,11 @@ export default function AiSettingsPage() {
       };
 
       await createAiCredential(payload);
-      message.success('AI 密钥已保存');
       setModalOpen(false);
       form.resetFields();
       await loadData();
-    } catch (requestError) {
-      message.error(getErrorMessage(requestError));
+    } catch {
+      // 请求错误由 alova 全局提示处理。
     } finally {
       setSaving(false);
     }
@@ -190,10 +174,9 @@ export default function AiSettingsPage() {
 
     try {
       await deleteAiCredential(credential.credentialId);
-      message.success('AI 密钥已删除');
       await loadData();
-    } catch (requestError) {
-      message.error(getErrorMessage(requestError));
+    } catch {
+      // 请求错误由 alova 全局提示处理。
     } finally {
       setDeletingId(null);
     }
@@ -282,8 +265,6 @@ export default function AiSettingsPage() {
       ),
     },
   ];
-  const providersEmpty = !loading && providerOptions.length === 0;
-
   return (
     <>
       <main className={styles.page}>
@@ -303,16 +284,6 @@ export default function AiSettingsPage() {
             新增密钥
           </Button>
         </section>
-        {(error || providersEmpty) && (
-          <Alert
-            className={styles.alert}
-            description={
-              error || '当前没有可用的 AI Provider，请联系管理员在系统配置中新增或启用 Provider。'
-            }
-            showIcon
-            type={error ? 'error' : 'warning'}
-          />
-        )}
         <section className={styles.panel}>
           <div className={styles.filters}>
             <span className={styles.summary}>共 {credentials.length} 个密钥</span>

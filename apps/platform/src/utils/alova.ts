@@ -27,7 +27,14 @@ interface AlovaApiResponse {
   message?: string;
 }
 
+interface AlovaErrorResponse {
+  error?: {
+    message?: string;
+  };
+}
+
 let alovaMessageApi: AlovaMessageApi | null = null;
+const shownResponseErrors = new WeakSet<Error>();
 
 /**
  * @func setAlovaMessageApi
@@ -50,6 +57,81 @@ function isApiResponse(data: unknown): data is AlovaApiResponse {
 }
 
 /**
+ * @func isErrorResponse
+ * @desc 判断响应数据是否包含错误信息结构。
+ * @param {unknown} data 响应数据。
+ * @returns {data is AlovaErrorResponse} 是否包含错误信息结构。
+ */
+function isErrorResponse(data: unknown): data is AlovaErrorResponse {
+  return typeof data === 'object' && data !== null && 'error' in data;
+}
+
+/**
+ * @func isShownError
+ * @desc 判断错误是否已经展示过全局提示。
+ * @param {unknown} error 错误对象。
+ * @returns {boolean} 是否已经展示过全局提示。
+ */
+function isShownError(error: unknown): boolean {
+  return error instanceof Error && shownResponseErrors.has(error);
+}
+
+/**
+ * @func createShownError
+ * @desc 创建已展示全局提示的错误对象。
+ * @param {string} message 错误提示文本。
+ * @returns {Error} 错误对象。
+ */
+function createShownError(message: string): Error {
+  const error = new Error(message);
+  shownResponseErrors.add(error);
+
+  return error;
+}
+
+/**
+ * @func parseResponseJson
+ * @desc 安全解析响应 JSON 数据。
+ * @param {Response} response fetch 响应对象。
+ * @returns {Promise<unknown>} 响应体 JSON 数据。
+ */
+async function parseResponseJson(response: Response): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch {
+    // 非 JSON 响应回退到 HTTP 状态提示，避免解析错误覆盖接口语义。
+    return null;
+  }
+}
+
+/**
+ * @func getResponseMessage
+ * @desc 获取接口响应中的提示文本。
+ * @param {unknown} data 响应数据。
+ * @param {string} fallback 默认提示。
+ * @returns {string} 响应提示文本。
+ */
+function getResponseMessage(data: unknown, fallback: string): string {
+  if (isApiResponse(data) && data.message) {
+    return data.message;
+  }
+
+  if (isErrorResponse(data) && data.error?.message) {
+    return data.error.message;
+  }
+
+  if (typeof data === 'object' && data !== null && 'message' in data) {
+    const { message } = data;
+
+    if (typeof message === 'string' && message) {
+      return message;
+    }
+  }
+
+  return fallback;
+}
+
+/**
  * @func showGlobalSuccessMessage
  * @desc 根据请求元数据展示全局成功提示。
  * @param {unknown} data 响应数据。
@@ -57,15 +139,13 @@ function isApiResponse(data: unknown): data is AlovaApiResponse {
  * @returns {void}
  */
 function showGlobalSuccessMessage(data: unknown, method?: AlovaMethodContext): void {
-  if (!method?.meta?.showSuccessMessage || !isApiResponse(data) || !data.success) {
+  if (!method?.meta?.showSuccessMessage) {
     return;
   }
 
-  const content = method.meta.successMessage ?? data.message;
+  const content = method.meta.successMessage ?? getResponseMessage(data, '操作成功');
 
-  if (content) {
-    alovaMessageApi?.success(content);
-  }
+  alovaMessageApi?.success(content);
 }
 
 /**
@@ -90,6 +170,17 @@ function showGlobalErrorMessage(content: string): void {
 }
 
 /**
+ * @func throwGlobalResponseError
+ * @desc 展示响应错误并抛出已标记错误。
+ * @param {string} content 错误提示文本。
+ * @returns {never}
+ */
+function throwGlobalResponseError(content: string): never {
+  showGlobalErrorMessage(content);
+  throw createShownError(content);
+}
+
+/**
  * @func parseSuccessResponse
  * @desc 解析响应 JSON 数据并处理全局成功提示。
  * @param {Response} response fetch 响应对象。
@@ -100,12 +191,14 @@ async function parseSuccessResponse(
   response: Response,
   method?: AlovaMethodContext,
 ): Promise<unknown> {
-  const data = await response.json();
+  const data = await parseResponseJson(response);
+
+  if (!response.ok) {
+    throwGlobalResponseError(getResponseMessage(data, response.statusText || '请求失败'));
+  }
 
   if (isApiResponse(data) && !data.success) {
-    const message = data.message || '请求失败';
-    showGlobalErrorMessage(message);
-    throw new Error(message);
+    throwGlobalResponseError(getResponseMessage(data, '请求失败'));
   }
 
   showGlobalSuccessMessage(data, method);
@@ -120,7 +213,10 @@ async function parseSuccessResponse(
  * @returns {never}
  */
 function handleResponseError(error: unknown): never {
-  showGlobalErrorMessage(getErrorMessage(error, '请求失败'));
+  if (!isShownError(error)) {
+    showGlobalErrorMessage(getErrorMessage(error, '请求失败'));
+  }
+
   throw error;
 }
 

@@ -66,6 +66,7 @@
 - 不随意改动构建配置（`next.config.ts`、`tsconfig.json`、`vite.config.ts`、`package.json`、`Dockerfile`、`docker-compose*.yml`、`.github/workflows/deploy.yml`、Stylelint/Prettier 配置），除非需求明确要求。
 - 不引入与需求无关的新依赖；如确需引入，须说明用途与体积影响。
 - 避免重复实现：已有工具函数（`src/utils/`）、请求封装（`src/utils/alova.ts`、`src/services/`）、组件可复用时不要新增平行实现。
+- 接口层响应提示统一在 `src/utils/alova.ts` 全局处理：接口失败返回的错误信息使用 `message.error`，接口成功提示使用 `message.success`；业务组件与 `src/services/` 不要重复调用 `message.error` / `message.success` 处理 alova 接口响应。纯前端校验、上传进度、编辑器图片上传等非 alova 接口交互提示可在组件内按需处理。
 - 单文件代码行数上限：每个页面（`src/app/**/page.tsx`、`layout.tsx` 等）、每个组件文件不得超过 500 行（含注释与空行）；超过时必须按职责拆分为子组件 / 子模块，不允许通过删注释、压行等方式绕过该限制。
 - App Router 中区分 Server Component / Client Component，需要 `"use client"` 时务必显式声明，且只在确有客户端交互时使用。
 - CSS Module 多词类名必须使用 kebab-case，并通过 bracket notation 访问，例如 `.auth-page` 对应 `styles["auth-page"]`；单词类名保持不变，例如 `.auth` 对应 `styles.auth`。

@@ -6,7 +6,7 @@ import {
   SettingOutlined,
   UserSwitchOutlined,
 } from '@ant-design/icons';
-import { App, Button, Card, Divider, Form, Input, Select, Switch, Tabs } from 'antd';
+import { Button, Card, Divider, Form, Input, Select, Switch, Tabs } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
 import { getSystemSettings, updateSystemSettings, type SystemSettings } from '@/services/admin';
 import styles from '../resource-page.module.scss';
@@ -45,7 +45,6 @@ function getSettingsFormValues(settings: SystemSettings): SettingsValues {
 }
 
 export default function SystemSettingsPage() {
-  const { message } = App.useApp();
   const [form] = Form.useForm<SettingsValues>();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -55,14 +54,12 @@ export default function SystemSettingsPage() {
     try {
       const settings = await getSystemSettings();
       form.setFieldsValue(getSettingsFormValues(settings));
-    } catch (requestError) {
-      const errorMessage =
-        requestError instanceof Error ? requestError.message : '加载系统设置失败';
-      message.error(errorMessage);
+    } catch {
+      // 请求错误由 alova 全局提示处理。
     } finally {
       setLoading(false);
     }
-  }, [form, message]);
+  }, [form]);
 
   useEffect(() => {
     loadSettings();
@@ -75,9 +72,8 @@ export default function SystemSettingsPage() {
         ...values,
         supportEmail: values.supportEmail ?? '',
       });
-      message.success('系统设置已保存');
-    } catch (requestError) {
-      message.error(requestError instanceof Error ? requestError.message : '保存系统设置失败');
+    } catch {
+      // 请求错误由 alova 全局提示处理。
     } finally {
       setSaving(false);
     }

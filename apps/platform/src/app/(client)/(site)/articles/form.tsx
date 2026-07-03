@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Alert, Button, Form, Input, Space, Switch, Typography } from 'antd';
+import { Button, Form, Input, message, Space, Switch, Typography } from 'antd';
 import { DynamicSimpleEditor } from '@/components/editor/dynamic-editor';
 import { DynamicMarkdownEditor } from '@/components/markdown-editor/dynamic-editor';
 import {
@@ -38,7 +38,6 @@ export default function ArticleForm(props: ArticleFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [currentArticle, setCurrentArticle] = useState(article);
   const [loadingArticle, setLoadingArticle] = useState(mode === 'edit' && !article);
-  const [errorMessage, setErrorMessage] = useState('');
   const isEdit = mode === 'edit';
 
   const onFinish = async (values: ArticleFormValues) => {
@@ -54,7 +53,7 @@ export default function ArticleForm(props: ArticleFormProps) {
 
       if (isEdit) {
         if (!currentArticle) {
-          setErrorMessage('文章尚未加载完成');
+          message.error('文章尚未加载完成');
           return;
         }
 
@@ -65,8 +64,8 @@ export default function ArticleForm(props: ArticleFormProps) {
 
       router.push('/articles');
       router.refresh();
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : '保存文章失败');
+    } catch {
+      // 请求错误由 alova 全局提示处理。
     } finally {
       setSubmitting(false);
     }
@@ -78,8 +77,6 @@ export default function ArticleForm(props: ArticleFormProps) {
       }
 
       setLoadingArticle(true);
-      setErrorMessage('');
-
       try {
         const nextArticle = await getArticle(articleId);
         setCurrentArticle(nextArticle);
@@ -91,8 +88,8 @@ export default function ArticleForm(props: ArticleFormProps) {
           note: nextArticle.note,
           published: nextArticle.published,
         });
-      } catch (error) {
-        setErrorMessage(error instanceof Error ? error.message : '文章加载失败');
+      } catch {
+        // 请求错误由 alova 全局提示处理。
       } finally {
         setLoadingArticle(false);
       }
@@ -109,9 +106,6 @@ export default function ArticleForm(props: ArticleFormProps) {
           </Title>
           <Button href="/articles">返回列表</Button>
         </div>
-
-        {errorMessage ? <Alert showIcon type="error" title={errorMessage} /> : null}
-
         <div className={styles.card}>
           <Form<ArticleFormValues>
             form={form}

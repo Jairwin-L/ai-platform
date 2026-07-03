@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowLeftOutlined, SafetyCertificateOutlined, SaveOutlined } from '@ant-design/icons';
-import { Alert, App, Button, Form, Input, Select, Skeleton } from 'antd';
+import { Button, Form, Input, Select, Skeleton } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -31,10 +31,6 @@ const typeLabel: Record<PermissionType, string> = {
   data: '数据',
 };
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '请求未能完成';
-}
-
 function flattenPermissions(permissions: AdminPermission[]): AdminPermission[] {
   return permissions.flatMap((permission) => [
     permission,
@@ -49,19 +45,16 @@ export function PermissionFormPage({
   permissionId?: string;
   parentId?: string;
 }) {
-  const { message } = App.useApp();
   const router = useRouter();
   const [form] = Form.useForm<PermissionFormValues>();
   const [permissions, setPermissions] = useState<AdminPermission[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const isEditing = Boolean(permissionId);
   const flatPermissions = useMemo(() => flattenPermissions(permissions), [permissions]);
 
   const loadForm = useCallback(async () => {
     setLoading(true);
-    setError(null);
 
     if (!permissionId) {
       const [permissionsResult] = await Promise.allSettled([
@@ -70,8 +63,6 @@ export function PermissionFormPage({
 
       if (permissionsResult.status === 'fulfilled') {
         setPermissions(permissionsResult.value.data);
-      } else {
-        setError(getErrorMessage(permissionsResult.reason));
       }
       form.setFieldsValue({
         name: '',
@@ -95,14 +86,10 @@ export function PermissionFormPage({
           parent_id: permission.parent_id ?? undefined,
           type: permission.type,
         });
-      } else {
-        setError(getErrorMessage(permissionResult.reason));
       }
 
       if (permissionsResult.status === 'fulfilled') {
         setPermissions(permissionsResult.value.data);
-      } else {
-        setError(getErrorMessage(permissionsResult.reason));
       }
     }
 
@@ -126,14 +113,12 @@ export function PermissionFormPage({
     try {
       if (permissionId) {
         await updatePermission(permissionId, payload);
-        message.success('权限已更新');
       } else {
         await createPermission(payload);
-        message.success('权限已创建');
       }
       router.push('/admin/permissions');
-    } catch (requestError) {
-      message.error(getErrorMessage(requestError));
+    } catch {
+      // 请求错误由 alova 全局提示处理。
     } finally {
       setSaving(false);
     }
@@ -161,17 +146,6 @@ export function PermissionFormPage({
         </h1>
         <p>{isEditing ? '更新权限名称、层级及访问类型。' : '创建页面、模块、操作或数据级权限。'}</p>
       </section>
-
-      {error && (
-        <Alert
-          className={styles.alert}
-          description={error}
-          showIcon
-          title="无法加载表单数据"
-          type="error"
-        />
-      )}
-
       <section className={styles.panel}>
         {loading && <Skeleton active paragraph={{ rows: 8 }} />}
         <Form

@@ -8,17 +8,7 @@ import {
   SearchOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
-import {
-  Alert,
-  App,
-  Button,
-  Input,
-  Popconfirm,
-  Space,
-  Table,
-  Tag,
-  type TableColumnsType,
-} from 'antd';
+import { Button, Input, Popconfirm, Space, Table, Tag, type TableColumnsType } from 'antd';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { deleteRole, getRoles, type AdminRole } from '@/services/admin';
@@ -31,30 +21,22 @@ function formatDate(value: string): string {
   }).format(new Date(value));
 }
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '请求未能完成';
-}
-
 export default function RolesPage() {
-  const { message } = App.useApp();
   const [roles, setRoles] = useState<AdminRole[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const loadRoles = useCallback(async () => {
     setLoading(true);
-    setError(null);
-
     try {
       const result = await getRoles({ page, pageSize: 10, searchTerm });
       setRoles(result.data);
       setTotal(result.total);
-    } catch (requestError) {
-      setError(getErrorMessage(requestError));
+    } catch {
+      // 请求错误由 alova 全局提示处理。
     } finally {
       setLoading(false);
     }
@@ -67,14 +49,13 @@ export default function RolesPage() {
   async function removeRole(role: AdminRole) {
     try {
       await deleteRole(role.id);
-      message.success('角色已删除');
       if (roles.length === 1 && page > 1) {
         setPage((value) => value - 1);
       } else {
         await loadRoles();
       }
-    } catch (requestError) {
-      message.error(getErrorMessage(requestError));
+    } catch {
+      // 请求错误由 alova 全局提示处理。
     }
   }
 
@@ -154,17 +135,6 @@ export default function RolesPage() {
           </Button>
         </Link>
       </section>
-
-      {error && (
-        <Alert
-          className={styles.alert}
-          description={error}
-          showIcon
-          title="无法加载角色"
-          type="error"
-        />
-      )}
-
       <section className={styles.panel}>
         <div className={styles.filters}>
           <Input.Search

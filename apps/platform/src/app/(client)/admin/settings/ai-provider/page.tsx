@@ -1,7 +1,7 @@
 'use client';
 
 import { DeleteOutlined, PlusOutlined, RobotOutlined, SaveOutlined } from '@ant-design/icons';
-import { Alert, App, Button, Card, Form, Input, Select, Switch } from 'antd';
+import { Button, Card, Form, Input, Select, Switch } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
 import {
   getAdminAiProviderOptions,
@@ -74,23 +74,20 @@ function hasDuplicateProviderValue(options: AiProviderOption[], value: string, i
 }
 
 export default function AiProviderSettingsPage() {
-  const { message } = App.useApp();
   const [form] = Form.useForm<ProviderOptionsValues>();
   const aiProviderOptions = Form.useWatch('aiProviderOptions', form) ?? [];
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const loadSettings = useCallback(async () => {
     setLoading(true);
-    setError(null);
 
     try {
       const nextProviderOptions = await getAdminAiProviderOptions();
 
       form.setFieldsValue({ aiProviderOptions: nextProviderOptions });
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : '无法加载 AI Provider 配置');
+    } catch {
+      // 请求错误由 alova 全局提示处理。
     } finally {
       setLoading(false);
     }
@@ -108,10 +105,8 @@ export default function AiProviderSettingsPage() {
         normalizeAiProviderOptions(values.aiProviderOptions),
       );
       form.setFieldsValue({ aiProviderOptions: nextProviderOptions });
-    } catch (requestError) {
-      message.error(
-        requestError instanceof Error ? requestError.message : '保存 AI Provider 配置失败',
-      );
+    } catch {
+      // 请求错误由 alova 全局提示处理。
     } finally {
       setSaving(false);
     }
@@ -127,14 +122,6 @@ export default function AiProviderSettingsPage() {
           <p>配置用户 AI 密钥页面可选择的 Provider。删除或禁用后不会出现在新增密钥下拉选项中。</p>
         </div>
       </section>
-      {(error || (!loading && !aiProviderOptions.length)) && (
-        <Alert
-          className={styles.alert}
-          description={error || '当前没有配置任何 Provider，用户将无法新增 AI 密钥。'}
-          showIcon
-          type={error ? 'error' : 'warning'}
-        />
-      )}
       <Card className={pageStyles.card} loading={loading} variant="borderless">
         <Form form={form} initialValues={initialValues} layout="vertical" onFinish={onFinish}>
           <Form.List name="aiProviderOptions">

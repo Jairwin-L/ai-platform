@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowLeftOutlined, SaveOutlined, UserOutlined } from '@ant-design/icons';
-import { Alert, App, Button, Form, Input, Select, Skeleton } from 'antd';
+import { Button, Form, Input, Select, Skeleton } from 'antd';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
@@ -31,16 +31,11 @@ const statusOptions: Array<{ label: string; value: UserStatus }> = [
   { label: '已停用', value: 'inactive' },
 ];
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '请求未能完成';
-}
-
 function getRoleIds(user: UserProfile): number[] {
   return user.roles.map((role) => role.id);
 }
 
 export default function EditUserPage() {
-  const { message } = App.useApp();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [form] = Form.useForm<UserFormValues>();
@@ -48,7 +43,6 @@ export default function EditUserPage() {
   const [roles, setRoles] = useState<AdminRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const loadForm = useCallback(async () => {
     if (!id) {
@@ -56,7 +50,6 @@ export default function EditUserPage() {
     }
 
     setLoading(true);
-    setError(null);
     const [userResult, rolesResult] = await Promise.allSettled([
       getUserProfileById(id),
       getRoles({ page: 1, pageSize: 100 }),
@@ -73,14 +66,10 @@ export default function EditUserPage() {
         status: result.status as UserStatus,
         roleIds: getRoleIds(result),
       });
-    } else {
-      setError(getErrorMessage(userResult.reason));
     }
 
     if (rolesResult.status === 'fulfilled') {
       setRoles(rolesResult.value.data);
-    } else if (userResult.status === 'fulfilled') {
-      setError(`无法加载角色：${getErrorMessage(rolesResult.reason)}`);
     }
 
     setLoading(false);
@@ -105,10 +94,9 @@ export default function EditUserPage() {
         status: values.status,
         roleIds: values.roleIds ?? [],
       });
-      message.success('用户已更新');
       router.push(`/admin/users/${id}`);
-    } catch (requestError) {
-      message.error(getErrorMessage(requestError));
+    } catch {
+      // 请求错误由 alova 全局提示处理。
     } finally {
       setSaving(false);
     }
@@ -127,17 +115,6 @@ export default function EditUserPage() {
         </h1>
         <p>更新用户的资料、角色和账号状态。</p>
       </section>
-
-      {error && (
-        <Alert
-          className={styles.alert}
-          description={error}
-          showIcon
-          title="无法加载编辑表单"
-          type="error"
-        />
-      )}
-
       <section className={styles.panel}>
         {loading && <Skeleton active paragraph={{ rows: 8 }} />}
         <Form

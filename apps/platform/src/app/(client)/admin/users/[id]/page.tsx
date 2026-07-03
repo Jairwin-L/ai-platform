@@ -7,7 +7,7 @@ import {
   SafetyCertificateOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import { Alert, Avatar, Button, Descriptions, Skeleton, Space, Tag } from 'antd';
+import { Avatar, Button, Descriptions, Skeleton, Space, Tag } from 'antd';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
@@ -21,10 +21,6 @@ const statusLabels: Record<string, { color: string; label: string }> = {
   banned: { color: 'red', label: '已封禁' },
   inactive: { color: 'default', label: '已停用' },
 };
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '请求未能完成';
-}
 
 function getDisplayName(user: UserProfile): string {
   return user.full_name || user.nick_name || user.user_name || user.email || '未命名用户';
@@ -45,7 +41,6 @@ export default function UserDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const loadUser = useCallback(async () => {
     if (!id) {
@@ -53,12 +48,11 @@ export default function UserDetailsPage() {
     }
 
     setLoading(true);
-    setError(null);
     try {
       setUser(await getUserProfileById(id));
-    } catch (requestError) {
+    } catch {
       setUser(null);
-      setError(getErrorMessage(requestError));
+      // 请求错误由 alova 全局提示处理。
     } finally {
       setLoading(false);
     }
@@ -94,17 +88,6 @@ export default function UserDetailsPage() {
           </Link>
         )}
       </section>
-
-      {error && (
-        <Alert
-          className={styles.alert}
-          description={error}
-          showIcon
-          title="无法加载用户详情"
-          type="error"
-        />
-      )}
-
       <section className={styles.panel}>
         {loading && <Skeleton active avatar paragraph={{ rows: 8 }} />}
         {user && !loading && (

@@ -1,7 +1,7 @@
 'use client';
 
 import { EditOutlined, SaveOutlined } from '@ant-design/icons';
-import { App, Button, Form, Input } from 'antd';
+import { Button, Form, Input } from 'antd';
 import { useState } from 'react';
 import { usePermission } from '@/hooks/use-permission';
 import { updateUser, type UserProfile } from '@/services/users';
@@ -16,12 +16,7 @@ interface AccountProfileFormProps {
   profile: UserProfile;
 }
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '资料更新失败，请稍后重试';
-}
-
 export function AccountProfileForm({ profile }: AccountProfileFormProps) {
-  const { message } = App.useApp();
   const { setCurrentUserProfile } = usePermission();
   const [form] = Form.useForm<ProfileFormValues>();
   const [editing, setEditing] = useState(false);
@@ -50,8 +45,8 @@ export function AccountProfileForm({ profile }: AccountProfileFormProps) {
       const updatedProfile = await updateUser(profile.id, values);
       setCurrentUserProfile(updatedProfile);
       setEditing(false);
-    } catch (error) {
-      message.error(getErrorMessage(error));
+    } catch {
+      // 请求错误由 alova 全局提示处理。
     } finally {
       setSaving(false);
     }

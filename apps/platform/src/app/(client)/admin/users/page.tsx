@@ -13,11 +13,10 @@ import {
   UserOutlined,
 } from '@ant-design/icons';
 import {
-  Alert,
-  App,
   Avatar,
   Button,
   Input,
+  message,
   Select,
   Space,
   Table,
@@ -38,10 +37,6 @@ const statusOptions: Array<{ color: string; label: string; value: UserStatus }> 
   { color: 'red', label: '已封禁', value: 'banned' },
   { color: 'default', label: '已停用', value: 'inactive' },
 ];
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '请求未能完成';
-}
 
 function getDisplayName(user: UserListItem): string {
   return user.full_name || user.nick_name || user.user_name || user.email || '未命名用户';
@@ -65,7 +60,6 @@ function formatDate(value: string | null): string {
 }
 
 export default function UsersPage() {
-  const { message } = App.useApp();
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [roles, setRoles] = useState<AdminRole[]>([]);
   const [total, setTotal] = useState(0);
@@ -75,11 +69,9 @@ export default function UsersPage() {
   const [filterStatus, setFilterStatus] = useState<UserStatus | 'all'>('active');
   const [filterRole, setFilterRole] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    setError(null);
 
     const [usersResult, rolesResult] = await Promise.allSettled([
       getUsers({ page, pageSize, searchTerm, status: filterStatus, role: filterRole }),
@@ -92,13 +84,10 @@ export default function UsersPage() {
     } else {
       setUsers([]);
       setTotal(0);
-      setError(getErrorMessage(usersResult.reason));
     }
 
     if (rolesResult.status === 'fulfilled') {
       setRoles(rolesResult.value.data);
-    } else if (usersResult.status === 'fulfilled') {
-      setError(`无法加载角色：${getErrorMessage(rolesResult.reason)}`);
     }
 
     setLoading(false);
@@ -111,10 +100,9 @@ export default function UsersPage() {
   async function updateUserStatus(user: UserListItem, status: UserStatus) {
     try {
       await updateUser(user.id, { status });
-      message.success(status === 'active' ? '用户已启用' : '用户已封禁');
       await loadData();
-    } catch (requestError) {
-      message.error(getErrorMessage(requestError));
+    } catch {
+      // 请求错误由 alova 全局提示处理。
     }
   }
 
@@ -253,17 +241,6 @@ export default function UsersPage() {
           </Button>
         </Space>
       </section>
-
-      {error && (
-        <Alert
-          className={styles.alert}
-          description={error}
-          showIcon
-          title="无法加载用户"
-          type="error"
-        />
-      )}
-
       <section className={styles.panel}>
         <div className={styles.filters}>
           <Input.Search
