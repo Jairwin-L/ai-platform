@@ -48,7 +48,7 @@ export default async function RootLayout({
         <meta name="msapplication-TileImage" content="/icon/ms-icon-144x144.png" />
         <meta name="theme-color" content="#fff" />
       </head>
-      <body>
+      <body className="app-body">
         <AntdRegistry>
           <AntdProvider>
             <Wrapper initialAuthPayload={initialAuthPayload}>{children}</Wrapper>

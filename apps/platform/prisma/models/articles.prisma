@@ -4,6 +4,7 @@ model Article {
   slug      String   @unique @db.VarChar(160)
   summary   String?  @db.VarChar(240)
   content   String
+  note      String?
   published Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

@@ -162,9 +162,12 @@ export default function ArticlesClient({ initialData, initialKeyword }: Articles
     {
       title: '操作',
       key: 'actions',
-      width: 150,
+      width: 210,
       render: (_, article) => (
         <Space>
+          <Button type="link" href={`/articles/${article.id}`}>
+            查看
+          </Button>
           <Button type="link" href={`/articles/${article.id}/edit`}>
             编辑
           </Button>
@@ -226,12 +229,10 @@ export default function ArticlesClient({ initialData, initialKeyword }: Articles
     <main className={styles.page}>
       <section className={styles.container}>
         <div className={styles.header}>
-          <div>
-            <Title level={2} className={styles.title}>
-              文章管理
-            </Title>
-          </div>
-          <Button type="primary" href="/articles/new">
+          <Title level={2} className={styles.title}>
+            文章管理
+          </Title>
+          <Button type="primary" href="/articles/create">
             新增文章
           </Button>
         </div>

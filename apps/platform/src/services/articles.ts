@@ -6,6 +6,7 @@ export interface Article {
   slug: string;
   summary: string | null;
   content: string;
+  note: string | null;
   published: boolean;
   createdAt: string;
   updatedAt: string;
@@ -16,6 +17,7 @@ export interface ArticleFormValues {
   slug: string;
   summary?: string | null;
   content: string;
+  note?: string | null;
   published?: boolean;
 }
 

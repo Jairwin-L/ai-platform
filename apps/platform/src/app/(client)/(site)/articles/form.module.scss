@@ -1,7 +1,6 @@
 .page {
   min-height: 100vh;
   padding: 2rem 1rem;
-  background: #f8fafc;
   color: #020617;
 }
 
@@ -16,19 +15,12 @@
 .header {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 1rem;
 }
 
 .title {
   margin-bottom: 0.5rem !important;
-}
-
-.card {
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  background: #fff;
-  box-shadow: 0 1px 2px rgb(15 23 42 / 6%);
 }
 
 .form-actions {
@@ -70,8 +62,8 @@
 @media (min-width: 768px) {
   .header {
     flex-direction: row;
-    align-items: flex-end;
     justify-content: space-between;
+    align-items: center;
   }
 }
 

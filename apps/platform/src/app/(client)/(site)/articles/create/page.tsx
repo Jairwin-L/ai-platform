@@ -1,5 +1,5 @@
 import ArticleForm from '../form';
 
-export default function NewArticlePage() {
+export default function Page() {
   return <ArticleForm mode="create" />;
 }

@@ -1,14 +1,12 @@
 import ArticleForm from '../../form';
 
-export const dynamic = 'force-dynamic';
-
-interface EditArticlePageProps {
+interface PageProps {
   params: Promise<{
     id: string;
   }>;
 }
 
-export default async function EditArticlePage({ params }: EditArticlePageProps) {
+export default async function Page({ params }: PageProps) {
   const { id } = await params;
 
   return <ArticleForm mode="edit" articleId={id} />;

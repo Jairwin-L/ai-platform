@@ -142,6 +142,18 @@ function toCredentialStatus(
   };
 }
 
+async function ensureSettledTasks(tasks: Array<Promise<unknown>>): Promise<void> {
+  const results = await Promise.allSettled(tasks);
+
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      continue;
+    }
+
+    throw result.reason;
+  }
+}
+
 export function buildCredentialExpiry(ttlOption?: ByokTtlOption): {
   expiresAt: string;
   ttlSeconds: number;
@@ -224,43 +236,47 @@ export async function listStoredApiCredentials(
     createByokCredentialRedisKey(userId, credentialId),
   );
   const rawValues = await client.mGet(redisKeys);
-  const statuses: StoredCredentialStatus[] = [];
+  const statusResults = await Promise.allSettled(
+    credentialIds.map(async (credentialId, index) => {
+      const redisKey = redisKeys[index];
+      const raw = rawValues[index];
+      const ttl = await client.ttl(redisKey);
 
-  for (let index = 0; index < credentialIds.length; index += 1) {
-    const credentialId = credentialIds[index];
-    const redisKey = redisKeys[index];
-    const raw = rawValues[index];
-    const ttl = await client.ttl(redisKey);
+      if (ttl === -2 || !raw) {
+        await client.zRem(indexKey, credentialId);
+        return null;
+      }
 
-    if (ttl === -2 || !raw) {
-      await client.zRem(indexKey, credentialId);
-      continue;
-    }
+      if (ttl === -1) {
+        await ensureSettledTasks([client.del(redisKey), client.zRem(indexKey, credentialId)]);
+        writeByokAuditEvent({
+          eventType: BYOK_AUDIT_EVENT.KEY_TTL_MISSING_REMOVED,
+          actorId: userId,
+          result: 'failed',
+          reasonCode: 'TTL_MISSING',
+        });
+        return null;
+      }
 
-    if (ttl === -1) {
-      await client.del(redisKey);
-      await client.zRem(indexKey, credentialId);
-      writeByokAuditEvent({
-        eventType: BYOK_AUDIT_EVENT.KEY_TTL_MISSING_REMOVED,
-        actorId: userId,
-        result: 'failed',
-        reasonCode: 'TTL_MISSING',
-      });
-      continue;
-    }
+      const payload = encryptedPayloadSchema.parse(JSON.parse(raw));
 
-    const payload = encryptedPayloadSchema.parse(JSON.parse(raw));
+      if (payload.credentialId !== credentialId) {
+        await ensureSettledTasks([client.del(redisKey), client.zRem(indexKey, credentialId)]);
+        return null;
+      }
 
-    if (payload.credentialId !== credentialId) {
-      await client.del(redisKey);
-      await client.zRem(indexKey, credentialId);
-      continue;
-    }
+      return toCredentialStatus(payload, ttl);
+    }),
+  );
+  const failedStatus = statusResults.find((result) => result.status === 'rejected');
 
-    statuses.push(toCredentialStatus(payload, ttl));
+  if (failedStatus?.status === 'rejected') {
+    throw failedStatus.reason;
   }
 
-  return statuses;
+  return statusResults.flatMap((result) =>
+    result.status === 'fulfilled' && result.value ? [result.value] : [],
+  );
 }
 
 export async function deleteStoredApiCredential(

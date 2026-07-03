@@ -5,6 +5,11 @@ const optionalSummarySchema = z.preprocess(
   z.string().trim().max(240, '摘要最多 240 个字符').nullable().optional(),
 );
 
+const optionalNoteSchema = z.preprocess(
+  (value) => (typeof value === 'string' && value.trim() === '' ? null : value),
+  z.string().trim().nullable().optional(),
+);
+
 export const articleQuerySchema = z.object({
   cursor: z
     .preprocess((value) => (value === '' ? undefined : value), z.string().trim().min(1).optional()),
@@ -23,6 +28,7 @@ export const createArticleSchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug 只能包含小写字母、数字和连字符'),
   summary: optionalSummarySchema,
   content: z.string().trim().min(1, '内容不能为空'),
+  note: optionalNoteSchema,
   published: z.boolean().optional().default(false),
 });
 

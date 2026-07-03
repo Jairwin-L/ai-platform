@@ -5,6 +5,7 @@
 
 import { queryArticles } from '@/app/api/articles/query';
 import type { Article as PrismaArticle } from '@/generated/prisma/client';
+import { prisma } from '@/lib/prisma';
 import type { Article, ArticleListData, ArticleListParams } from '@/services/articles';
 
 /**
@@ -60,5 +61,23 @@ export async function fetchArticleList(params: ArticleListParams): Promise<Artic
     console.error('文章查询失败：', error);
 
     return createEmptyArticleList(params);
+  }
+}
+
+/**
+ * @func fetchArticleById
+ * @desc 在服务端查询单篇文章详情。
+ * @param {string} id 文章 ID。
+ * @returns {Promise<Article | null>} 文章详情数据；不存在或查询失败时返回 null。
+ */
+export async function fetchArticleById(id: string): Promise<Article | null> {
+  try {
+    const article = await prisma.article.findUnique({ where: { id } });
+
+    return article ? transformArticle(article) : null;
+  } catch (error) {
+    console.error('文章详情查询失败：', error);
+
+    return null;
   }
 }

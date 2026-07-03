@@ -21,7 +21,7 @@ class TestKeyProvider implements EncryptionKeyProvider {
 
 function tamperBase64(value: string): string {
   const buffer = Buffer.from(value, 'base64');
-  buffer[0] ^= 1;
+  buffer[0] = buffer[0] === 255 ? 0 : buffer[0] + 1;
   return buffer.toString('base64');
 }
 

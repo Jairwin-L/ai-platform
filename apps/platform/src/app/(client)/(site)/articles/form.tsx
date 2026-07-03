@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { Alert, Button, Form, Input, Space, Switch, Typography } from 'antd';
 import { SimpleEditor } from '@/components/editor';
@@ -13,7 +14,19 @@ import {
 } from '@/services/articles';
 import styles from './form.module.scss';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
+
+const MarkdownEditor = dynamic(
+  () => import('@/components/markdown-editor').then((mod) => mod.MarkdownEditor),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="simple-editor-loading">
+        <div>Loading editor...</div>
+      </div>
+    ),
+  },
+);
 
 function getEditorText(html?: string): string {
   return (html || '')
@@ -47,6 +60,7 @@ export default function ArticleForm(props: ArticleFormProps) {
       const payload = {
         ...values,
         summary: values.summary?.trim() || null,
+        note: values.note?.trim() || null,
         published: Boolean(values.published),
       };
 
@@ -86,6 +100,7 @@ export default function ArticleForm(props: ArticleFormProps) {
           slug: nextArticle.slug,
           summary: nextArticle.summary,
           content: nextArticle.content,
+          note: nextArticle.note,
           published: nextArticle.published,
         });
       } catch (error) {
@@ -101,16 +116,9 @@ export default function ArticleForm(props: ArticleFormProps) {
     <main className={styles.page}>
       <section className={styles.container}>
         <div className={styles.header}>
-          <div>
-            <Title level={2} className={styles.title}>
-              {isEdit ? '编辑文章' : '新增文章'}
-            </Title>
-            <Text type="secondary">
-              {isEdit
-                ? '修改文章标题、Slug、正文和发布状态。'
-                : '创建一篇新文章并保存到 PostgreSQL。'}
-            </Text>
-          </div>
+          <Title level={2} className={styles.title}>
+            {isEdit ? '编辑文章' : '新增文章'}
+          </Title>
           <Button href="/articles">返回列表</Button>
         </div>
 
@@ -126,6 +134,7 @@ export default function ArticleForm(props: ArticleFormProps) {
               slug: currentArticle?.slug ?? '',
               summary: currentArticle?.summary ?? null,
               content: currentArticle?.content ?? '',
+              note: currentArticle?.note ?? '',
               published: currentArticle?.published ?? false,
             }}
             onFinish={onFinish}
@@ -179,6 +188,10 @@ export default function ArticleForm(props: ArticleFormProps) {
               ]}
             >
               <SimpleEditor />
+            </Form.Item>
+
+            <Form.Item label="笔记" name="note" className={styles['editor-item']}>
+              <MarkdownEditor />
             </Form.Item>
 
             <Form.Item label="发布状态" name="published" valuePropName="checked">

@@ -13,7 +13,8 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { Typography } from '@tiptap/extension-typography';
 import { Underline } from '@tiptap/extension-underline';
 import Youtube from '@tiptap/extension-youtube';
-import { EditorContent, EditorContext, useEditor } from '@tiptap/react';
+import { Markdown } from '@tiptap/markdown';
+import { EditorContent, EditorContext, useEditor, type Editor } from '@tiptap/react';
 import { StarterKit } from '@tiptap/starter-kit';
 import { Input, Modal, message } from 'antd';
 
@@ -75,8 +76,6 @@ const MainToolbarContent = ({
 }) => {
   return (
     <>
-      {/* <Spacer /> */}
-
       <ToolbarGroup>
         <UndoRedoButton action="undo" />
         <UndoRedoButton action="redo" />
@@ -105,13 +104,6 @@ const MainToolbarContent = ({
 
       <ToolbarSeparator />
 
-      {/* <ToolbarGroup>
-        <MarkButton type="superscript" />
-        <MarkButton type="subscript" />
-      </ToolbarGroup>
-
-      <ToolbarSeparator /> */}
-
       <ToolbarGroup>
         <TextAlignButton align="left" />
         <TextAlignButton align="center" />
@@ -129,7 +121,6 @@ const MainToolbarContent = ({
           onClick={addYoutubeVideo}
           className="tiptap-button"
         >
-          {/* TODO: Add Youtube icon */}
           <span className="tiptap-button-text md:block hidden">Youtube</span>
         </Button>
       </ToolbarGroup>
@@ -166,15 +157,15 @@ const MobileToolbarContent = ({
   </>
 );
 
-interface SimpleEditorProps {
+interface MarkdownEditorProps {
   content?: string;
   value?: string;
-  onUpdate?: (html: string) => void;
-  onChange?: (html: string) => void;
+  onUpdate?: (markdown: string) => void;
+  onChange?: (markdown: string) => void;
 }
 
-export const SimpleEditor = React.forwardRef(
-  ({ content, value, onUpdate, onChange }: SimpleEditorProps, ref) => {
+export const MarkdownEditor = React.forwardRef(
+  ({ content, value, onUpdate, onChange }: MarkdownEditorProps, ref) => {
     const isMobile = useMobile();
     const windowSize = useWindowSize();
     const editorContent = value ?? content ?? '';
@@ -188,28 +179,15 @@ export const SimpleEditor = React.forwardRef(
     const toolbarRef = React.useRef<HTMLDivElement>(null);
     const [modal, modalContextHolder] = Modal.useModal();
 
-    // React.useEffect(() => {
-    //   const updateRect = () => {
-    //     setRect(document.body.getBoundingClientRect())
-    //   }
-
-    //   updateRect()
-
-    //   const resizeObserver = new ResizeObserver(updateRect)
-    //   resizeObserver.observe(document.body)
-
-    //   // window.addEventListener('scroll', updateRect)
-
-    //   return () => {
-    //     resizeObserver.disconnect()
-    //     // window.removeEventListener('scroll', updateRect)
-    //   }
-    // }, [])
+    const getMarkdown = React.useCallback(
+      (currentEditor: Editor) => currentEditor.getMarkdown(),
+      [],
+    );
 
     const emitChange = React.useCallback(
-      (html: string) => {
-        onUpdate?.(html);
-        onChange?.(html);
+      (markdown: string) => {
+        onUpdate?.(markdown);
+        onChange?.(markdown);
       },
       [onChange, onUpdate],
     );
@@ -217,6 +195,7 @@ export const SimpleEditor = React.forwardRef(
     const editor = useEditor({
       immediatelyRender: false,
       shouldRerenderOnTransaction: false,
+      contentType: 'markdown',
       editorProps: {
         attributes: {
           autocomplete: 'off',
@@ -254,30 +233,28 @@ export const SimpleEditor = React.forwardRef(
           height: 480,
           controls: true,
         }),
+        Markdown,
       ],
       content: editorContent,
-      onUpdate: ({ editor: currentEditor }) => emitChange(currentEditor.getHTML()),
+      onUpdate: ({ editor: currentEditor }) => emitChange(getMarkdown(currentEditor)),
     });
 
     React.useImperativeHandle(
       ref,
       () => ({
         getHTML: () => editor?.getHTML() || '',
+        getMarkdown: () => editor?.getMarkdown() || '',
       }),
       [editor],
     );
 
-    // 当外部 content 变化时，同步更新编辑器内容（避免无限循环）
     React.useEffect(() => {
       if (!editor) return;
 
-      // 只在内容真正不同时才更新，避免光标位置丢失
-      const currentContent = editor.getHTML();
-      const nextContent = editorContent || '<p></p>';
-      if (nextContent !== currentContent) {
-        editor.commands.setContent(nextContent, { emitUpdate: false });
+      if (editorContent !== getMarkdown(editor)) {
+        editor.commands.setContent(editorContent, { emitUpdate: false, contentType: 'markdown' });
       }
-    }, [editor, editorContent]);
+    }, [editor, editorContent, getMarkdown]);
 
     React.useEffect(() => {
       const checkCursorVisibility = () => {
@@ -294,7 +271,6 @@ export const SimpleEditor = React.forwardRef(
             const toolbarHeight = toolbarRef.current.getBoundingClientRect().height;
             const isEnoughSpace = windowSize.height - cursorCoords.top - toolbarHeight > 0;
 
-            // If not enough space, scroll until the cursor is the middle of the screen
             if (!isEnoughSpace) {
               const scrollY = cursorCoords.top - windowSize.height / 2 + toolbarHeight;
               window.scrollTo({
@@ -344,7 +320,6 @@ export const SimpleEditor = React.forwardRef(
       editor.commands.focus('end');
     };
 
-    // 如果编辑器还未初始化，显示加载状态
     if (!editor) {
       return (
         <div className="simple-editor-loading">
@@ -357,16 +332,7 @@ export const SimpleEditor = React.forwardRef(
       <>
         {modalContextHolder}
         <EditorContext.Provider value={{ editor }}>
-          <Toolbar
-            ref={toolbarRef}
-            // style={
-            //   isMobile
-            //     ? {
-            //         bottom: `calc(100% - ${windowSize.height - rect.y}px)`
-            //       }
-            //     : {}
-            // }
-          >
+          <Toolbar ref={toolbarRef}>
             {mobileView === 'main' ? (
               <MainToolbarContent
                 onHighlighterClick={() => setMobileView('highlighter')}
@@ -391,4 +357,4 @@ export const SimpleEditor = React.forwardRef(
   },
 );
 
-SimpleEditor.displayName = 'SimpleEditor';
+MarkdownEditor.displayName = 'MarkdownEditor';

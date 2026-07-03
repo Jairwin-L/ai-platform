@@ -2,7 +2,7 @@ import { articleQuerySchema } from '@/lib/article-schema';
 import ArticlesClient from './articles';
 import { fetchArticleList } from './utils/article';
 
-interface ArticlesPageProps {
+interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
@@ -10,7 +10,7 @@ function getSearchValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export default async function Page({ searchParams }: ArticlesPageProps) {
+export default async function Page({ searchParams }: PageProps) {
   const params = await searchParams;
   const query = articleQuerySchema.parse({
     cursor: getSearchValue(params.cursor),
