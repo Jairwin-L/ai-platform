@@ -1,4 +1,3 @@
-import { Prisma } from '@/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
 import { normalizeAiProviderOptions, type AiProviderOption } from './provider-options';
 
@@ -68,10 +67,17 @@ export async function updateStoredAiProviderOptions(options: AiProviderOption[])
       .filter((value) => !nextValues.has(value));
 
     if (removedValues.length > 0) {
-      await transaction.$executeRaw`
-        DELETE FROM ai_providers
-        WHERE value IN (${Prisma.join(removedValues)})
-      `;
+      const deleteResults = await Promise.allSettled(
+        removedValues.map((value) => transaction.$executeRaw`
+          DELETE FROM ai_providers
+          WHERE value = ${value}
+        `),
+      );
+      const failedDelete = deleteResults.find((result) => result.status === 'rejected');
+
+      if (failedDelete?.status === 'rejected') {
+        throw failedDelete.reason;
+      }
     }
 
     const upsertResults = await Promise.allSettled(

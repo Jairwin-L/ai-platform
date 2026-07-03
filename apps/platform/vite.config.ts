@@ -2807,9 +2807,8 @@ export default defineConfig({
     ],
   },
   staged: {
-    '*.{cjs,cts,js,jsx,mjs,mts,ts,tsx,vue}': 'vp lint --fix',
     '*.{css,less,scss}': 'stylelint --fix',
-    '*.{cjs,css,cts,html,js,json,jsx,less,md,mjs,mts,scss,ts,tsx,vue,yaml,yml}': 'vp fmt',
+    '*.{cjs,css,cts,html,js,json,jsx,less,md,mjs,mts,scss,ts,tsx,vue,yaml,yml}': 'vp check --fix',
   },
   run: {
     tasks: {
