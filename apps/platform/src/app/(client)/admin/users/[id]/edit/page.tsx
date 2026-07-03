@@ -5,13 +5,13 @@ import { Button, Form, Input, Select, Skeleton } from 'antd';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { getRoles, type AdminRole } from '@/services/admin';
+import { getRoles, type AdminRole } from '@/api/modules/admin';
 import {
   getUserProfileById,
   updateUser,
   type UserProfile,
   type UserStatus,
-} from '@/services/users';
+} from '@/api/modules/users';
 import styles from '@/components/admin/admin-form-page.module.scss';
 
 interface UserFormValues {

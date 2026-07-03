@@ -11,7 +11,7 @@ import { Avatar, Button, Descriptions, Skeleton, Space, Tag } from 'antd';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { getUserProfileById, type UserProfile } from '@/services/users';
+import { getUserProfileById, type UserProfile } from '@/api/modules/users';
 import styles from '../../resource-page.module.scss';
 
 const statusLabels: Record<string, { color: string; label: string }> = {

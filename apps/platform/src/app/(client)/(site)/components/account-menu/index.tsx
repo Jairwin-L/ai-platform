@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react';
 import { Dropdown, Skeleton } from 'antd';
 import type { MenuProps } from 'antd';
 import { usePermission } from '@/hooks/use-permission';
-import { signOut } from '@/services/auth';
-import type { AuthUser } from '@/services/auth';
+import { signOut } from '@/api/modules/auth';
+import type { AuthUser } from '@/api/modules/auth';
 import styles from './index.module.scss';
 
 function getDisplayName(user: AuthUser | null): string {

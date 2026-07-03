@@ -9,7 +9,7 @@ import {
   type ArticleListData,
   deleteArticle,
   listArticles,
-} from '@/services/articles';
+} from '@/api/modules/articles';
 import styles from './articles.module.scss';
 
 const { Title, Text } = Typography;

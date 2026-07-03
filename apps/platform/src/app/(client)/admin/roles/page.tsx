@@ -11,7 +11,7 @@ import {
 import { Button, Input, Popconfirm, Space, Table, Tag, type TableColumnsType } from 'antd';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import { deleteRole, getRoles, type AdminRole } from '@/services/admin';
+import { deleteRole, getRoles, type AdminRole } from '@/api/modules/admin';
 import styles from '../resource-page.module.scss';
 
 function formatDate(value: string): string {

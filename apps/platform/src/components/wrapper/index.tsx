@@ -3,7 +3,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { usePermission } from '@/hooks/use-permission';
-import type { AuthPayload } from '@/services/auth';
+import type { AuthPayload } from '@/api/modules/auth';
 import { useAuthSessionStore } from '@/stores/auth-session';
 import ClientSideOnly from '../client-side-only';
 import Loading from '../loading';

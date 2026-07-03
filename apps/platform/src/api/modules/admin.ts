@@ -1,4 +1,4 @@
-import { alovaDelete, alovaGet, alovaPost, alovaPut } from '@/utils/alova';
+import { alovaDelete, alovaGet, alovaPost, alovaPut } from '@/api/alova';
 
 interface PaginatedData<T> {
   data: T[];
@@ -83,66 +83,66 @@ function getQueryParams(params: ListParams): Record<string, unknown> {
 }
 
 export async function getRoles(params: ListParams = {}): Promise<PaginatedData<AdminRole>> {
-  return alovaGet<PaginatedData<AdminRole>>('/api/roles', getQueryParams(params));
+  return alovaGet<PaginatedData<AdminRole>>('/roles', getQueryParams(params));
 }
 
 export async function getRole(id: string): Promise<AdminRole> {
-  return alovaGet<AdminRole>(`/api/roles/${id}`);
+  return alovaGet<AdminRole>(`/roles/${id}`);
 }
 
 export async function createRole(payload: RolePayload): Promise<AdminRole> {
-  return alovaPost<AdminRole>('/api/roles', payload);
+  return alovaPost<AdminRole>('/roles', payload);
 }
 
 export async function updateRole(id: string, payload: RolePayload): Promise<AdminRole> {
-  return alovaPut<AdminRole>(`/api/roles/${id}`, payload);
+  return alovaPut<AdminRole>(`/roles/${id}`, payload);
 }
 
 export async function deleteRole(id: string): Promise<void> {
-  await alovaDelete<{ id: string }>(`/api/roles/${id}`);
+  await alovaDelete<{ id: string }>(`/roles/${id}`);
 }
 
 export async function getPermissions(
   params: ListParams = {},
 ): Promise<PaginatedData<AdminPermission>> {
-  return alovaGet<PaginatedData<AdminPermission>>('/api/permissions', getQueryParams(params));
+  return alovaGet<PaginatedData<AdminPermission>>('/permissions', getQueryParams(params));
 }
 
 export async function getPermission(id: string): Promise<AdminPermission> {
-  return alovaGet<AdminPermission>(`/api/permissions/${id}`);
+  return alovaGet<AdminPermission>(`/permissions/${id}`);
 }
 
 export async function createPermission(payload: PermissionPayload): Promise<AdminPermission> {
-  return alovaPost<AdminPermission>('/api/permissions', payload);
+  return alovaPost<AdminPermission>('/permissions', payload);
 }
 
 export async function updatePermission(
   id: string,
   payload: PermissionPayload,
 ): Promise<AdminPermission> {
-  return alovaPut<AdminPermission>(`/api/permissions/${id}`, payload);
+  return alovaPut<AdminPermission>(`/permissions/${id}`, payload);
 }
 
 export async function deletePermission(id: string): Promise<void> {
-  await alovaDelete<{ id: string }>(`/api/permissions/${id}`);
+  await alovaDelete<{ id: string }>(`/permissions/${id}`);
 }
 
 export async function getSystemSettings(): Promise<SystemSettings> {
-  return alovaGet<SystemSettings>('/api/system-settings');
+  return alovaGet<SystemSettings>('/system-settings');
 }
 
 export async function updateSystemSettings(
   payload: SystemSettingsPayload,
 ): Promise<SystemSettings> {
-  return alovaPut<SystemSettings>('/api/system-settings', payload);
+  return alovaPut<SystemSettings>('/system-settings', payload);
 }
 
 export async function getAdminAiProviderOptions(): Promise<AiProviderOption[]> {
-  return alovaGet<AiProviderOption[]>('/api/admin/ai-providers');
+  return alovaGet<AiProviderOption[]>('/admin/ai-providers');
 }
 
 export async function updateAdminAiProviderOptions(
   options: AiProviderOption[],
 ): Promise<AiProviderOption[]> {
-  return alovaPut<AiProviderOption[]>('/api/admin/ai-providers', { options });
+  return alovaPut<AiProviderOption[]>('/admin/ai-providers', { options });
 }

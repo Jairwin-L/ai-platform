@@ -6,11 +6,11 @@
 ## 1. 项目背景
 
 - 技术栈：`Next.js (App Router) + React 19 + TypeScript + Tailwind CSS`
-- 请求层：`alova`，现有封装位于 `src/utils/alova.ts`，业务请求示例位于 `src/services/`
+- 请求层：`alova`，请求封装与业务请求模块统一位于 `src/api/`
 - 包管理与工具链：Vite+ (`vp`) + `pnpm`
 - 部署：GitHub Actions 构建 Docker 镜像并推送到 GHCR，再通过 SSH 登录服务器执行 Docker Compose 拉取镜像并重启服务。
 - Node 版本要求：`22.x`
-- 主要代码目录：`src/`（包含 `app/`、`components/`、`constants/`、`lib/`、`services/`、`styles/`、`utils/` 等）
+- 主要代码目录：`src/`（包含 `api/`、`app/`、`components/`、`constants/`、`lib/`、`styles/`、`utils/` 等）
 - 主要配置文件：`package.json`、`vite.config.ts`、`next.config.ts`、`tsconfig.json`、`postcss.config.mjs`
 - 部署相关文件：`Dockerfile`、`docker-compose.prod.yml`、`.github/workflows/deploy.yml`、`scripts/deploy-compose.sh`
 
@@ -24,7 +24,7 @@
 ## 3. 执行流程
 
 1. 先理解需求与影响范围，再动手改代码。
-2. 先查现有实现（`src/app/` 路由、`src/services/` 请求封装、`src/components/` 组件、`src/utils/`、`src/lib/`），优先复用。
+2. 先查现有实现（`src/app/` 路由、`src/api/` 请求封装、`src/components/` 组件、`src/utils/`、`src/lib/`），优先复用。
 3. 修改完成后默认不主动执行构建、lint、test、`vp check` 等生成构建和代码检测相关命令；仅列出建议用户手动执行的最小必要校验命令。用户明确要求执行时再运行。
 4. 公开仓库在提交、发布或用户要求检查时，需要检查是否包含隐私或敏感数据；重点覆盖 `.env*`、部署配置、GitHub Actions、Docker/Compose、源码、文档、Git 跟踪文件与必要的 Git 历史。
 5. 隐私与敏感数据检查至少关注：密钥、token、密码、私钥、真实服务器地址、数据库连接串、Webhook、第三方服务凭证、个人邮箱/手机号、内部业务地址与生产环境配置；发现风险时先报告并给出最小修复建议。
@@ -65,8 +65,8 @@
 - 默认不做大规模无关重构。
 - 不随意改动构建配置（`next.config.ts`、`tsconfig.json`、`vite.config.ts`、`package.json`、`Dockerfile`、`docker-compose*.yml`、`.github/workflows/deploy.yml`、Stylelint/Prettier 配置），除非需求明确要求。
 - 不引入与需求无关的新依赖；如确需引入，须说明用途与体积影响。
-- 避免重复实现：已有工具函数（`src/utils/`）、请求封装（`src/utils/alova.ts`、`src/services/`）、组件可复用时不要新增平行实现。
-- 接口层响应提示统一在 `src/utils/alova.ts` 全局处理：接口失败返回的错误信息使用 `message.error`，接口成功提示使用 `message.success`；业务组件与 `src/services/` 不要重复调用 `message.error` / `message.success` 处理 alova 接口响应。纯前端校验、上传进度、编辑器图片上传等非 alova 接口交互提示可在组件内按需处理。
+- 避免重复实现：已有工具函数（`src/utils/`）、请求封装与业务请求模块（`src/api/`）、组件可复用时不要新增平行实现。
+- 接口层响应提示统一在 `src/api/alova.ts` 全局处理：接口失败返回的错误信息使用 `message.error`，接口成功提示使用 `message.success`；业务组件与 `src/api/` 业务请求模块不要重复调用 `message.error` / `message.success` 处理 alova 接口响应。纯前端校验、上传进度、编辑器图片上传等非 alova 接口交互提示可在组件内按需处理。
 - 单文件代码行数上限：每个页面（`src/app/**/page.tsx`、`layout.tsx` 等）、每个组件文件不得超过 500 行（含注释与空行）；超过时必须按职责拆分为子组件 / 子模块，不允许通过删注释、压行等方式绕过该限制。
 - App Router 中区分 Server Component / Client Component，需要 `"use client"` 时务必显式声明，且只在确有客户端交互时使用。
 - CSS Module 多词类名必须使用 kebab-case，并通过 bracket notation 访问，例如 `.auth-page` 对应 `styles["auth-page"]`；单词类名保持不变，例如 `.auth` 对应 `styles.auth`。

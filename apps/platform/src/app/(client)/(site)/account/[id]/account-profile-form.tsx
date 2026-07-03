@@ -4,7 +4,7 @@ import { EditOutlined, SaveOutlined } from '@ant-design/icons';
 import { Button, Form, Input } from 'antd';
 import { useState } from 'react';
 import { usePermission } from '@/hooks/use-permission';
-import { updateUser, type UserProfile } from '@/services/users';
+import { updateUser, type UserProfile } from '@/api/modules/users';
 import styles from './page.module.scss';
 
 interface ProfileFormValues {

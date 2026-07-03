@@ -1,4 +1,4 @@
-import { alovaGet, alovaPut } from '@/utils/alova';
+import { alovaGet, alovaPut } from '@/api/alova';
 
 export interface UserProfileRole {
   id: number;
@@ -65,13 +65,13 @@ export interface UserListParams extends Record<string, unknown> {
 }
 
 export async function getUserProfileById(id: string) {
-  return alovaGet<UserProfile>(`/api/users/${id}`);
+  return alovaGet<UserProfile>(`/users/${id}`);
 }
 
 export async function getUsers(params: UserListParams = {}): Promise<PaginatedData<UserListItem>> {
-  return alovaGet<PaginatedData<UserListItem>>('/api/users', params);
+  return alovaGet<PaginatedData<UserListItem>>('/users', params);
 }
 
 export async function updateUser(id: string, payload: UserUpdatePayload): Promise<UserProfile> {
-  return alovaPut<UserProfile>(`/api/users/${id}`, payload);
+  return alovaPut<UserProfile>(`/users/${id}`, payload);
 }

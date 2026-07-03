@@ -376,7 +376,7 @@ function onComplete(method: Method): void {
 export const alovaInstance = createAlova({
   requestAdapter: fetch(),
   statesHook: ReactHook,
-  baseURL: '',
+  baseURL: '/api',
   timeout: 10000,
   cacheFor: null,
   beforeRequest,

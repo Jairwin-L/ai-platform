@@ -11,7 +11,7 @@ import { Button, Card, Col, Row, Skeleton, Statistic, Tag } from 'antd';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { usePermission } from '@/hooks/use-permission';
-import { getPermissions, getRoles } from '@/services/admin';
+import { getPermissions, getRoles } from '@/api/modules/admin';
 import styles from './page.module.scss';
 
 interface OverviewData {

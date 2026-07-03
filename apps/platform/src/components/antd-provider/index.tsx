@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect } from 'react';
 import { App, ConfigProvider } from 'antd';
-import { setAlovaMessageApi } from '@/utils/alova';
+import { setAlovaMessageApi } from '@/api/alova';
 
 function AlovaMessageBridge() {
   const { message } = App.useApp();

@@ -16,7 +16,7 @@ import {
   getPermissions,
   type AdminPermission,
   type PermissionType,
-} from '@/services/admin';
+} from '@/api/modules/admin';
 import styles from '../resource-page.module.scss';
 
 const typeColor: Record<PermissionType, string> = {

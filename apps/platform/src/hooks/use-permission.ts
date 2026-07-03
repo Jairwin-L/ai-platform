@@ -1,9 +1,9 @@
 'use client';
 
 import { useCallback } from 'react';
-import type { AuthUser } from '@/services/auth';
+import type { AuthUser } from '@/api/modules/auth';
 import { useAuthSessionStore } from '@/stores/auth-session';
-import type { UserProfile } from '@/services/users';
+import type { UserProfile } from '@/api/modules/users';
 
 export type PermissionCode = string;
 

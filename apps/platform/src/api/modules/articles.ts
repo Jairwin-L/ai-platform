@@ -1,4 +1,4 @@
-import { alovaDelete, alovaGet, alovaPost, alovaPut } from '@/utils/alova';
+import { alovaDelete, alovaGet, alovaPost, alovaPut } from '@/api/alova';
 
 export interface Article {
   id: string;
@@ -39,21 +39,21 @@ export interface ArticleListData {
 }
 
 export async function listArticles(params: ArticleListParams) {
-  return alovaGet<ArticleListData>('/api/articles', { ...params });
+  return alovaGet<ArticleListData>('/articles', { ...params });
 }
 
 export async function getArticle(id: string) {
-  return alovaGet<Article>(`/api/articles/${id}`);
+  return alovaGet<Article>(`/articles/${id}`);
 }
 
 export async function createArticle(payload: ArticleFormValues) {
-  return alovaPost<Article>('/api/articles', payload);
+  return alovaPost<Article>('/articles', payload);
 }
 
 export async function updateArticle(id: string, payload: Partial<ArticleFormValues>) {
-  return alovaPut<Article>(`/api/articles/${id}`, payload);
+  return alovaPut<Article>(`/articles/${id}`, payload);
 }
 
 export async function deleteArticle(id: string) {
-  return alovaDelete<{ id: string }>(`/api/articles/${id}`);
+  return alovaDelete<{ id: string }>(`/articles/${id}`);
 }

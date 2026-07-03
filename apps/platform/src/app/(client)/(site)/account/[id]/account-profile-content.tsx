@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useAuthSessionStore } from '@/stores/auth-session';
-import type { UserProfile } from '@/services/users';
+import type { UserProfile } from '@/api/modules/users';
 import { AccountProfileForm } from './account-profile-form';
 import styles from './page.module.scss';
 

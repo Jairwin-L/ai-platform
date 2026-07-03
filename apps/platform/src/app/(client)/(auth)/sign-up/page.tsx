@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Button, Form, Input, Typography } from 'antd';
 import type { FormInstance } from 'antd';
 import { APP_BLACK_LOGO, APP_NAME, VERIFICATION_CODE_TTL_SECONDS } from '@/constants';
-import { requestVerificationCode, signUp } from '@/services/auth';
+import { requestVerificationCode, signUp } from '@/api/modules/auth';
 import styles from './page.module.scss';
 
 interface SignUpValues {

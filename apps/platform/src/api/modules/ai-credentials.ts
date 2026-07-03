@@ -1,4 +1,4 @@
-import { alovaDelete, alovaGet, alovaPost } from '@/utils/alova';
+import { alovaDelete, alovaGet, alovaPost } from '@/api/alova';
 
 export type AiCredentialProvider = 'anthropic' | 'deepseek' | 'gemini' | 'openai';
 export type AiCredentialStatus = 'active' | 'disabled' | 'expired' | 'invalid';
@@ -33,24 +33,21 @@ interface AiCredentialListResponse {
 }
 
 export async function getAiCredentials(): Promise<AiCredential[]> {
-  const response = await alovaGet<AiCredentialListResponse>('/api/user/ai-credentials');
+  const response = await alovaGet<AiCredentialListResponse>('/user/ai-credentials');
 
   return response.credentials;
 }
 
 export async function getAiProviderOptions(): Promise<AiProviderOption[]> {
-  return alovaGet<AiProviderOption[]>('/api/ai/provider-options');
+  return alovaGet<AiProviderOption[]>('/ai/provider-options');
 }
 
 export async function createAiCredential(payload: SaveAiCredentialPayload): Promise<AiCredential> {
-  const response = await alovaPost<AiCredential & { saved: true }>(
-    '/api/user/ai-credentials',
-    payload,
-  );
+  const response = await alovaPost<AiCredential & { saved: true }>('/user/ai-credentials', payload);
 
   return response;
 }
 
 export async function deleteAiCredential(credentialId: string): Promise<void> {
-  await alovaDelete(`/api/user/ai-credentials/${credentialId}`);
+  await alovaDelete(`/user/ai-credentials/${credentialId}`);
 }

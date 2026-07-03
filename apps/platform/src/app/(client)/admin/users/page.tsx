@@ -25,8 +25,8 @@ import {
 } from 'antd';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import { getRoles, type AdminRole } from '@/services/admin';
-import { getUsers, updateUser, type UserListItem, type UserStatus } from '@/services/users';
+import { getRoles, type AdminRole } from '@/api/modules/admin';
+import { getUsers, updateUser, type UserListItem, type UserStatus } from '@/api/modules/users';
 import styles from '../resource-page.module.scss';
 
 const pageSize = 10;

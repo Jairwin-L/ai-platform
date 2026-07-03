@@ -11,7 +11,7 @@ import {
   updateRole,
   type AdminPermission,
   type RolePayload,
-} from '@/services/admin';
+} from '@/api/modules/admin';
 import styles from './admin-form-page.module.scss';
 
 interface RoleFormValues {

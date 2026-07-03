@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Button, Form, Input, Tabs, Typography } from 'antd';
 import type { FormInstance } from 'antd';
 import { APP_BLACK_LOGO, APP_NAME, VERIFICATION_CODE_TTL_SECONDS } from '@/constants';
-import { requestVerificationCode, signInWithCode, signInWithPassword } from '@/services/auth';
+import { requestVerificationCode, signInWithCode, signInWithPassword } from '@/api/modules/auth';
 import { useAuthSessionStore } from '@/stores/auth-session';
 import styles from './page.module.scss';
 

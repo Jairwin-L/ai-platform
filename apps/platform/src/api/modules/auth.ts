@@ -1,4 +1,4 @@
-import { alovaGet, alovaPost } from '@/utils/alova';
+import { alovaGet, alovaPost } from '@/api/alova';
 
 export type AuthCodePurpose = 'sign-in' | 'sign-up';
 
@@ -18,11 +18,11 @@ export interface AuthPayload {
 }
 
 export async function requestVerificationCode(email: string, purpose: AuthCodePurpose) {
-  return alovaPost<null>('/api/code', { email, purpose });
+  return alovaPost<null>('/code', { email, purpose });
 }
 
 export async function signUp(payload: { code: string; email: string; password: string }) {
-  return alovaPost<null>('/api/sign-up', {
+  return alovaPost<null>('/sign-up', {
     code: payload.code,
     email: payload.email,
     password: payload.password,
@@ -30,7 +30,7 @@ export async function signUp(payload: { code: string; email: string; password: s
 }
 
 export async function signInWithPassword(payload: { email: string; password: string }) {
-  return alovaPost<AuthPayload>('/api/sign-in', {
+  return alovaPost<AuthPayload>('/sign-in', {
     email: payload.email,
     method: 'password',
     password: payload.password,
@@ -38,7 +38,7 @@ export async function signInWithPassword(payload: { email: string; password: str
 }
 
 export async function signInWithCode(payload: { code: string; email: string }) {
-  return alovaPost<AuthPayload>('/api/sign-in', {
+  return alovaPost<AuthPayload>('/sign-in', {
     code: payload.code,
     email: payload.email,
     method: 'code',
@@ -46,9 +46,9 @@ export async function signInWithCode(payload: { code: string; email: string }) {
 }
 
 export async function signOut() {
-  return alovaPost<null>('/api/sign-out');
+  return alovaPost<null>('/sign-out');
 }
 
 export async function getCurrentUser() {
-  return alovaGet<AuthPayload>('/api/me');
+  return alovaGet<AuthPayload>('/me');
 }

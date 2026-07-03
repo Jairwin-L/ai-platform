@@ -1,8 +1,8 @@
 'use client';
 
 import { create } from 'zustand';
-import type { AuthPayload } from '@/services/auth';
-import type { UserProfile } from '@/services/users';
+import type { AuthPayload } from '@/api/modules/auth';
+import type { UserProfile } from '@/api/modules/users';
 
 interface AuthSessionState {
   currentUserProfile: UserProfile | null;

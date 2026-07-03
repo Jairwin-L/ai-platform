@@ -11,7 +11,7 @@ import {
   createArticle,
   getArticle,
   updateArticle,
-} from '@/services/articles';
+} from '@/api/modules/articles';
 import styles from './form.module.scss';
 
 const { Title } = Typography;

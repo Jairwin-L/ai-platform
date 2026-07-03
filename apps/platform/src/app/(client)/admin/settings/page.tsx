@@ -8,7 +8,7 @@ import {
 } from '@ant-design/icons';
 import { Button, Card, Divider, Form, Input, Select, Switch, Tabs } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
-import { getSystemSettings, updateSystemSettings, type SystemSettings } from '@/services/admin';
+import { getSystemSettings, updateSystemSettings, type SystemSettings } from '@/api/modules/admin';
 import styles from '../resource-page.module.scss';
 import settingsStyles from './page.module.scss';
 

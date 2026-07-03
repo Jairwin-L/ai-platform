@@ -12,7 +12,7 @@ import {
   type AdminPermission,
   type PermissionPayload,
   type PermissionType,
-} from '@/services/admin';
+} from '@/api/modules/admin';
 import styles from './admin-form-page.module.scss';
 
 interface PermissionFormValues {

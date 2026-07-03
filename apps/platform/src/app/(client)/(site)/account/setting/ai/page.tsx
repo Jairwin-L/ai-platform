@@ -24,7 +24,7 @@ import {
   type AiCredentialTtlOption,
   type AiProviderOption,
   type SaveAiCredentialPayload,
-} from '@/services/ai-credentials';
+} from '@/api/modules/ai-credentials';
 import styles from './page.module.scss';
 
 interface CredentialFormValues {

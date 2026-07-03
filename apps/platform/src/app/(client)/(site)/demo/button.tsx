@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { query } from '@/services/demo';
+import { query } from '@/api/modules/demo';
 
 export default function Button() {
   const [text, setText] = useState<string>('');
