@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { Alert, Button, Form, Input, Space, Switch, Typography } from 'antd';
-import { SimpleEditor } from '@/components/editor';
+import { DynamicSimpleEditor } from '@/components/editor/dynamic-editor';
+import { DynamicMarkdownEditor } from '@/components/markdown-editor/dynamic-editor';
 import {
   type Article,
   type ArticleFormValues,
@@ -15,18 +15,6 @@ import {
 import styles from './form.module.scss';
 
 const { Title } = Typography;
-
-const MarkdownEditor = dynamic(
-  () => import('@/components/markdown-editor').then((mod) => mod.MarkdownEditor),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="simple-editor-loading">
-        <div>Loading editor...</div>
-      </div>
-    ),
-  },
-);
 
 function getEditorText(html?: string): string {
   return (html || '')
@@ -187,11 +175,11 @@ export default function ArticleForm(props: ArticleFormProps) {
                 },
               ]}
             >
-              <SimpleEditor />
+              <DynamicSimpleEditor />
             </Form.Item>
 
             <Form.Item label="笔记" name="note" className={styles['editor-item']}>
-              <MarkdownEditor />
+              <DynamicMarkdownEditor />
             </Form.Item>
 
             <Form.Item label="发布状态" name="published" valuePropName="checked">

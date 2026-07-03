@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { Button, Space, Tag, Typography } from 'antd';
-import { SimpleEditorViewer } from '@/components/editor/viewer';
+import { DynamicSimpleEditorViewer } from '@/components/editor/dynamic-viewer';
 import { DynamicMarkdownEditorViewer } from '@/components/markdown-editor/dynamic-viewer';
 import { fetchArticleById } from '../utils/article';
 import styles from './page.module.scss';
@@ -46,7 +46,7 @@ export default async function Page({ params }: PageProps) {
         </div>
 
         <article className={styles.card}>
-          <SimpleEditorViewer content={article.content} />
+          <DynamicSimpleEditorViewer content={article.content} />
         </article>
 
         {article.note ? (
