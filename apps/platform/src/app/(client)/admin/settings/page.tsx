@@ -6,9 +6,9 @@ import {
   SettingOutlined,
   UserSwitchOutlined,
 } from '@ant-design/icons';
-import { App, Alert, Button, Card, Divider, Form, Input, Select, Switch, Tabs } from 'antd';
+import { App, Button, Card, Divider, Form, Input, Select, Switch, Tabs } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
-import { getSystemSettings, updateSystemSettings } from '@/services/admin';
+import { getSystemSettings, updateSystemSettings, type SystemSettings } from '@/services/admin';
 import styles from '../resource-page.module.scss';
 import settingsStyles from './page.module.scss';
 
@@ -32,25 +32,37 @@ const initialValues: SettingsValues = {
   sessionPolicy: 'standard',
 };
 
+function getSettingsFormValues(settings: SystemSettings): SettingsValues {
+  return {
+    displayName: settings.displayName,
+    supportEmail: settings.supportEmail,
+    defaultLanguage: settings.defaultLanguage,
+    allowRegistration: settings.allowRegistration,
+    byokAllowedOrigins: settings.byokAllowedOrigins,
+    maintenanceMode: settings.maintenanceMode,
+    sessionPolicy: settings.sessionPolicy,
+  };
+}
+
 export default function SystemSettingsPage() {
   const { message } = App.useApp();
   const [form] = Form.useForm<SettingsValues>();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const loadSettings = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const settings = await getSystemSettings();
-      form.setFieldsValue(settings);
+      form.setFieldsValue(getSettingsFormValues(settings));
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : '无法加载系统设置');
+      const errorMessage =
+        requestError instanceof Error ? requestError.message : '加载系统设置失败';
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [form]);
+  }, [form, message]);
 
   useEffect(() => {
     loadSettings();
@@ -59,7 +71,10 @@ export default function SystemSettingsPage() {
   async function onFinish(values: SettingsValues) {
     setSaving(true);
     try {
-      await updateSystemSettings({ ...values, supportEmail: values.supportEmail ?? '' });
+      await updateSystemSettings({
+        ...values,
+        supportEmail: values.supportEmail ?? '',
+      });
       message.success('系统设置已保存');
     } catch (requestError) {
       message.error(requestError instanceof Error ? requestError.message : '保存系统设置失败');
@@ -78,18 +93,6 @@ export default function SystemSettingsPage() {
           <p>管理可公开维护的展示与访问策略，不包含任何密钥、环境变量或部署配置。</p>
         </div>
       </section>
-
-      <Alert
-        className={styles.alert}
-        description={
-          error ||
-          '接口只读写安全的展示与访问策略字段。密钥、连接串、部署地址和环境变量均不会显示或修改。'
-        }
-        title={error ? '无法加载系统设置' : '安全边界'}
-        showIcon
-        type={error ? 'error' : 'info'}
-      />
-
       <Card className={settingsStyles.card} loading={loading} variant="borderless">
         <Form form={form} initialValues={initialValues} layout="vertical" onFinish={onFinish}>
           <Tabs

@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '../../generated/prisma/client';
+import { seedAiProviders } from './ai-providers';
 import { seedPermissions } from './permissions';
 import { assignAdminRolePermissions, assignBasicRolePermissions } from './role-permissions';
 import { seedRoles } from './roles';
@@ -16,7 +17,7 @@ const pool = new Pool({ connectionString: databaseUrl });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-const requiredTables = ['roles', 'permissions', 'role_permissions'];
+const requiredTables = ['roles', 'permissions', 'role_permissions', 'ai_providers'];
 
 async function assertRequiredTablesExist(): Promise<void> {
   const tableResults = await prisma.$queryRaw<Array<{ table_name: string }>>`
@@ -42,6 +43,7 @@ async function main(): Promise<void> {
   await assertRequiredTablesExist();
   await seedRoles(prisma);
   await seedPermissions(prisma);
+  await seedAiProviders(prisma);
   await assignAdminRolePermissions(prisma);
   await assignBasicRolePermissions(prisma);
 }

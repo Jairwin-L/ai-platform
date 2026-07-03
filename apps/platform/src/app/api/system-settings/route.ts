@@ -20,6 +20,16 @@ const DEFAULT_SETTINGS = {
 };
 const supportedLanguages = new Set(['zh-CN', 'en-US']);
 const supportedSessionPolicies = new Set(['standard', 'strict']);
+const systemSettingsSelect = {
+  allow_registration: true,
+  byok_allowed_origins: true,
+  default_language: true,
+  display_name: true,
+  maintenance_mode: true,
+  session_policy: true,
+  support_email: true,
+  updated_at: true,
+} as const;
 
 interface SystemSettingsPayload {
   allowRegistration?: unknown;
@@ -196,6 +206,7 @@ const getSystemSettingsHandler: ApiHandler = async () => {
       where: { id: SETTINGS_ID },
       create: { id: SETTINGS_ID, ...DEFAULT_SETTINGS },
       update: {},
+      select: systemSettingsSelect,
     });
 
     return createSuccessResponse(toSettingsResponse(settings), '系统设置查询成功');
@@ -223,6 +234,7 @@ const updateSystemSettingsHandler: ApiHandler = async (request: NextRequest) => 
       where: { id: SETTINGS_ID },
       create: { id: SETTINGS_ID, ...DEFAULT_SETTINGS, ...data },
       update: { ...data, updated_at: new Date() },
+      select: systemSettingsSelect,
     });
 
     return createSuccessResponse(toSettingsResponse(settings), '系统设置更新成功');

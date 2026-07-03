@@ -8,11 +8,15 @@ import {
 } from '@/lib/ai/security/request-security';
 import { listUserApiCredentials, saveUserApiCredential } from '@/lib/ai/byok/service';
 import { saveApiCredentialSchema } from '@/lib/ai/byok/schemas';
+import { BYOK_ERROR_CODE } from '@/lib/ai/byok/constants';
+import { ByokPublicError } from '@/lib/ai/byok/errors';
 import {
   createByokErrorResponse,
   createByokJsonResponse,
   requireByokUser,
 } from '@/lib/ai/byok/route-helpers';
+import { getEnabledAiProviderOptions } from '@/lib/ai/byok/provider-options';
+import { getStoredAiProviderOptions } from '@/lib/ai/byok/provider-options-store';
 
 export const runtime = 'nodejs';
 
@@ -48,6 +52,12 @@ export async function POST(request: NextRequest) {
     });
 
     const input = await parseLimitedJsonBody(request, saveApiCredentialSchema);
+    const providerOptions = getEnabledAiProviderOptions(await getStoredAiProviderOptions());
+
+    if (!providerOptions.some((option) => option.value === input.provider)) {
+      throw new ByokPublicError(BYOK_ERROR_CODE.UNSUPPORTED_PROVIDER, 400);
+    }
+
     const result = await saveUserApiCredential(userId, input, { requestId, ip });
 
     return createByokJsonResponse(result);

@@ -75,6 +75,13 @@ export interface SystemSettings {
 
 export type SystemSettingsPayload = Omit<SystemSettings, 'updatedAt'>;
 
+export interface AiProviderOption {
+  color: string;
+  enabled: boolean;
+  label: string;
+  value: string;
+}
+
 function assertApiResponse<T>(response: unknown): ApiResponse<T> {
   const result = response as ApiResponse<T>;
 
@@ -156,4 +163,16 @@ export async function updateSystemSettings(
 ): Promise<SystemSettings> {
   const response = await alovaPut('/api/system-settings', payload);
   return assertApiResponse<SystemSettings>(response).data;
+}
+
+export async function getAdminAiProviderOptions(): Promise<AiProviderOption[]> {
+  const response = await alovaGet('/api/admin/ai-providers');
+  return assertApiResponse<AiProviderOption[]>(response).data;
+}
+
+export async function updateAdminAiProviderOptions(
+  options: AiProviderOption[],
+): Promise<AiProviderOption[]> {
+  const response = await alovaPut('/api/admin/ai-providers', { options });
+  return assertApiResponse<AiProviderOption[]>(response).data;
 }

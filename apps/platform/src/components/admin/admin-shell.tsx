@@ -39,7 +39,14 @@ const menuItems: AdminMenuItem[] = [
           { key: '/admin/permissions', label: '权限' },
         ],
       },
-      { key: '/admin/settings', label: '系统配置' },
+      {
+        key: '/admin/settings-group',
+        label: '系统配置',
+        children: [
+          { key: '/admin/settings', label: '基础配置' },
+          { key: '/admin/settings/ai-provider', label: 'AI Provider' },
+        ],
+      },
     ],
   },
 ];
