@@ -4,7 +4,7 @@
  */
 
 import { createAlova } from 'alova';
-import type { RequestBody } from 'alova';
+import type { Method, RequestBody } from 'alova';
 import fetch from 'alova/fetch';
 import ReactHook from 'alova/react';
 
@@ -14,17 +14,24 @@ interface AlovaMessageApi {
 }
 
 interface AlovaRequestMeta {
+  showErrorMessage?: boolean;
   showSuccessMessage?: boolean;
   successMessage?: string;
 }
 
-interface AlovaMethodContext {
-  meta?: AlovaRequestMeta;
+declare module 'alova' {
+  interface AlovaCustomTypes {
+    meta: AlovaRequestMeta;
+  }
 }
 
-interface AlovaApiResponse {
+interface AlovaApiResponse<T = unknown> {
+  code?: number;
+  data?: T;
+  errorCode?: string;
   success?: boolean;
   message?: string;
+  timestamp?: number;
 }
 
 interface AlovaErrorResponse {
@@ -34,7 +41,6 @@ interface AlovaErrorResponse {
 }
 
 let alovaMessageApi: AlovaMessageApi | null = null;
-const shownResponseErrors = new WeakSet<Error>();
 
 /**
  * @func setAlovaMessageApi
@@ -53,7 +59,11 @@ export function setAlovaMessageApi(messageApi: AlovaMessageApi | null): void {
  * @returns {data is AlovaApiResponse} 是否为统一接口响应结构。
  */
 function isApiResponse(data: unknown): data is AlovaApiResponse {
-  return typeof data === 'object' && data !== null && 'success' in data;
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    ('success' in data || ('code' in data && 'message' in data && 'data' in data))
+  );
 }
 
 /**
@@ -67,39 +77,47 @@ function isErrorResponse(data: unknown): data is AlovaErrorResponse {
 }
 
 /**
- * @func isShownError
- * @desc 判断错误是否已经展示过全局提示。
- * @param {unknown} error 错误对象。
- * @returns {boolean} 是否已经展示过全局提示。
+ * @func isFailedApiResponse
+ * @desc 判断统一接口响应是否表示业务失败。
+ * @param {unknown} data 响应数据。
+ * @returns {boolean} 是否为业务失败响应。
  */
-function isShownError(error: unknown): boolean {
-  return error instanceof Error && shownResponseErrors.has(error);
+function isFailedApiResponse(data: unknown): boolean {
+  if (!isApiResponse(data)) {
+    return false;
+  }
+
+  if (data.success === false) {
+    return true;
+  }
+
+  if (data.success === true) {
+    return false;
+  }
+
+  return typeof data.code === 'number' && (data.code < 200 || data.code >= 300);
 }
 
 /**
- * @func createShownError
- * @desc 创建已展示全局提示的错误对象。
- * @param {string} message 错误提示文本。
- * @returns {Error} 错误对象。
- */
-function createShownError(message: string): Error {
-  const error = new Error(message);
-  shownResponseErrors.add(error);
-
-  return error;
-}
-
-/**
- * @func parseResponseJson
- * @desc 安全解析响应 JSON 数据。
+ * @func parseResponseBody
+ * @desc 安全解析响应体数据。
  * @param {Response} response fetch 响应对象。
- * @returns {Promise<unknown>} 响应体 JSON 数据。
+ * @returns {Promise<unknown>} 响应体数据。
  */
-async function parseResponseJson(response: Response): Promise<unknown> {
+async function parseResponseBody(response: Response): Promise<unknown> {
+  if (response.status === 204) {
+    return null;
+  }
+
+  const contentType = response.headers.get('content-type') ?? '';
+
   try {
-    return await response.json();
+    if (contentType.includes('application/json')) {
+      return await response.json();
+    }
+
+    return await response.text();
   } catch {
-    // 非 JSON 响应回退到 HTTP 状态提示，避免解析错误覆盖接口语义。
     return null;
   }
 }
@@ -121,10 +139,10 @@ function getResponseMessage(data: unknown, fallback: string): string {
   }
 
   if (typeof data === 'object' && data !== null && 'message' in data) {
-    const { message } = data;
+    const { message: responseMessage } = data;
 
-    if (typeof message === 'string' && message) {
-      return message;
+    if (typeof responseMessage === 'string' && responseMessage) {
+      return responseMessage;
     }
   }
 
@@ -135,28 +153,114 @@ function getResponseMessage(data: unknown, fallback: string): string {
  * @func showGlobalSuccessMessage
  * @desc 根据请求元数据展示全局成功提示。
  * @param {unknown} data 响应数据。
- * @param {AlovaMethodContext | undefined} method 请求方法上下文。
+ * @param {Method | undefined} method 请求方法上下文。
  * @returns {void}
  */
-function showGlobalSuccessMessage(data: unknown, method?: AlovaMethodContext): void {
-  if (!method?.meta?.showSuccessMessage) {
+function showGlobalSuccessMessage(data: unknown, method?: Method): void {
+  const meta = method?.config.meta;
+
+  if (!meta?.showSuccessMessage) {
     return;
   }
 
-  const content = method.meta.successMessage ?? getResponseMessage(data, '操作成功');
+  const content = meta.successMessage ?? getResponseMessage(data, '操作成功');
 
   alovaMessageApi?.success(content);
 }
 
 /**
- * @func getErrorMessage
- * @desc 获取可展示的错误提示文本。
- * @param {unknown} error 错误对象。
- * @param {string} fallback 默认错误提示。
- * @returns {string} 错误提示文本。
+ * @func shouldShowGlobalErrorMessage
+ * @desc 判断当前请求是否应展示全局错误提示。
+ * @param {Method | undefined} method 请求方法上下文。
+ * @returns {boolean} 是否展示全局错误提示。
  */
-function getErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error ? error.message : fallback;
+function shouldShowGlobalErrorMessage(method?: Method): boolean {
+  const meta = method?.config.meta;
+
+  return meta?.showErrorMessage !== false;
+}
+
+/**
+ * @func isNamedError
+ * @desc 判断错误对象是否匹配指定错误名称。
+ * @param {unknown} error 错误对象。
+ * @param {string} name 错误名称。
+ * @returns {boolean} 是否匹配指定错误名称。
+ */
+function isNamedError(error: unknown, name: string): boolean {
+  return error instanceof Error && error.name === name;
+}
+
+/**
+ * @func isTimeoutError
+ * @desc 判断请求错误是否为超时错误。
+ * @param {unknown} error 错误对象。
+ * @returns {boolean} 是否为超时错误。
+ */
+function isTimeoutError(error: unknown): boolean {
+  return error instanceof Error && error.message === 'fetchError: network timeout';
+}
+
+/**
+ * @func isNetworkError
+ * @desc 判断请求错误是否为网络连接错误。
+ * @param {unknown} error 错误对象。
+ * @returns {boolean} 是否为网络连接错误。
+ */
+function isNetworkError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return ['Failed to fetch', 'Load failed', 'NetworkError'].some((networkMessage) =>
+    error.message.includes(networkMessage),
+  );
+}
+
+/**
+ * @func getObjectErrorMessage
+ * @desc 获取普通错误对象中的提示文本。
+ * @param {unknown} error 错误对象。
+ * @returns {string | undefined} 错误提示文本。
+ */
+function getObjectErrorMessage(error: unknown): string | undefined {
+  if (typeof error !== 'object' || error === null || !('message' in error)) {
+    return undefined;
+  }
+
+  const { message: errorMessage } = error;
+
+  return typeof errorMessage === 'string' && errorMessage ? errorMessage : undefined;
+}
+
+/**
+ * @func normalizeRequestError
+ * @desc 归一化全局请求错误，确保错误继续以 Error 抛出。
+ * @param {unknown} error 请求错误。
+ * @returns {Error} 归一化后的错误对象。
+ */
+function normalizeRequestError(error: unknown): Error {
+  if (isTimeoutError(error)) {
+    return new Error('请求超时，请稍后重试');
+  }
+
+  if (isNamedError(error, 'AbortError')) {
+    return new Error('请求已取消');
+  }
+
+  if (isNetworkError(error)) {
+    return new Error('网络连接异常，请检查网络后重试');
+  }
+
+  if (error instanceof Error) {
+    return error;
+  }
+
+  if (typeof error === 'string' && error) {
+    return new Error(error);
+  }
+
+  return new Error(getObjectErrorMessage(error) ?? '请求失败');
 }
 
 /**
@@ -170,65 +274,116 @@ function showGlobalErrorMessage(content: string): void {
 }
 
 /**
- * @func throwGlobalResponseError
- * @desc 展示响应错误并抛出已标记错误。
+ * @func throwResponseError
+ * @desc 按请求元数据展示响应错误并抛出错误。
  * @param {string} content 错误提示文本。
+ * @param {Method | undefined} method 请求方法上下文。
  * @returns {never}
  */
-function throwGlobalResponseError(content: string): never {
-  showGlobalErrorMessage(content);
-  throw createShownError(content);
+function throwResponseError(content: string, method?: Method): never {
+  if (shouldShowGlobalErrorMessage(method)) {
+    showGlobalErrorMessage(content);
+  }
+
+  throw new Error(content);
 }
 
 /**
- * @func parseSuccessResponse
- * @desc 解析响应 JSON 数据并处理全局成功提示。
+ * @func getHttpErrorFallback
+ * @desc 获取 HTTP 错误的兜底提示。
  * @param {Response} response fetch 响应对象。
- * @param {AlovaMethodContext} [method] 请求方法上下文。
- * @returns {Promise<unknown>} 响应体 JSON 数据。
+ * @returns {string} HTTP 错误提示。
  */
-async function parseSuccessResponse(
-  response: Response,
-  method?: AlovaMethodContext,
-): Promise<unknown> {
-  const data = await parseResponseJson(response);
+function getHttpErrorFallback(response: Response): string {
+  return response.statusText || `请求失败（${response.status}）`;
+}
+
+/**
+ * @func getApiResponseData
+ * @desc 获取统一接口响应中的业务数据。
+ * @param {unknown} data 响应数据。
+ * @returns {unknown} 业务数据或原始响应数据。
+ */
+function getApiResponseData(data: unknown): unknown {
+  return isApiResponse(data) ? (data.data ?? null) : data;
+}
+
+/**
+ * @func onSuccess
+ * @desc 解析响应数据并处理全局响应提示。
+ * @param {Response} response fetch 响应对象。
+ * @param {Method} [method] 请求方法上下文。
+ * @returns {Promise<unknown>} 业务数据或原始响应数据。
+ */
+async function onSuccess(response: Response, method?: Method): Promise<unknown> {
+  const data = await parseResponseBody(response);
 
   if (!response.ok) {
-    throwGlobalResponseError(getResponseMessage(data, response.statusText || '请求失败'));
+    throwResponseError(getResponseMessage(data, getHttpErrorFallback(response)), method);
   }
 
-  if (isApiResponse(data) && !data.success) {
-    throwGlobalResponseError(getResponseMessage(data, '请求失败'));
+  if (isFailedApiResponse(data)) {
+    throwResponseError(getResponseMessage(data, '请求失败'), method);
   }
 
   showGlobalSuccessMessage(data, method);
 
-  return data;
+  return getApiResponseData(data);
 }
 
 /**
- * @func handleResponseError
+ * @func onError
  * @desc 处理请求错误并抛出供业务侧捕获。
  * @param {unknown} error 请求错误。
+ * @param {Method} [method] 请求方法上下文。
  * @returns {never}
  */
-function handleResponseError(error: unknown): never {
-  if (!isShownError(error)) {
-    showGlobalErrorMessage(getErrorMessage(error, '请求失败'));
+function onError(error: unknown, method?: Method): never {
+  const normalizedError = normalizeRequestError(error);
+
+  if (shouldShowGlobalErrorMessage(method)) {
+    showGlobalErrorMessage(normalizedError.message);
   }
 
-  throw error;
+  throw normalizedError;
 }
 
+/**
+ * @func beforeRequest
+ * @desc 在请求发出前统一补充基础请求配置。
+ * @param {Method} method 请求方法上下文。
+ * @returns {void}
+ */
+function beforeRequest(method: Method): void {
+  const { config } = method;
+
+  config.headers = {
+    Accept: 'application/json',
+    ...config.headers,
+  };
+  config.credentials = config.credentials ?? 'same-origin';
+}
+
+/**
+ * @func onComplete
+ * @desc 统一响应完成入口，预留完成态扩展点。
+ * @param {Method} method 请求方法上下文。
+ * @returns {void}
+ */
+function onComplete(method: Method): void {
+  void method;
+}
 export const alovaInstance = createAlova({
   requestAdapter: fetch(),
   statesHook: ReactHook,
   baseURL: '',
   timeout: 10000,
   cacheFor: null,
+  beforeRequest,
   responded: {
-    onSuccess: parseSuccessResponse,
-    onError: handleResponseError,
+    onSuccess,
+    onError,
+    onComplete,
   },
 });
 

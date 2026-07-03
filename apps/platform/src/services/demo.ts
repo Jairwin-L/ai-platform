@@ -1,10 +1,5 @@
 import { alovaGet } from '@/utils/alova';
 
-export interface DemoResponse {
-  data: string;
-}
-
-export async function query(): Promise<DemoResponse> {
-  const response = await alovaGet('/api/demo');
-  return response as DemoResponse;
+export async function query(): Promise<string> {
+  return alovaGet<string>('/api/demo');
 }

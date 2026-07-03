@@ -1,11 +1,5 @@
 import { alovaDelete, alovaGet, alovaPost, alovaPut } from '@/utils/alova';
 
-interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
-
 interface PaginatedData<T> {
   data: T[];
   page: number;
@@ -82,16 +76,6 @@ export interface AiProviderOption {
   value: string;
 }
 
-function assertApiResponse<T>(response: unknown): ApiResponse<T> {
-  const result = response as ApiResponse<T>;
-
-  if (!result.success) {
-    throw new Error(result.message || '请求失败');
-  }
-
-  return result;
-}
-
 function getQueryParams(params: ListParams): Record<string, unknown> {
   return Object.fromEntries(
     Object.entries(params).filter(([, value]) => value !== undefined && value !== ''),
@@ -99,80 +83,66 @@ function getQueryParams(params: ListParams): Record<string, unknown> {
 }
 
 export async function getRoles(params: ListParams = {}): Promise<PaginatedData<AdminRole>> {
-  const response = await alovaGet('/api/roles', getQueryParams(params));
-  return assertApiResponse<PaginatedData<AdminRole>>(response).data;
+  return alovaGet<PaginatedData<AdminRole>>('/api/roles', getQueryParams(params));
 }
 
 export async function getRole(id: string): Promise<AdminRole> {
-  const response = await alovaGet(`/api/roles/${id}`);
-  return assertApiResponse<AdminRole>(response).data;
+  return alovaGet<AdminRole>(`/api/roles/${id}`);
 }
 
 export async function createRole(payload: RolePayload): Promise<AdminRole> {
-  const response = await alovaPost('/api/roles', payload);
-  return assertApiResponse<AdminRole>(response).data;
+  return alovaPost<AdminRole>('/api/roles', payload);
 }
 
 export async function updateRole(id: string, payload: RolePayload): Promise<AdminRole> {
-  const response = await alovaPut(`/api/roles/${id}`, payload);
-  return assertApiResponse<AdminRole>(response).data;
+  return alovaPut<AdminRole>(`/api/roles/${id}`, payload);
 }
 
 export async function deleteRole(id: string): Promise<void> {
-  const response = await alovaDelete(`/api/roles/${id}`);
-  assertApiResponse<{ id: string }>(response);
+  await alovaDelete<{ id: string }>(`/api/roles/${id}`);
 }
 
 export async function getPermissions(
   params: ListParams = {},
 ): Promise<PaginatedData<AdminPermission>> {
-  const response = await alovaGet('/api/permissions', getQueryParams(params));
-  return assertApiResponse<PaginatedData<AdminPermission>>(response).data;
+  return alovaGet<PaginatedData<AdminPermission>>('/api/permissions', getQueryParams(params));
 }
 
 export async function getPermission(id: string): Promise<AdminPermission> {
-  const response = await alovaGet(`/api/permissions/${id}`);
-  return assertApiResponse<AdminPermission>(response).data;
+  return alovaGet<AdminPermission>(`/api/permissions/${id}`);
 }
 
 export async function createPermission(payload: PermissionPayload): Promise<AdminPermission> {
-  const response = await alovaPost('/api/permissions', payload);
-  return assertApiResponse<AdminPermission>(response).data;
+  return alovaPost<AdminPermission>('/api/permissions', payload);
 }
 
 export async function updatePermission(
   id: string,
   payload: PermissionPayload,
 ): Promise<AdminPermission> {
-  const response = await alovaPut(`/api/permissions/${id}`, payload);
-  return assertApiResponse<AdminPermission>(response).data;
+  return alovaPut<AdminPermission>(`/api/permissions/${id}`, payload);
 }
 
 export async function deletePermission(id: string): Promise<void> {
-  const response = await alovaDelete(`/api/permissions/${id}`);
-  assertApiResponse<{ id: string }>(response);
+  await alovaDelete<{ id: string }>(`/api/permissions/${id}`);
 }
 
 export async function getSystemSettings(): Promise<SystemSettings> {
-  const response = await alovaGet('/api/system-settings');
-  return assertApiResponse<SystemSettings>(response).data;
+  return alovaGet<SystemSettings>('/api/system-settings');
 }
 
 export async function updateSystemSettings(
   payload: SystemSettingsPayload,
 ): Promise<SystemSettings> {
-  const response = await alovaPut('/api/system-settings', payload);
-  return assertApiResponse<SystemSettings>(response).data;
+  return alovaPut<SystemSettings>('/api/system-settings', payload);
 }
 
 export async function getAdminAiProviderOptions(): Promise<AiProviderOption[]> {
-  const response = await alovaGet('/api/admin/ai-providers');
-  return assertApiResponse<AiProviderOption[]>(response).data;
+  return alovaGet<AiProviderOption[]>('/api/admin/ai-providers');
 }
 
 export async function updateAdminAiProviderOptions(
   options: AiProviderOption[],
 ): Promise<AiProviderOption[]> {
-  const response = await alovaPut('/api/admin/ai-providers', { options });
-  return assertApiResponse<AiProviderOption[]>(response).data;
+  return alovaPut<AiProviderOption[]>('/api/admin/ai-providers', { options });
 }

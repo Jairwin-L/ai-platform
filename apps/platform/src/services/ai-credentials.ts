@@ -4,12 +4,6 @@ export type AiCredentialProvider = 'anthropic' | 'deepseek' | 'gemini' | 'openai
 export type AiCredentialStatus = 'active' | 'disabled' | 'expired' | 'invalid';
 export type AiCredentialTtlOption = '2w' | '3w' | '4w' | '7d';
 
-interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
-
 export interface AiCredential {
   credentialId: string;
   expiresAt: string;
@@ -38,16 +32,6 @@ interface AiCredentialListResponse {
   credentials: AiCredential[];
 }
 
-function assertApiResponse<T>(response: unknown): ApiResponse<T> {
-  const result = response as ApiResponse<T>;
-
-  if (!result.success) {
-    throw new Error(result.message || '请求失败');
-  }
-
-  return result;
-}
-
 export async function getAiCredentials(): Promise<AiCredential[]> {
   const response = await alovaGet<AiCredentialListResponse>('/api/user/ai-credentials');
 
@@ -55,9 +39,7 @@ export async function getAiCredentials(): Promise<AiCredential[]> {
 }
 
 export async function getAiProviderOptions(): Promise<AiProviderOption[]> {
-  const response = await alovaGet('/api/ai/provider-options');
-
-  return assertApiResponse<AiProviderOption[]>(response).data;
+  return alovaGet<AiProviderOption[]>('/api/ai/provider-options');
 }
 
 export async function createAiCredential(payload: SaveAiCredentialPayload): Promise<AiCredential> {

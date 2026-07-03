@@ -33,48 +33,27 @@ export interface ArticleListPagination {
   limit: number;
 }
 
-interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
-
 export interface ArticleListData {
   data: Article[];
   pagination: ArticleListPagination;
 }
 
-function assertApiResponse<T>(response: unknown): ApiResponse<T> {
-  const result = response as ApiResponse<T>;
-
-  if (!result.success) {
-    throw new Error(result.message || '请求失败');
-  }
-
-  return result;
-}
-
 export async function listArticles(params: ArticleListParams) {
-  const response = await alovaGet('/api/articles', { ...params });
-  return assertApiResponse<ArticleListData>(response).data;
+  return alovaGet<ArticleListData>('/api/articles', { ...params });
 }
 
 export async function getArticle(id: string) {
-  const response = await alovaGet(`/api/articles/${id}`);
-  return assertApiResponse<Article>(response).data;
+  return alovaGet<Article>(`/api/articles/${id}`);
 }
 
 export async function createArticle(payload: ArticleFormValues) {
-  const response = await alovaPost('/api/articles', payload);
-  return assertApiResponse<Article>(response).data;
+  return alovaPost<Article>('/api/articles', payload);
 }
 
 export async function updateArticle(id: string, payload: Partial<ArticleFormValues>) {
-  const response = await alovaPut(`/api/articles/${id}`, payload);
-  return assertApiResponse<Article>(response).data;
+  return alovaPut<Article>(`/api/articles/${id}`, payload);
 }
 
 export async function deleteArticle(id: string) {
-  const response = await alovaDelete(`/api/articles/${id}`);
-  return assertApiResponse<{ id: string }>(response).data;
+  return alovaDelete<{ id: string }>(`/api/articles/${id}`);
 }

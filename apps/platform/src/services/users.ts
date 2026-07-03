@@ -49,12 +49,6 @@ export interface UserUpdatePayload {
   user_name?: string | null;
 }
 
-interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
-
 interface PaginatedData<T> {
   data: T[];
   page: number;
@@ -70,27 +64,14 @@ export interface UserListParams extends Record<string, unknown> {
   status?: UserStatus | 'all';
 }
 
-function assertApiResponse<T>(response: unknown): ApiResponse<T> {
-  const result = response as ApiResponse<T>;
-
-  if (!result.success) {
-    throw new Error(result.message || '请求失败');
-  }
-
-  return result;
-}
-
 export async function getUserProfileById(id: string) {
-  const response = await alovaGet(`/api/users/${id}`);
-  return assertApiResponse<UserProfile>(response).data;
+  return alovaGet<UserProfile>(`/api/users/${id}`);
 }
 
 export async function getUsers(params: UserListParams = {}): Promise<PaginatedData<UserListItem>> {
-  const response = await alovaGet('/api/users', params);
-  return assertApiResponse<PaginatedData<UserListItem>>(response).data;
+  return alovaGet<PaginatedData<UserListItem>>('/api/users', params);
 }
 
 export async function updateUser(id: string, payload: UserUpdatePayload): Promise<UserProfile> {
-  const response = await alovaPut(`/api/users/${id}`, payload);
-  return assertApiResponse<UserProfile>(response).data;
+  return alovaPut<UserProfile>(`/api/users/${id}`, payload);
 }
