@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { isNodeSelection, type Editor } from '@tiptap/react';
+import { isNodeSelection } from '@tiptap/react';
 
 // --- Hooks ---
 
@@ -23,19 +23,8 @@ import { isMarkInSchema } from '@/lib/tiptap-utils';
 // --- Styles ---
 import '@/components/tiptap-ui/link-popover/link-popover.scss';
 
-export interface LinkHandlerProps {
-  editor: Editor | null;
-  onSetLink?: () => void;
-  onLinkActive?: () => void;
-}
-
-export interface LinkMainProps {
-  url: string;
-  setUrl: React.Dispatch<React.SetStateAction<string>>;
-  setLink: () => void;
-  removeLink: () => void;
-  isActive: boolean;
-}
+export type LinkHandlerProps = ITiptapUi.LinkHandlerProps;
+export type LinkMainProps = ITiptapUi.LinkMainProps;
 
 export const useLinkHandler = (props: LinkHandlerProps) => {
   const { editor, onSetLink, onLinkActive } = props;
@@ -131,9 +120,7 @@ export const LinkButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
   },
 );
 
-export const LinkContent: React.FC<{
-  editor?: Editor | null;
-}> = ({ editor: providedEditor }) => {
+export const LinkContent: React.FC<ITiptapUi.LinkContentProps> = ({ editor: providedEditor }) => {
   const editor = useTiptapEditor(providedEditor);
 
   const linkHandler = useLinkHandler({
@@ -204,26 +191,7 @@ const LinkMain: React.FC<LinkMainProps> = ({ url, setUrl, setLink, removeLink, i
   );
 };
 
-export interface LinkPopoverProps extends Omit<ButtonProps, 'type'> {
-  /**
-   * The TipTap editor instance.
-   */
-  editor?: Editor | null;
-  /**
-   * Whether to hide the link popover.
-   * @default false
-   */
-  hideWhenUnavailable?: boolean;
-  /**
-   * Callback for when the popover opens or closes.
-   */
-  onOpenChange?: (isOpen: boolean) => void;
-  /**
-   * Whether to automatically open the popover when a link is active.
-   * @default true
-   */
-  autoOpenOnLinkActive?: boolean;
-}
+export type LinkPopoverProps = ITiptapUi.LinkPopoverProps;
 
 export function LinkPopover({
   editor: providedEditor,

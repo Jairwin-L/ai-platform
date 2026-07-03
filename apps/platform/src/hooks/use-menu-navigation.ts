@@ -1,20 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import type { Editor } from '@tiptap/react';
 
-type Orientation = 'horizontal' | 'vertical' | 'both';
-
-interface MenuNavigationOptions<T> {
-  editor?: Editor | null;
-  containerRef?: React.RefObject<HTMLElement | null>;
-  query?: string;
-  items: T[];
-  onSelect?: (item: T) => void;
-  onClose?: () => void;
-  orientation?: Orientation;
-  autoSelectFirstItem?: boolean;
-}
+type MenuNavigationOptions<T> = IHooks.MenuNavigationOptions<T>;
 
 export function useMenuNavigation<T>({
   editor,

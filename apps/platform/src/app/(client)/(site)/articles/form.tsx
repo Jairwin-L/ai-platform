@@ -6,7 +6,6 @@ import { Button, Form, Input, message, Space, Switch, Typography } from 'antd';
 import { DynamicSimpleEditor } from '@/components/editor/dynamic-editor';
 import { DynamicMarkdownEditor } from '@/components/markdown-editor/dynamic-editor';
 import {
-  type Article,
   type ArticleFormValues,
   createArticle,
   getArticle,
@@ -25,11 +24,7 @@ function getEditorText(html?: string): string {
     .trim();
 }
 
-interface ArticleFormProps {
-  mode: 'create' | 'edit';
-  article?: Article;
-  articleId?: string;
-}
+type ArticleFormProps = IAppPages.ArticleFormProps;
 
 export default function ArticleForm(props: ArticleFormProps) {
   const { mode, article, articleId } = props;

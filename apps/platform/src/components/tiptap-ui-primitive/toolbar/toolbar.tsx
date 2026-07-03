@@ -4,11 +4,8 @@ import * as React from 'react';
 import { Separator } from '@/components/tiptap-ui-primitive/separator';
 import '@/components/tiptap-ui-primitive/toolbar/toolbar.scss';
 
-type BaseProps = React.HTMLAttributes<HTMLDivElement>;
-
-interface ToolbarProps extends BaseProps {
-  variant?: 'floating' | 'fixed';
-}
+type BaseProps = ITiptapPrimitive.ToolbarBaseProps;
+type ToolbarProps = ITiptapPrimitive.ToolbarProps;
 
 const mergeRefs = <T,>(
   refs: Array<React.RefObject<T> | React.Ref<T> | null | undefined>,

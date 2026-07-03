@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 
 // Page
 // ========================================================
-export default function ClientSideOnly({ children }: { children: React.ReactNode }) {
+export default function ClientSideOnly({ children }: IComponent.ChildrenProps) {
   // State / Props
   const [hasMounted, setHasMounted] = useState(false);
 

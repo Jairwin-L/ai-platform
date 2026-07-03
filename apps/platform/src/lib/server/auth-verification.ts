@@ -2,13 +2,9 @@ import crypto from 'node:crypto';
 import { VERIFICATION_CODE_TTL_SECONDS } from '@/constants';
 import { redisDel, redisGet, redisSetEx } from './redis';
 
-export type AuthCodePurpose = 'sign-in' | 'sign-up';
+export type AuthCodePurpose = IServer.AuthCodePurpose;
 
-interface StoredVerificationCode {
-  attempts: number;
-  codeHash: string;
-  expiresAt: number;
-}
+type StoredVerificationCode = IServer.StoredVerificationCode;
 
 const CODE_TTL_SECONDS = VERIFICATION_CODE_TTL_SECONDS;
 const MAX_VERIFY_ATTEMPTS = 5;

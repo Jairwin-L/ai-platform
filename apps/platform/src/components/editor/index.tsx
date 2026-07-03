@@ -166,12 +166,7 @@ const MobileToolbarContent = ({
   </>
 );
 
-interface SimpleEditorProps {
-  content?: string;
-  value?: string;
-  onUpdate?: (html: string) => void;
-  onChange?: (html: string) => void;
-}
+type SimpleEditorProps = IEditorComponent.SimpleEditorProps;
 
 export const SimpleEditor = React.forwardRef(
   ({ content, value, onUpdate, onChange }: SimpleEditorProps, ref) => {

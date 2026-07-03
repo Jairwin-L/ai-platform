@@ -14,18 +14,8 @@ import {
 } from '@/api/modules/admin';
 import styles from './admin-form-page.module.scss';
 
-interface RoleFormValues {
-  description?: string;
-  is_system?: boolean;
-  name: string;
-  permissions?: string[];
-}
-
-interface PermissionTreeNode {
-  children?: PermissionTreeNode[];
-  title: string;
-  value: string;
-}
+type PermissionTreeNode = IComponent.PermissionTreeNode;
+type RoleFormValues = IAppForms.RoleFormValues;
 
 const defaultRoleValues: RoleFormValues = {
   description: '',
@@ -42,7 +32,7 @@ function getPermissionTree(nodes: AdminPermission[]): PermissionTreeNode[] {
   }));
 }
 
-export function RoleFormPage({ roleId }: { roleId?: string }) {
+export function RoleFormPage({ roleId }: IComponent.RoleFormPageProps) {
   const router = useRouter();
   const [form] = Form.useForm<RoleFormValues>();
   const [permissionTree, setPermissionTree] = useState<PermissionTreeNode[]>([]);

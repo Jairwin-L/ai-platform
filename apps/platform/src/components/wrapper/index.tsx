@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
+import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { usePermission } from '@/hooks/use-permission';
-import type { AuthPayload } from '@/api/modules/auth';
 import { useAuthSessionStore } from '@/stores/auth-session';
 import ClientSideOnly from '../client-side-only';
 import Loading from '../loading';
@@ -19,10 +18,7 @@ function isAdminPath(pathname: string): boolean {
   return pathname === ADMIN_PATH || pathname.startsWith(`${ADMIN_PATH}/`);
 }
 
-interface WrapperProps {
-  children: ReactNode;
-  initialAuthPayload: AuthPayload | null;
-}
+type WrapperProps = IComponent.WrapperProps;
 
 export default function Wrapper({ children, initialAuthPayload }: WrapperProps) {
   const pathname = usePathname();

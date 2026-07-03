@@ -14,14 +14,7 @@ import {
 } from '@/api/modules/users';
 import styles from '@/components/admin/admin-form-page.module.scss';
 
-interface UserFormValues {
-  bio?: string;
-  full_name?: string;
-  nick_name?: string;
-  roleIds?: number[];
-  status: UserStatus;
-  user_name?: string;
-}
+type UserFormValues = IAppForms.UserFormValues;
 
 const statusOptions: Array<{ label: string; value: UserStatus }> = [
   { label: '正常', value: 'active' },

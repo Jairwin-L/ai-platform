@@ -1,20 +1,8 @@
-import type { Article as PrismaArticle, Prisma } from '@/generated/prisma/client';
+import type { Prisma } from '@/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
 
-export interface ArticleQueryParams {
-  cursor?: string | null;
-  limit: number;
-  keyword?: string;
-}
-
-export interface ArticleQueryResult {
-  data: PrismaArticle[];
-  pagination: {
-    nextCursor: string | null;
-    hasMore: boolean;
-    limit: number;
-  };
-}
+export type ArticleQueryParams = IArticleQuery.ArticleQueryParams;
+export type ArticleQueryResult = IArticleQuery.ArticleQueryResult;
 
 function getArticleWhere(keyword: string): Prisma.ArticleWhereInput {
   if (!keyword) {

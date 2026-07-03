@@ -5,18 +5,7 @@ import { AUTH_SESSION_COOKIE_NAME } from '@/constants/auth';
 import { prisma } from '@/lib/prisma';
 import type { AuthUser } from './types';
 
-export interface AuthPayload {
-  permissions: string[];
-  roles: string[];
-  user: {
-    email: string | null;
-    emailVerified: boolean | null;
-    id: string;
-    nickName: string | null;
-    picture: string | null;
-    status: string;
-  };
-}
+export type AuthPayload = IServer.AuthPayload;
 
 const scryptAsync = promisify(crypto.scrypt);
 const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;

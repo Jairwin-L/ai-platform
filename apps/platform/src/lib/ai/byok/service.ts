@@ -24,27 +24,9 @@ import {
 import type { ChatRequestInput, SaveApiCredentialInput } from './schemas';
 import { writeByokAuditEvent } from '@/lib/ai/security/audit';
 
-export interface ByokRequestMeta {
-  requestId?: string;
-  ip?: string;
-}
-
-export interface ByokServiceDependencies {
-  callAiProvider?: typeof callAiProvider;
-  createCredentialId?: typeof createCredentialId;
-  decryptApiKey?: typeof decryptApiKey;
-  deleteStoredApiCredential?: typeof deleteStoredApiCredential;
-  encryptApiKey?: typeof encryptApiKey;
-  getStoredApiCredential?: typeof getStoredApiCredential;
-  listStoredApiCredentials?: typeof listStoredApiCredentials;
-  saveStoredApiCredential?: typeof saveStoredApiCredential;
-  touchStoredApiCredentialLastUsed?: typeof touchStoredApiCredentialLastUsed;
-  validateProviderApiKey?: typeof validateProviderApiKey;
-}
-
-export interface SavedCredentialResult extends StoredCredentialStatus {
-  saved: true;
-}
+export type ByokRequestMeta = IByok.RequestMeta;
+export type ByokServiceDependencies = IByok.ServiceDependencies;
+export type SavedCredentialResult = IByok.SavedCredentialResult;
 
 export async function saveUserApiCredential(
   userId: string,

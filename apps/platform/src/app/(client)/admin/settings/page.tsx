@@ -12,15 +12,7 @@ import { getSystemSettings, updateSystemSettings, type SystemSettings } from '@/
 import styles from '../resource-page.module.scss';
 import settingsStyles from './page.module.scss';
 
-interface SettingsValues {
-  allowRegistration: boolean;
-  byokAllowedOrigins: string;
-  defaultLanguage: 'en-US' | 'zh-CN';
-  displayName: string;
-  maintenanceMode: boolean;
-  sessionPolicy: 'standard' | 'strict';
-  supportEmail?: string;
-}
+type SettingsValues = IAppForms.SettingsValues;
 
 const initialValues: SettingsValues = {
   displayName: 'Next.js Starter Kit',

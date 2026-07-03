@@ -6,8 +6,8 @@ const INITIAL_QUALITY = 75;
 const MIN_QUALITY = 30;
 const QUALITY_STEP = 5;
 
-type SharpInstance = ReturnType<typeof sharp>;
-type SharpOutputType = 'jpeg' | 'png';
+type SharpInstance = IServer.SharpInstance;
+type SharpOutputType = IServer.SharpOutputType;
 
 async function loadSharp(): Promise<typeof sharp> {
   return (await import(/* webpackIgnore: true */ 'sharp')).default;

@@ -2,13 +2,7 @@ import { Prisma } from '@/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
 import { normalizeAiProviderOptions, type AiProviderOption } from './provider-options';
 
-interface ProviderOptionRow {
-  color: string;
-  enabled: boolean;
-  label: string;
-  sort_order: number;
-  value: string;
-}
+type ProviderOptionRow = IByok.ProviderOptionRow;
 
 function isMissingProviderOptionsTable(error: unknown): boolean {
   if (typeof error !== 'object' || error === null) {

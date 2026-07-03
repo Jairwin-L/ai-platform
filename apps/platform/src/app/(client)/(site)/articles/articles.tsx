@@ -4,22 +4,14 @@ import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Input, Popconfirm, Space, Table, Tag, Typography } from 'antd';
 import type { TableProps } from 'antd';
-import {
-  type Article,
-  type ArticleListData,
-  deleteArticle,
-  listArticles,
-} from '@/api/modules/articles';
+import { type Article, deleteArticle, listArticles } from '@/api/modules/articles';
 import styles from './articles.module.scss';
 
 const { Title, Text } = Typography;
 
 const DEFAULT_LIMIT = 10;
 
-interface ArticlesClientProps {
-  initialData: ArticleListData;
-  initialKeyword: string;
-}
+type ArticlesClientProps = IAppPages.ArticlesClientProps;
 
 export default function ArticlesClient({ initialData, initialKeyword }: ArticlesClientProps) {
   const router = useRouter();

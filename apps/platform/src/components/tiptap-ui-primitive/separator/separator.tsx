@@ -3,12 +3,7 @@
 import * as React from 'react';
 import '@/components/tiptap-ui-primitive/separator/separator.scss';
 
-type Orientation = 'horizontal' | 'vertical';
-
-export interface SeparatorProps extends React.HTMLAttributes<HTMLDivElement> {
-  orientation?: Orientation;
-  decorative?: boolean;
-}
+export type SeparatorProps = ITiptapPrimitive.SeparatorProps;
 
 export const Separator = React.forwardRef<HTMLDivElement, SeparatorProps>(
   ({ decorative, orientation = 'vertical', className = '', ...divProps }, ref) => {

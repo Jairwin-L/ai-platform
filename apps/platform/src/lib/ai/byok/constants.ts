@@ -5,7 +5,7 @@ export const BYOK_PROVIDER = {
   DEEPSEEK: 'deepseek',
 } as const;
 
-export type ByokProvider = (typeof BYOK_PROVIDER)[keyof typeof BYOK_PROVIDER];
+export type ByokProvider = IByok.Provider;
 
 export const SUPPORTED_BYOK_PROVIDERS = [
   BYOK_PROVIDER.OPENAI,
@@ -28,7 +28,7 @@ export const BYOK_TTL_OPTION_SECONDS = {
   '4w': 60 * 60 * 24 * 28,
 } as const;
 
-export type ByokTtlOption = keyof typeof BYOK_TTL_OPTION_SECONDS;
+export type ByokTtlOption = IByok.TtlOption;
 
 export const BYOK_CREDENTIAL_STATUS = {
   ACTIVE: 'active',
@@ -37,8 +37,7 @@ export const BYOK_CREDENTIAL_STATUS = {
   DISABLED: 'disabled',
 } as const;
 
-export type ByokCredentialStatus =
-  (typeof BYOK_CREDENTIAL_STATUS)[keyof typeof BYOK_CREDENTIAL_STATUS];
+export type ByokCredentialStatus = IByok.CredentialStatus;
 
 export const BYOK_AUDIT_EVENT = {
   KEY_SAVE_SUCCESS: 'BYOK_KEY_SAVE_SUCCESS',
@@ -62,7 +61,7 @@ export const BYOK_ERROR_CODE = {
   INTERNAL_ERROR: 'INTERNAL_ERROR',
 } as const;
 
-export type ByokErrorCode = (typeof BYOK_ERROR_CODE)[keyof typeof BYOK_ERROR_CODE];
+export type ByokErrorCode = IByok.ErrorCode;
 
 export const BYOK_SAFE_RESPONSE_HEADERS = {
   'Cache-Control': 'no-store, max-age=0',

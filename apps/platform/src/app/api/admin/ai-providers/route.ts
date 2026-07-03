@@ -13,9 +13,7 @@ import {
   updateStoredAiProviderOptions,
 } from '@/lib/ai/byok/provider-options-store';
 
-interface AiProviderPayload {
-  options?: unknown;
-}
+type AiProviderPayload = ISettingsApi.AiProviderPayload;
 
 const getAiProvidersHandler: ApiHandler = async () => {
   try {

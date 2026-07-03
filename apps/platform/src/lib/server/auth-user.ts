@@ -2,10 +2,7 @@ import crypto from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 import { createPasswordHash } from './auth-session';
 
-export interface CreateEmailUserInput {
-  email: string;
-  password: string;
-}
+export type CreateEmailUserInput = IServer.CreateEmailUserInput;
 
 export async function createEmailUser(input: CreateEmailUserInput) {
   const passwordHash = await createPasswordHash(input.password);

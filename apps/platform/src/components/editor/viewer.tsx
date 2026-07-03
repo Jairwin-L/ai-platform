@@ -22,10 +22,7 @@ import '@/components/tiptap-node/image-node/image-node.scss';
 import '@/components/tiptap-node/paragraph-node/paragraph-node.scss';
 import '@/components/tiptap-templates/simple/simple-editor.scss';
 
-interface SimpleEditorViewerProps {
-  content: string;
-  onUpdate?: (html: string) => void;
-}
+type SimpleEditorViewerProps = IEditorComponent.SimpleEditorViewerProps;
 
 export const SimpleEditorViewer = React.forwardRef(
   ({ content, onUpdate }: SimpleEditorViewerProps, ref) => {

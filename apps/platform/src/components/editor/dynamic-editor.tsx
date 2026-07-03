@@ -11,12 +11,7 @@ const SimpleEditor = dynamic(() => import('@/components/editor').then((mod) => m
   ),
 });
 
-interface DynamicSimpleEditorProps {
-  content?: string;
-  value?: string;
-  onUpdate?: (html: string) => void;
-  onChange?: (html: string) => void;
-}
+type DynamicSimpleEditorProps = IEditorComponent.SimpleEditorProps;
 
 export function DynamicSimpleEditor(props: DynamicSimpleEditorProps) {
   return <SimpleEditor {...props} />;

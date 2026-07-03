@@ -3,25 +3,10 @@
  * R2 浏览器直传工具函数。
  */
 
-export interface PresignedUrlItem {
-  url: string;
-  key: string;
-  fileName: string;
-  expiresAt: string;
-  maxFileSize: number;
-}
+export type PresignedUrlItem = IUploadApi.PresignedUrlItem;
+export type UploadProgressInfo = IUtils.UploadProgressInfo;
 
-export interface UploadProgressInfo {
-  progress: number;
-  loaded: number;
-  total: number;
-}
-
-interface PresignedResponse {
-  success: boolean;
-  data?: PresignedUrlItem[];
-  message?: string;
-}
+type PresignedResponse = IUploadApi.PresignedResponse;
 
 /**
  * @func getFileMimeType

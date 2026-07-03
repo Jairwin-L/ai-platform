@@ -39,5 +39,5 @@ export const updateArticleSchema = createArticleSchema.partial().refine(
   },
 );
 
-export type CreateArticleInput = z.infer<typeof createArticleSchema>;
-export type UpdateArticleInput = z.infer<typeof updateArticleSchema>;
+export type CreateArticleInput = IArticleSchema.CreateArticleInput;
+export type UpdateArticleInput = IArticleSchema.UpdateArticleInput;

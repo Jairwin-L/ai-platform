@@ -1,13 +1,7 @@
 import { APP_NAME } from '@/constants';
 import type { AuthCodePurpose } from './auth-verification';
 
-interface ResendEmailResponse {
-  error?: {
-    message?: string;
-    name?: string;
-  };
-  id?: string;
-}
+type ResendEmailResponse = IServer.ResendEmailResponse;
 
 function getResendApiKey(): string {
   const apiKey = process.env.RESEND_API_KEY;

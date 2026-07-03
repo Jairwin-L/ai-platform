@@ -9,14 +9,10 @@ import { type Editor } from '@tiptap/react';
 import { ImagePlusIcon } from '@/components/tiptap-icons/image-plus-icon';
 
 // --- UI Primitives ---
-import { Button, ButtonProps } from '@/components/tiptap-ui-primitive/button';
+import { Button } from '@/components/tiptap-ui-primitive/button';
 import { useTiptapEditor } from '@/hooks/use-tiptap-editor';
 
-export interface ImageUploadButtonProps extends ButtonProps {
-  editor?: Editor | null;
-  text?: string;
-  extensionName?: string;
-}
+export type ImageUploadButtonProps = ITiptapUi.ImageUploadButtonProps;
 
 export function isImageActive(editor: Editor | null, extensionName: string): boolean {
   if (!editor) return false;

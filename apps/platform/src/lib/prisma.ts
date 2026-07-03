@@ -2,12 +2,7 @@ import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@/generated/prisma/client';
 
-interface PrismaGlobal {
-  prisma?: PrismaClient;
-  prismaPool?: Pool;
-}
-
-const globalForPrisma = globalThis as unknown as PrismaGlobal;
+const globalForPrisma = globalThis as unknown as IPrismaClient.Global;
 
 function createPrismaClient() {
   const connectionString = process.env.DATABASE_URL;

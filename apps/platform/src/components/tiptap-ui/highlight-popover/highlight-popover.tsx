@@ -22,17 +22,8 @@ import { isMarkInSchema } from '@/lib/tiptap-utils';
 // --- Styles ---
 import '@/components/tiptap-ui/highlight-popover/highlight-popover.scss';
 
-export interface HighlightColor {
-  label: string;
-  value: string;
-  border?: string;
-}
-
-export interface HighlightContentProps {
-  editor?: Editor | null;
-  colors?: HighlightColor[];
-  activeNode?: number;
-}
+export type HighlightColor = ITiptapUi.HighlightColor;
+export type HighlightContentProps = ITiptapUi.HighlightContentProps;
 
 export const DEFAULT_HIGHLIGHT_COLORS: HighlightColor[] = [
   {
@@ -190,20 +181,7 @@ export function HighlightContent({
   );
 }
 
-export interface HighlightPopoverProps extends Omit<ButtonProps, 'type'> {
-  /**
-   * The TipTap editor instance.
-   */
-  editor?: Editor | null;
-  /**
-   * The highlight colors to display in the popover.
-   */
-  colors?: HighlightColor[];
-  /**
-   * Whether to hide the highlight popover.
-   */
-  hideWhenUnavailable?: boolean;
-}
+export type HighlightPopoverProps = ITiptapUi.HighlightPopoverProps;
 
 export function HighlightPopover({
   editor: providedEditor,

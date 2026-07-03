@@ -17,37 +17,13 @@ import { UnderlineIcon } from '@/components/tiptap-icons/underline-icon';
 // --- Lib ---
 
 // --- UI Primitives ---
-import { Button, ButtonProps } from '@/components/tiptap-ui-primitive/button';
+import { Button } from '@/components/tiptap-ui-primitive/button';
 import { useTiptapEditor } from '@/hooks/use-tiptap-editor';
 import { isMarkInSchema } from '@/lib/tiptap-utils';
 
-export type Mark =
-  | 'bold'
-  | 'italic'
-  | 'strike'
-  | 'code'
-  | 'underline'
-  | 'superscript'
-  | 'subscript';
+export type Mark = ITiptapUi.Mark;
 
-export interface MarkButtonProps extends Omit<ButtonProps, 'type'> {
-  /**
-   * The type of mark to toggle
-   */
-  type: Mark;
-  /**
-   * Optional editor instance. If not provided, will use editor from context
-   */
-  editor?: Editor | null;
-  /**
-   * Display text for the button (optional)
-   */
-  text?: string;
-  /**
-   * Whether this button should be hidden when the mark is not available
-   */
-  hideWhenUnavailable?: boolean;
-}
+export type MarkButtonProps = ITiptapUi.MarkButtonProps;
 
 export const markIcons = {
   bold: BoldIcon,

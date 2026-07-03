@@ -23,24 +23,9 @@ import {
 import '@/components/tiptap-ui-primitive/dropdown-menu/dropdown-menu.scss';
 import { Separator } from '../separator';
 
-interface DropdownMenuOptions {
-  initialOpen?: boolean;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  side?: 'top' | 'right' | 'bottom' | 'left';
-  align?: 'start' | 'center' | 'end';
-}
-
-interface DropdownMenuProps extends DropdownMenuOptions {
-  children: React.ReactNode;
-}
-
-type ContextType = ReturnType<typeof useDropdownMenu> & {
-  updatePosition: (
-    side: 'top' | 'right' | 'bottom' | 'left',
-    align: 'start' | 'center' | 'end',
-  ) => void;
-};
+type ContextType = ITiptapPrimitive.DropdownContextValue;
+type DropdownMenuOptions = ITiptapPrimitive.DropdownMenuOptions;
+type DropdownMenuProps = ITiptapPrimitive.DropdownMenuProps;
 
 const DropdownMenuContext = React.createContext<ContextType | null>(null);
 
@@ -139,9 +124,7 @@ export function DropdownMenu({ children, ...options }: DropdownMenuProps) {
   );
 }
 
-interface DropdownMenuTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  asChild?: boolean;
-}
+type DropdownMenuTriggerProps = ITiptapPrimitive.DropdownMenuTriggerProps;
 
 export const DropdownMenuTrigger = React.forwardRef<HTMLButtonElement, DropdownMenuTriggerProps>(
   ({ children, asChild = false, ...props }, propRef) => {
@@ -193,13 +176,7 @@ export const DropdownMenuTrigger = React.forwardRef<HTMLButtonElement, DropdownM
 
 DropdownMenuTrigger.displayName = 'DropdownMenuTrigger';
 
-interface DropdownMenuContentProps extends React.HTMLAttributes<HTMLDivElement> {
-  orientation?: 'vertical' | 'horizontal';
-  side?: 'top' | 'right' | 'bottom' | 'left';
-  align?: 'start' | 'center' | 'end';
-  portal?: boolean;
-  portalProps?: Omit<React.ComponentProps<typeof FloatingPortal>, 'children'>;
-}
+type DropdownMenuContentProps = ITiptapPrimitive.DropdownMenuContentProps;
 
 export const DropdownMenuContent = React.forwardRef<HTMLDivElement, DropdownMenuContentProps>(
   (
@@ -258,11 +235,7 @@ export const DropdownMenuContent = React.forwardRef<HTMLDivElement, DropdownMenu
 
 DropdownMenuContent.displayName = 'DropdownMenuContent';
 
-interface DropdownMenuItemProps extends React.HTMLAttributes<HTMLDivElement> {
-  asChild?: boolean;
-  disabled?: boolean;
-  onSelect?: () => void;
-}
+type DropdownMenuItemProps = ITiptapPrimitive.DropdownMenuItemProps;
 
 export const DropdownMenuItem = React.forwardRef<HTMLDivElement, DropdownMenuItemProps>(
   ({ children, disabled, asChild = false, onSelect, className, ...props }, ref) => {
@@ -332,9 +305,7 @@ export const DropdownMenuItem = React.forwardRef<HTMLDivElement, DropdownMenuIte
 
 DropdownMenuItem.displayName = 'DropdownMenuItem';
 
-interface DropdownMenuGroupProps extends React.HTMLAttributes<HTMLDivElement> {
-  label?: string;
-}
+type DropdownMenuGroupProps = ITiptapPrimitive.DropdownMenuGroupProps;
 
 export const DropdownMenuGroup = React.forwardRef<HTMLDivElement, DropdownMenuGroupProps>(
   ({ children, label, className, ...props }, ref) => {

@@ -2,15 +2,7 @@ import crypto from 'node:crypto';
 import { logger } from '@/lib/server/logger';
 import { redactSensitiveData } from './redact';
 
-export interface ByokAuditEvent {
-  eventType: string;
-  actorId?: string;
-  provider?: string;
-  requestId?: string;
-  ip?: string;
-  result: 'success' | 'blocked' | 'failed';
-  reasonCode?: string;
-}
+export type ByokAuditEvent = IByok.AuditEvent;
 
 function hashValue(value?: string): string | undefined {
   if (!value) {

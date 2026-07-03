@@ -2,41 +2,14 @@ import crypto from 'node:crypto';
 import {
   BYOK_AAD_PREFIX,
   BYOK_CREDENTIAL_STATUS,
-  type ByokCredentialStatus,
   BYOK_ENCRYPTION_ALGORITHM,
   BYOK_PAYLOAD_VERSION,
-  type ByokProvider,
 } from './constants';
 import { envEncryptionKeyProvider, type EncryptionKeyProvider } from './encryption-key-provider';
 
-export interface EncryptedApiKeyPayload {
-  version: number;
-  credentialId: string;
-  provider: ByokProvider;
-  label: string;
-  algorithm: typeof BYOK_ENCRYPTION_ALGORITHM;
-  keyVersion: string;
-  ciphertext: string;
-  iv: string;
-  authTag: string;
-  keyHint: string;
-  createdAt: string;
-  expiresAt: string;
-  lastUsedAt?: string;
-  status: ByokCredentialStatus;
-}
-
-export interface ApiKeyAadContext {
-  userId: string;
-  provider: ByokProvider;
-  credentialId: string;
-}
-
-export interface ApiKeyEncryptionMetadata {
-  label: string;
-  expiresAt: string;
-  status?: ByokCredentialStatus;
-}
+export type ApiKeyAadContext = IByok.ApiKeyAadContext;
+export type ApiKeyEncryptionMetadata = IByok.ApiKeyEncryptionMetadata;
+export type EncryptedApiKeyPayload = IByok.EncryptedApiKeyPayload;
 
 function createAad(context: ApiKeyAadContext): Buffer {
   return Buffer.from(

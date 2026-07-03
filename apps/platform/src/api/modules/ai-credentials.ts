@@ -1,40 +1,15 @@
 import { alovaDelete, alovaGet, alovaPost } from '@/api/alova';
 
-export type AiCredentialProvider = 'anthropic' | 'deepseek' | 'gemini' | 'openai';
-export type AiCredentialStatus = 'active' | 'disabled' | 'expired' | 'invalid';
-export type AiCredentialTtlOption = '2w' | '3w' | '4w' | '7d';
-
-export interface AiCredential {
-  credentialId: string;
-  expiresAt: string;
-  keyHint: string;
-  label: string;
-  lastUsedAt?: string;
-  provider: AiCredentialProvider;
-  remainingSeconds: number;
-  status: AiCredentialStatus;
-}
-
-export interface SaveAiCredentialPayload {
-  apiKey: string;
-  label: string;
-  provider: AiCredentialProvider;
-  ttlOption: AiCredentialTtlOption;
-}
-
-export interface AiProviderOption {
-  color: string;
-  label: string;
-  value: AiCredentialProvider;
-}
-
-interface AiCredentialListResponse {
-  credentials: AiCredential[];
-}
+export type AiCredential = IApiAiCredentials.AiCredential;
+export type AiCredentialListResponse = IApiAiCredentials.AiCredentialListResponse;
+export type AiCredentialProvider = IApiAiCredentials.AiCredentialProvider;
+export type AiCredentialStatus = IApiAiCredentials.AiCredentialStatus;
+export type AiCredentialTtlOption = IApiAiCredentials.AiCredentialTtlOption;
+export type AiProviderOption = IApiAiCredentials.AiProviderOption;
+export type SaveAiCredentialPayload = IApiAiCredentials.SaveAiCredentialPayload;
 
 export async function getAiCredentials(): Promise<AiCredential[]> {
   const response = await alovaGet<AiCredentialListResponse>('/user/ai-credentials');
-
   return response.credentials;
 }
 
@@ -44,7 +19,6 @@ export async function getAiProviderOptions(): Promise<AiProviderOption[]> {
 
 export async function createAiCredential(payload: SaveAiCredentialPayload): Promise<AiCredential> {
   const response = await alovaPost<AiCredential & { saved: true }>('/user/ai-credentials', payload);
-
   return response;
 }
 

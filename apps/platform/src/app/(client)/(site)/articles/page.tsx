@@ -2,9 +2,7 @@ import { articleQuerySchema } from '@/lib/article-schema';
 import ArticlesClient from './articles';
 import { fetchArticleList } from './utils/article';
 
-interface PageProps {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}
+type PageProps = IAppPages.ArticleListPageProps;
 
 function getSearchValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;

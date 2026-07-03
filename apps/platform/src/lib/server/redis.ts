@@ -1,8 +1,8 @@
 import { Socket, connect as connectNet } from 'node:net';
 import { TLSSocket, connect as connectTls } from 'node:tls';
 
-type RedisArrayValue = Array<string | number | null>;
-type RedisValue = string | number | null | RedisArrayValue;
+type RedisValue = IServer.RedisValue;
+type RedisArrayValue = IServer.RedisArrayValue;
 
 const REDIS_COMMAND_TIMEOUT_MS = 5000;
 

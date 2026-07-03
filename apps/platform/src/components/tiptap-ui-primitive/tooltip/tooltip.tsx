@@ -14,42 +14,14 @@ import {
   useInteractions,
   useMergeRefs,
   FloatingPortal,
-  type Placement,
-  type UseFloatingReturn,
-  type ReferenceType,
   FloatingDelayGroup,
 } from '@floating-ui/react';
 import '@/components/tiptap-ui-primitive/tooltip/tooltip.scss';
 
-interface TooltipProviderProps {
-  children: React.ReactNode;
-  initialOpen?: boolean;
-  placement?: Placement;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  delay?: number;
-  closeDelay?: number;
-  timeout?: number;
-  useDelayGroup?: boolean;
-}
-
-interface TooltipTriggerProps extends Omit<React.HTMLProps<HTMLElement>, 'ref'> {
-  asChild?: boolean;
-  children: React.ReactNode;
-}
-
-interface TooltipContentProps extends Omit<React.HTMLProps<HTMLDivElement>, 'ref'> {
-  children?: React.ReactNode;
-  portal?: boolean;
-  portalProps?: Omit<React.ComponentProps<typeof FloatingPortal>, 'children'>;
-}
-
-interface TooltipContextValue extends UseFloatingReturn<ReferenceType> {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  getReferenceProps: (userProps?: React.HTMLProps<HTMLElement>) => Record<string, unknown>;
-  getFloatingProps: (userProps?: React.HTMLProps<HTMLDivElement>) => Record<string, unknown>;
-}
+type TooltipContentProps = ITiptapPrimitive.TooltipContentProps;
+type TooltipContextValue = ITiptapPrimitive.TooltipContextValue;
+type TooltipProviderProps = ITiptapPrimitive.TooltipProviderProps;
+type TooltipTriggerProps = ITiptapPrimitive.TooltipTriggerProps;
 
 function useTooltip({
   initialOpen = false,

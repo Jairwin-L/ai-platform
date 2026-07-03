@@ -13,11 +13,7 @@ import {
 import { ByokPublicError } from './errors';
 import type { ChatRequestInput } from './schemas';
 
-export interface ChatCompletionResult {
-  provider: ByokProvider;
-  model: string;
-  content: string;
-}
+export type ChatCompletionResult = IByok.ChatCompletionResult;
 
 export class ProviderAuthenticationError extends Error {
   constructor() {
@@ -26,30 +22,10 @@ export class ProviderAuthenticationError extends Error {
   }
 }
 
-interface ProviderErrorPayload {
-  error?: {
-    code?: unknown;
-    message?: unknown;
-    status?: unknown;
-    type?: unknown;
-  };
-}
-
-interface OpenAiCompatibleResponse {
-  choices?: Array<{ message?: { content?: string } }>;
-}
-
-interface AnthropicResponse {
-  content?: Array<{ text?: string; type?: string }>;
-}
-
-interface GeminiResponse {
-  candidates?: Array<{
-    content?: {
-      parts?: Array<{ text?: string }>;
-    };
-  }>;
-}
+type AnthropicResponse = IByok.AnthropicResponse;
+type GeminiResponse = IByok.GeminiResponse;
+type OpenAiCompatibleResponse = IByok.OpenAiCompatibleResponse;
+type ProviderErrorPayload = IByok.ProviderErrorPayload;
 
 function isModelAllowed(provider: ByokProvider, model: string): boolean {
   return (BYOK_ALLOWED_MODELS_BY_PROVIDER[provider] as readonly string[]).includes(model);

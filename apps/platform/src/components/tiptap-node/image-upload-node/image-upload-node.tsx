@@ -6,27 +6,8 @@ import { NodeViewWrapper } from '@tiptap/react';
 import { CloseIcon } from '@/components/tiptap-icons/close-icon';
 import '@/components/tiptap-node/image-upload-node/image-upload-node.scss';
 
-export interface FileItem {
-  id: string;
-  file: File;
-  progress: number;
-  status: 'uploading' | 'success' | 'error';
-  url?: string;
-  abortController?: AbortController;
-}
-
-interface UploadOptions {
-  maxSize: number;
-  limit: number;
-  accept: string;
-  upload: (
-    file: File,
-    onProgress: (event: { progress: number }) => void,
-    signal: AbortSignal,
-  ) => Promise<string>;
-  onSuccess?: (url: string) => void;
-  onError?: (error: Error) => void;
-}
+export type FileItem = ITiptapNode.FileItem;
+type UploadOptions = ITiptapNode.UploadOptions;
 
 function useFileUpload(options: UploadOptions) {
   const [fileItem, setFileItem] = React.useState<FileItem | null>(null);
@@ -196,10 +177,7 @@ const FileCornerIcon: React.FC = () => (
   </svg>
 );
 
-interface ImageUploadDragAreaProps {
-  onFile: (files: File[]) => void;
-  children?: React.ReactNode;
-}
+type ImageUploadDragAreaProps = ITiptapNode.ImageUploadDragAreaProps;
 
 const ImageUploadDragArea: React.FC<ImageUploadDragAreaProps> = ({ onFile, children }) => {
   const [dragover, setDragover] = React.useState(false);
@@ -237,12 +215,7 @@ const ImageUploadDragArea: React.FC<ImageUploadDragAreaProps> = ({ onFile, child
   );
 };
 
-interface ImageUploadPreviewProps {
-  file: File;
-  progress: number;
-  status: 'uploading' | 'success' | 'error';
-  onRemove: () => void;
-}
+type ImageUploadPreviewProps = ITiptapNode.ImageUploadPreviewProps;
 
 const ImageUploadPreview: React.FC<ImageUploadPreviewProps> = ({
   file,
@@ -293,7 +266,7 @@ const ImageUploadPreview: React.FC<ImageUploadPreviewProps> = ({
   );
 };
 
-const DropZoneContent: React.FC<{ maxSize: number }> = ({ maxSize }) => (
+const DropZoneContent: React.FC<ITiptapNode.DropZoneContentProps> = ({ maxSize }) => (
   <>
     <div className="tiptap-image-upload-dropzone">
       <FileIcon />

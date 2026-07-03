@@ -1,42 +1,10 @@
 import { alovaDelete, alovaGet, alovaPost, alovaPut } from '@/api/alova';
 
-export interface Article {
-  id: string;
-  title: string;
-  slug: string;
-  summary: string | null;
-  content: string;
-  note: string | null;
-  published: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ArticleFormValues {
-  title: string;
-  slug: string;
-  summary?: string | null;
-  content: string;
-  note?: string | null;
-  published?: boolean;
-}
-
-export interface ArticleListParams {
-  cursor?: string | null;
-  limit?: number;
-  keyword?: string;
-}
-
-export interface ArticleListPagination {
-  nextCursor: string | null;
-  hasMore: boolean;
-  limit: number;
-}
-
-export interface ArticleListData {
-  data: Article[];
-  pagination: ArticleListPagination;
-}
+export type Article = IApiArticles.Article;
+export type ArticleFormValues = IApiArticles.ArticleFormValues;
+export type ArticleListData = IApiArticles.ArticleListData;
+export type ArticleListPagination = IApiArticles.ArticleListPagination;
+export type ArticleListParams = IApiArticles.ArticleListParams;
 
 export async function listArticles(params: ArticleListParams) {
   return alovaGet<ArticleListData>('/articles', { ...params });

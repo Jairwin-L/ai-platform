@@ -1,21 +1,8 @@
 import { alovaGet, alovaPost } from '@/api/alova';
 
-export type AuthCodePurpose = 'sign-in' | 'sign-up';
-
-export interface AuthUser {
-  email: string | null;
-  emailVerified: boolean | null;
-  id: string;
-  nickName: string | null;
-  picture: string | null;
-  status: string;
-}
-
-export interface AuthPayload {
-  permissions: string[];
-  roles: string[];
-  user: AuthUser;
-}
+export type AuthCodePurpose = IApiAuth.AuthCodePurpose;
+export type AuthPayload = IApiAuth.AuthPayload;
+export type AuthUser = IApiAuth.AuthUser;
 
 export async function requestVerificationCode(email: string, purpose: AuthCodePurpose) {
   return alovaPost<null>('/code', { email, purpose });

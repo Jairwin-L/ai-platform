@@ -1,13 +1,7 @@
 import { SUPPORTED_BYOK_PROVIDERS, type ByokProvider } from './constants';
 
-export interface AiProviderOption {
-  color: string;
-  enabled: boolean;
-  label: string;
-  value: ByokProvider;
-}
-
-export type EnabledAiProviderOption = Omit<AiProviderOption, 'enabled'>;
+export type AiProviderOption = IByok.AiProviderOption;
+export type EnabledAiProviderOption = IByok.EnabledAiProviderOption;
 
 const allowedProviderColors = new Set([
   'blue',

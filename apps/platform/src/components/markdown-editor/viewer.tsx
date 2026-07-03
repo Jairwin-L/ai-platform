@@ -23,10 +23,7 @@ import '@/components/tiptap-node/image-node/image-node.scss';
 import '@/components/tiptap-node/paragraph-node/paragraph-node.scss';
 import '@/components/tiptap-templates/simple/simple-editor.scss';
 
-interface MarkdownEditorViewerProps {
-  content: string;
-  onUpdate?: (markdown: string) => void;
-}
+type MarkdownEditorViewerProps = IEditorComponent.MarkdownEditorViewerProps;
 
 export const MarkdownEditorViewer = React.forwardRef(
   ({ content, onUpdate }: MarkdownEditorViewerProps, ref) => {

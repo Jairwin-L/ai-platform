@@ -12,31 +12,13 @@ import { CodeBlockIcon } from '@/components/tiptap-icons/code-block-icon';
 // --- Lib ---
 
 // --- UI Primitives ---
-import { Button, ButtonProps } from '@/components/tiptap-ui-primitive/button';
+import { Button } from '@/components/tiptap-ui-primitive/button';
 import { useTiptapEditor } from '@/hooks/use-tiptap-editor';
 import { isNodeInSchema } from '@/lib/tiptap-utils';
 
-export type NodeType = 'codeBlock' | 'blockquote';
+export type NodeType = ITiptapUi.NodeType;
 
-export interface NodeButtonProps extends Omit<ButtonProps, 'type'> {
-  /**
-   * The TipTap editor instance.
-   */
-  editor?: Editor | null;
-  /**
-   * The type of node to toggle.
-   */
-  type: NodeType;
-  /**
-   * Optional text to display alongside the icon.
-   */
-  text?: string;
-  /**
-   * Whether the button should hide when the node is not available.
-   * @default false
-   */
-  hideWhenUnavailable?: boolean;
-}
+export type NodeButtonProps = ITiptapUi.NodeButtonProps;
 
 export const nodeIcons = {
   codeBlock: CodeBlockIcon,

@@ -72,5 +72,5 @@ export const chatRequestSchema = z
     }
   });
 
-export type SaveApiCredentialInput = z.infer<typeof saveApiCredentialSchema>;
-export type ChatRequestInput = z.infer<typeof chatRequestSchema>;
+export type ChatRequestInput = IByok.ChatRequestInput;
+export type SaveApiCredentialInput = IByok.SaveApiCredentialInput;

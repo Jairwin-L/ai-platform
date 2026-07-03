@@ -9,14 +9,7 @@ import {
   type ApiHandler,
 } from '@/lib/server';
 
-interface PermissionNode {
-  id: string;
-  name: string;
-  code: string;
-  parent_id: string | null;
-  type: string;
-  children?: PermissionNode[];
-}
+type PermissionNode = IRouteApi.RolePermissionNode;
 
 async function getRoleId(context: ApiContext): Promise<number | null> {
   const params = await context.params;

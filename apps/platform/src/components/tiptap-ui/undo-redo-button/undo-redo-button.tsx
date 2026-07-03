@@ -10,28 +10,15 @@ import { Redo2Icon } from '@/components/tiptap-icons/redo2-icon';
 import { Undo2Icon } from '@/components/tiptap-icons/undo2-icon';
 
 // --- UI Primitives ---
-import { Button, ButtonProps } from '@/components/tiptap-ui-primitive/button';
+import { Button } from '@/components/tiptap-ui-primitive/button';
 import { useTiptapEditor } from '@/hooks/use-tiptap-editor';
 
-export type HistoryAction = 'undo' | 'redo';
+export type HistoryAction = ITiptapUi.HistoryAction;
 
 /**
  * Props for the UndoRedoButton component.
  */
-export interface UndoRedoButtonProps extends ButtonProps {
-  /**
-   * The TipTap editor instance.
-   */
-  editor?: Editor | null;
-  /**
-   * Optional text to display alongside the icon.
-   */
-  text?: string;
-  /**
-   * The history action to perform (undo or redo).
-   */
-  action: HistoryAction;
-}
+export type UndoRedoButtonProps = ITiptapUi.UndoRedoButtonProps;
 
 export const historyIcons = {
   undo: Undo2Icon,

@@ -4,20 +4,8 @@ import { BYOK_AUDIT_EVENT, BYOK_ERROR_CODE } from '@/lib/ai/byok/constants';
 import { ByokPublicError } from '@/lib/ai/byok/errors';
 import { writeByokAuditEvent } from './audit';
 
-export interface RateLimitRedisClient {
-  decr(key: string): Promise<number>;
-  expire(key: string, seconds: number): Promise<void>;
-  incr(key: string): Promise<number>;
-}
-
-export interface RateLimitInput {
-  userId: string;
-  ip: string;
-  route: string;
-  limit: number;
-  windowSeconds: number;
-  requestId?: string;
-}
+export type RateLimitInput = IByok.RateLimitInput;
+export type RateLimitRedisClient = IByok.RateLimitRedisClient;
 
 const defaultRateLimitRedisClient: RateLimitRedisClient = {
   decr: redisDecr,

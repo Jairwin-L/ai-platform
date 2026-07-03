@@ -1,11 +1,4 @@
-export interface EncryptionKeyProvider {
-  getActiveKey(): Promise<{
-    version: string;
-    key: Buffer;
-  }>;
-
-  getKeyByVersion(version: string): Promise<Buffer>;
-}
+export type EncryptionKeyProvider = IByok.EncryptionKeyProvider;
 
 function getEnvEncryptionKey(version: string): Buffer {
   const envName = `AI_KEY_ENCRYPTION_KEY_${version.toUpperCase()}`;

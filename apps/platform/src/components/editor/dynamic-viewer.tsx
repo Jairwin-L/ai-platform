@@ -14,9 +14,7 @@ const SimpleEditorViewer = dynamic(
   },
 );
 
-interface DynamicSimpleEditorViewerProps {
-  content: string;
-}
+type DynamicSimpleEditorViewerProps = IEditorComponent.DynamicSimpleEditorViewerProps;
 
 export function DynamicSimpleEditorViewer({ content }: DynamicSimpleEditorViewerProps) {
   return <SimpleEditorViewer content={content} />;

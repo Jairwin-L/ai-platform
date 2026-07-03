@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { isNodeSelection, type Editor } from '@tiptap/react';
+import { isNodeSelection } from '@tiptap/react';
 
 // --- Hooks ---
 
@@ -20,7 +20,7 @@ import {
 } from '@/components/tiptap-ui/heading-button/heading-button';
 
 // --- UI Primitives ---
-import { Button, ButtonProps } from '@/components/tiptap-ui-primitive/button';
+import { Button } from '@/components/tiptap-ui-primitive/button';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -31,12 +31,7 @@ import {
 import { useTiptapEditor } from '@/hooks/use-tiptap-editor';
 import { isNodeInSchema } from '@/lib/tiptap-utils';
 
-export interface HeadingDropdownMenuProps extends Omit<ButtonProps, 'type'> {
-  editor?: Editor | null;
-  levels?: Level[];
-  hideWhenUnavailable?: boolean;
-  onOpenChange?: (isOpen: boolean) => void;
-}
+export type HeadingDropdownMenuProps = ITiptapUi.HeadingDropdownMenuProps;
 
 export function HeadingDropdownMenu({
   editor: providedEditor,

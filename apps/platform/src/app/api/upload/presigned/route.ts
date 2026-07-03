@@ -23,29 +23,10 @@ const ALLOWED_MIME_TYPES = new Set([
   'image/avif',
 ]);
 
-interface PresignedRequestFile {
-  fileName?: string;
-  fileType?: string;
-}
-
-interface PresignedRequestBody {
-  files?: PresignedRequestFile[];
-  path?: string;
-  expiresIn?: number;
-}
-
-interface PresignedUrlItem {
-  url: string;
-  key: string;
-  fileName: string;
-  expiresAt: string;
-  maxFileSize: number;
-}
-
-interface StorageConfig {
-  endpointUrl: string;
-  bucketName: string;
-}
+type PresignedRequestBody = IUploadApi.PresignedRequestBody;
+type PresignedRequestFile = IUploadApi.PresignedRequestFile;
+type PresignedUrlItem = IUploadApi.PresignedUrlItem;
+type StorageConfig = IUploadApi.StorageConfig;
 
 function getEnv(name: string): string | undefined {
   return process.env[name];

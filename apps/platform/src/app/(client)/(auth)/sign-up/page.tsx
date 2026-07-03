@@ -9,11 +9,7 @@ import { APP_BLACK_LOGO, APP_NAME, VERIFICATION_CODE_TTL_SECONDS } from '@/const
 import { requestVerificationCode, signUp } from '@/api/modules/auth';
 import styles from './page.module.scss';
 
-interface SignUpValues {
-  code: string;
-  email: string;
-  password: string;
-}
+type SignUpValues = IAppForms.SignUpValues;
 
 async function requestCode(
   form: FormInstance,

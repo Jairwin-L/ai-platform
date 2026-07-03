@@ -10,15 +10,8 @@ import { requestVerificationCode, signInWithCode, signInWithPassword } from '@/a
 import { useAuthSessionStore } from '@/stores/auth-session';
 import styles from './page.module.scss';
 
-interface PasswordSignInValues {
-  email: string;
-  password: string;
-}
-
-interface CodeSignInValues {
-  code: string;
-  email: string;
-}
+type CodeSignInValues = IAppForms.CodeSignInValues;
+type PasswordSignInValues = IAppForms.PasswordSignInValues;
 
 async function requestCode(
   form: FormInstance,

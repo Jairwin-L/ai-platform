@@ -27,12 +27,7 @@ import {
 } from '@/api/modules/ai-credentials';
 import styles from './page.module.scss';
 
-interface CredentialFormValues {
-  apiKey: string;
-  label: string;
-  provider: AiCredentialProvider;
-  ttlOption: AiCredentialTtlOption;
-}
+type CredentialFormValues = IAppForms.CredentialFormValues;
 
 const initialValues: CredentialFormValues = {
   label: '',

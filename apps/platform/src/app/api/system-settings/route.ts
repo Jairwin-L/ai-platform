@@ -31,15 +31,7 @@ const systemSettingsSelect = {
   updated_at: true,
 } as const;
 
-interface SystemSettingsPayload {
-  allowRegistration?: unknown;
-  byokAllowedOrigins?: unknown;
-  defaultLanguage?: unknown;
-  displayName?: unknown;
-  maintenanceMode?: unknown;
-  sessionPolicy?: unknown;
-  supportEmail?: unknown;
-}
+type SystemSettingsPayload = ISettingsApi.SystemSettingsPayload;
 
 function toSettingsResponse(settings: {
   allow_registration: boolean;

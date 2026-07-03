@@ -6,9 +6,7 @@ import type { UserProfile } from '@/api/modules/users';
 import { AccountProfileForm } from './account-profile-form';
 import styles from './page.module.scss';
 
-interface AccountProfileContentProps {
-  profile: UserProfile;
-}
+type AccountProfileContentProps = IAppPages.AccountProfileContentProps;
 
 function getDisplayName(profile: UserProfile): string {
   return profile.nick_name || profile.full_name || profile.user_name || profile.email || profile.id;

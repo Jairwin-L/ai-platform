@@ -4,11 +4,7 @@ import { getAuthUserBySessionToken, getSessionCookieName } from '@/lib/server/au
 import { getUserProfile } from '@/lib/server/user-profile';
 import { AccountProfileContent } from './account-profile-content';
 
-interface AccountPageProps {
-  params: Promise<{
-    id?: string;
-  }>;
-}
+type AccountPageProps = IAppPages.AccountPageProps;
 
 async function getCurrentUserId() {
   const cookieStore = await cookies();

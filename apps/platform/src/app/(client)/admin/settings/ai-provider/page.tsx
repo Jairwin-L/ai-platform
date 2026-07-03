@@ -11,9 +11,7 @@ import {
 import styles from '../../resource-page.module.scss';
 import pageStyles from './page.module.scss';
 
-interface ProviderOptionsValues {
-  aiProviderOptions: AiProviderOption[];
-}
+type ProviderOptionsValues = IAppForms.ProviderOptionsValues;
 
 const providerColorOptions = [
   'blue',

@@ -6,11 +6,9 @@
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 800;
 
-export type CompressStrategy = 'sharp' | 'tinify';
+export type CompressStrategy = IUtils.CompressStrategy;
 
-interface CompressApiErrorResponse {
-  message?: string;
-}
+type CompressApiErrorResponse = IUtils.CompressApiErrorResponse;
 
 const SUPPORTED_MIME_TYPES: Record<CompressStrategy, Set<string>> = {
   sharp: new Set(['image/avif', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']),

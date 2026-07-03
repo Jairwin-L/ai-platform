@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { App, Button, Empty, Progress, Select, Upload } from 'antd';
 import Image from 'next/image';
-import type { UploadFile, UploadProps } from 'antd';
+import type { UploadProps } from 'antd';
 import { getFileLink } from '@/utils/link';
 import { fileTypeValid } from '@/utils/file';
 import { compressImage } from '@/utils/compress-image';
@@ -14,10 +14,7 @@ import styles from './page.module.scss';
 const { Dragger } = Upload;
 const MAX_UPLOAD_FILE_COUNT = 5;
 
-interface UploadListFile extends UploadFile {
-  compressedSize?: number;
-  originalSize?: number;
-}
+type UploadListFile = IAppPages.UploadListFile;
 
 function getTodayPath(): string {
   const now = new Date();

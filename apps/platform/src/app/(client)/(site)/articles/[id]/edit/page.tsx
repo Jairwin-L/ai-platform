@@ -1,10 +1,6 @@
 import ArticleForm from '../../form';
 
-interface PageProps {
-  params: Promise<{
-    id: string;
-  }>;
-}
+type PageProps = IAppPages.ArticleDetailPageProps;
 
 export default async function Page({ params }: PageProps) {
   const { id } = await params;

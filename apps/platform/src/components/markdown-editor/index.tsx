@@ -157,12 +157,7 @@ const MobileToolbarContent = ({
   </>
 );
 
-interface MarkdownEditorProps {
-  content?: string;
-  value?: string;
-  onUpdate?: (markdown: string) => void;
-  onChange?: (markdown: string) => void;
-}
+type MarkdownEditorProps = IEditorComponent.MarkdownEditorProps;
 
 export const MarkdownEditor = React.forwardRef(
   ({ content, value, onUpdate, onChange }: MarkdownEditorProps, ref) => {

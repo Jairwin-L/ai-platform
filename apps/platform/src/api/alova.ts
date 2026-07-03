@@ -8,39 +8,7 @@ import type { Method, RequestBody } from 'alova';
 import fetch from 'alova/fetch';
 import ReactHook from 'alova/react';
 
-interface AlovaMessageApi {
-  success: (content: string) => unknown;
-  error: (content: string) => unknown;
-}
-
-interface AlovaRequestMeta {
-  showErrorMessage?: boolean;
-  showSuccessMessage?: boolean;
-  successMessage?: string;
-}
-
-declare module 'alova' {
-  interface AlovaCustomTypes {
-    meta: AlovaRequestMeta;
-  }
-}
-
-interface AlovaApiResponse<T = unknown> {
-  code?: number;
-  data?: T;
-  errorCode?: string;
-  success?: boolean;
-  message?: string;
-  timestamp?: number;
-}
-
-interface AlovaErrorResponse {
-  error?: {
-    message?: string;
-  };
-}
-
-let alovaMessageApi: AlovaMessageApi | null = null;
+let alovaMessageApi: IAlovaHttp.MessageApi | null = null;
 
 /**
  * @func setAlovaMessageApi
@@ -48,7 +16,7 @@ let alovaMessageApi: AlovaMessageApi | null = null;
  * @param {AlovaMessageApi | null} messageApi Ant Design message 实例。
  * @returns {void}
  */
-export function setAlovaMessageApi(messageApi: AlovaMessageApi | null): void {
+export function setAlovaMessageApi(messageApi: IAlovaHttp.MessageApi | null): void {
   alovaMessageApi = messageApi;
 }
 
@@ -58,7 +26,7 @@ export function setAlovaMessageApi(messageApi: AlovaMessageApi | null): void {
  * @param {unknown} data 响应数据。
  * @returns {data is AlovaApiResponse} 是否为统一接口响应结构。
  */
-function isApiResponse(data: unknown): data is AlovaApiResponse {
+function isApiResponse(data: unknown): data is IAlovaHttp.ApiResponse {
   return (
     typeof data === 'object' &&
     data !== null &&
@@ -72,7 +40,7 @@ function isApiResponse(data: unknown): data is AlovaApiResponse {
  * @param {unknown} data 响应数据。
  * @returns {data is AlovaErrorResponse} 是否包含错误信息结构。
  */
-function isErrorResponse(data: unknown): data is AlovaErrorResponse {
+function isErrorResponse(data: unknown): data is IAlovaHttp.ErrorResponse {
   return typeof data === 'object' && data !== null && 'error' in data;
 }
 

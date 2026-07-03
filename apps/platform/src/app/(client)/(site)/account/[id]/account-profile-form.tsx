@@ -4,17 +4,11 @@ import { EditOutlined, SaveOutlined } from '@ant-design/icons';
 import { Button, Form, Input } from 'antd';
 import { useState } from 'react';
 import { usePermission } from '@/hooks/use-permission';
-import { updateUser, type UserProfile } from '@/api/modules/users';
+import { updateUser } from '@/api/modules/users';
 import styles from './page.module.scss';
 
-interface ProfileFormValues {
-  bio?: string;
-  nick_name?: string;
-}
-
-interface AccountProfileFormProps {
-  profile: UserProfile;
-}
+type AccountProfileFormProps = IAppPages.AccountProfileFormProps;
+type ProfileFormValues = IAppForms.ProfileFormValues;
 
 export function AccountProfileForm({ profile }: AccountProfileFormProps) {
   const { setCurrentUserProfile } = usePermission();

@@ -14,9 +14,7 @@ const MarkdownEditorViewer = dynamic(
   },
 );
 
-interface DynamicMarkdownEditorViewerProps {
-  content: string;
-}
+type DynamicMarkdownEditorViewerProps = IEditorComponent.DynamicMarkdownEditorViewerProps;
 
 export function DynamicMarkdownEditorViewer({ content }: DynamicMarkdownEditorViewerProps) {
   return <MarkdownEditorViewer content={content} />;

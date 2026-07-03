@@ -9,18 +9,13 @@ import {
 } from '@ant-design/icons';
 import { ConfigProvider, Dropdown, Layout, Menu, type MenuProps } from 'antd';
 import { usePathname, useRouter } from 'next/navigation';
-import { type ReactNode, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { APP_BLACK_LOGO, APP_NAME } from '@/constants';
 import { usePermission } from '@/hooks/use-permission';
 import styles from './admin-shell.module.scss';
 import { APP_WHITE_LOGO } from '@/constants/app';
 
-interface AdminMenuItem {
-  children?: AdminMenuItem[];
-  icon?: ReactNode;
-  key: string;
-  label: string;
-}
+type AdminMenuItem = IComponent.AdminMenuItem;
 
 const menuItems: AdminMenuItem[] = [
   { key: '/admin', icon: <DashboardOutlined />, label: '概览' },
@@ -82,7 +77,7 @@ function getCurrentMenuPath(pathname: string): string[] | undefined {
   return currentMenuPath;
 }
 
-export function AdminShell({ children }: { children: ReactNode }) {
+export function AdminShell({ children }: IComponent.AdminShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = usePermission();

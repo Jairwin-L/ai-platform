@@ -9,8 +9,6 @@ import {
   BYOK_REDIS_KEY_PREFIX,
   BYOK_TTL_OPTION_SECONDS,
   SUPPORTED_BYOK_PROVIDERS,
-  type ByokCredentialStatus,
-  type ByokProvider,
   type ByokTtlOption,
 } from './constants';
 import type { EncryptedApiKeyPayload } from './crypto';
@@ -27,28 +25,8 @@ import {
 } from '@/lib/server/redis';
 import { writeByokAuditEvent } from '@/lib/ai/security/audit';
 
-export interface ByokRedisClient {
-  del(key: string): Promise<void>;
-  expire(key: string, seconds: number): Promise<void>;
-  get(key: string): Promise<string | null>;
-  mGet(keys: string[]): Promise<Array<string | null>>;
-  setEx(key: string, seconds: number, value: string): Promise<void>;
-  ttl(key: string): Promise<number>;
-  zAdd(key: string, score: number, member: string): Promise<void>;
-  zRangeByScore(key: string, min: number | string, max: number | string): Promise<string[]>;
-  zRem(key: string, member: string): Promise<void>;
-}
-
-export interface StoredCredentialStatus {
-  credentialId: string;
-  provider: ByokProvider;
-  label: string;
-  keyHint: string;
-  expiresAt: string;
-  lastUsedAt?: string;
-  remainingSeconds: number;
-  status: ByokCredentialStatus;
-}
+export type ByokRedisClient = IByok.RedisClient;
+export type StoredCredentialStatus = IByok.StoredCredentialStatus;
 
 const encryptedPayloadSchema = z.object({
   version: z.literal(BYOK_PAYLOAD_VERSION),

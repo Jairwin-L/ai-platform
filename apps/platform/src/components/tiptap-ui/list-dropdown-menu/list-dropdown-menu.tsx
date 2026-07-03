@@ -21,7 +21,7 @@ import {
 } from '@/components/tiptap-ui/list-button/list-button';
 
 // --- UI Primitives ---
-import { Button, ButtonProps } from '@/components/tiptap-ui-primitive/button';
+import { Button } from '@/components/tiptap-ui-primitive/button';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -32,22 +32,7 @@ import {
 import { useTiptapEditor } from '@/hooks/use-tiptap-editor';
 import { isNodeInSchema } from '@/lib/tiptap-utils';
 
-export interface ListDropdownMenuProps extends Omit<ButtonProps, 'type'> {
-  /**
-   * The TipTap editor instance.
-   */
-  editor?: Editor;
-  /**
-   * The list types to display in the dropdown.
-   */
-  types?: ListType[];
-  /**
-   * Whether the dropdown should be hidden when no list types are available
-   * @default false
-   */
-  hideWhenUnavailable?: boolean;
-  onOpenChange?: (isOpen: boolean) => void;
-}
+export type ListDropdownMenuProps = ITiptapUi.ListDropdownMenuProps;
 
 export function canToggleAnyList(editor: Editor | null, listTypes: ListType[]): boolean {
   if (!editor) return false;

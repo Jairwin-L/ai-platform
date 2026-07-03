@@ -7,11 +7,7 @@ import styles from './page.module.scss';
 
 const { Title, Text } = Typography;
 
-interface PageProps {
-  params: Promise<{
-    id: string;
-  }>;
-}
+type PageProps = IAppPages.ArticleDetailPageProps;
 
 export default async function Page({ params }: PageProps) {
   const { id } = await params;

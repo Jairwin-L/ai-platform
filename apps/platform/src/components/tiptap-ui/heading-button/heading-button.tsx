@@ -16,31 +16,13 @@ import { HeadingSixIcon } from '@/components/tiptap-icons/heading-six-icon';
 // --- Lib ---
 
 // --- UI Primitives ---
-import { Button, ButtonProps } from '@/components/tiptap-ui-primitive/button';
+import { Button } from '@/components/tiptap-ui-primitive/button';
 import { useTiptapEditor } from '@/hooks/use-tiptap-editor';
 import { isNodeInSchema } from '@/lib/tiptap-utils';
 
-export type Level = 1 | 2 | 3 | 4 | 5 | 6;
+export type Level = ITiptapUi.HeadingLevel;
 
-export interface HeadingButtonProps extends Omit<ButtonProps, 'type'> {
-  /**
-   * The TipTap editor instance.
-   */
-  editor?: Editor | null;
-  /**
-   * The heading level.
-   */
-  level: Level;
-  /**
-   * Optional text to display alongside the icon.
-   */
-  text?: string;
-  /**
-   * Whether the button should hide when the heading is not available.
-   * @default false
-   */
-  hideWhenUnavailable?: boolean;
-}
+export type HeadingButtonProps = ITiptapUi.HeadingButtonProps;
 
 export const headingIcons = {
   1: HeadingOneIcon,

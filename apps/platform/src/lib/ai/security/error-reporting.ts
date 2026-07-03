@@ -1,6 +1,6 @@
 import { sanitizeForErrorReporting } from './redact';
 
-export type ErrorReporter = (payload: unknown) => void | Promise<void>;
+export type ErrorReporter = IByok.ErrorReporter;
 
 export async function reportSanitizedError(
   reporter: ErrorReporter,

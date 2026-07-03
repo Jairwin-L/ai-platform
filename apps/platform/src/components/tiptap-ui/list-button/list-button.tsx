@@ -13,37 +13,15 @@ import { ListTodoIcon } from '@/components/tiptap-icons/list-todo-icon';
 // --- Lib ---
 
 // --- UI Primitives ---
-import { Button, ButtonProps } from '@/components/tiptap-ui-primitive/button';
+import { Button } from '@/components/tiptap-ui-primitive/button';
 import { useTiptapEditor } from '@/hooks/use-tiptap-editor';
 import { isNodeInSchema } from '@/lib/tiptap-utils';
 
-export type ListType = 'bulletList' | 'orderedList' | 'taskList';
+export type ListType = ITiptapUi.ListType;
 
-export interface ListOption {
-  label: string;
-  type: ListType;
-  icon: React.ElementType;
-}
+export type ListOption = ITiptapUi.ListOption;
 
-export interface ListButtonProps extends Omit<ButtonProps, 'type'> {
-  /**
-   * The TipTap editor instance.
-   */
-  editor?: Editor | null;
-  /**
-   * The type of list to toggle.
-   */
-  type: ListType;
-  /**
-   * Optional text to display alongside the icon.
-   */
-  text?: string;
-  /**
-   * Whether the button should hide when the list is not available.
-   * @default false
-   */
-  hideWhenUnavailable?: boolean;
-}
+export type ListButtonProps = ITiptapUi.ListButtonProps;
 
 export const listOptions: ListOption[] = [
   {

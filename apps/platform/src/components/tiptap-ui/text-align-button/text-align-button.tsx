@@ -12,30 +12,12 @@ import { AlignLeftIcon } from '@/components/tiptap-icons/align-left-icon';
 import { AlignRightIcon } from '@/components/tiptap-icons/align-right-icon';
 
 // --- UI Primitives ---
-import { Button, ButtonProps } from '@/components/tiptap-ui-primitive/button';
+import { Button } from '@/components/tiptap-ui-primitive/button';
 import { useTiptapEditor } from '@/hooks/use-tiptap-editor';
 
-export type TextAlign = 'left' | 'center' | 'right' | 'justify';
+export type TextAlign = ITiptapUi.TextAlign;
 
-export interface TextAlignButtonProps extends ButtonProps {
-  /**
-   * The TipTap editor instance.
-   */
-  editor?: Editor | null;
-  /**
-   * The text alignment to apply.
-   */
-  align: TextAlign;
-  /**
-   * Optional text to display alongside the icon.
-   */
-  text?: string;
-  /**
-   * Whether the button should hide when the alignment is not available.
-   * @default false
-   */
-  hideWhenUnavailable?: boolean;
-}
+export type TextAlignButtonProps = ITiptapUi.TextAlignButtonProps;
 
 export const textAlignIcons = {
   left: AlignLeftIcon,

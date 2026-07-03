@@ -12,10 +12,7 @@ function nodeEqualsType({ types, node }: { types: NodeType | NodeType[]; node: N
   return node.type === types;
 }
 
-export interface TrailingNodeOptions {
-  node: string;
-  notAfter: string[];
-}
+export type TrailingNodeOptions = ITiptapNode.TrailingNodeOptions;
 
 export const TrailingNode = Extension.create<TrailingNodeOptions>({
   name: 'trailingNode',

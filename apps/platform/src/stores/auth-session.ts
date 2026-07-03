@@ -1,18 +1,8 @@
 'use client';
 
 import { create } from 'zustand';
-import type { AuthPayload } from '@/api/modules/auth';
-import type { UserProfile } from '@/api/modules/users';
 
-interface AuthSessionState {
-  currentUserProfile: UserProfile | null;
-  isLoading: boolean;
-  isReady: boolean;
-  payload: AuthPayload | null;
-  clearSession: () => void;
-  setCurrentUserProfile: (profile: UserProfile) => void;
-  setPayload: (payload: AuthPayload | null) => void;
-}
+type AuthSessionState = IStore.AuthSessionState;
 
 export const useAuthSessionStore = create<AuthSessionState>((set) => ({
   currentUserProfile: null,

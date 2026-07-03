@@ -1,80 +1,14 @@
 import { alovaDelete, alovaGet, alovaPost, alovaPut } from '@/api/alova';
 
-interface PaginatedData<T> {
-  data: T[];
-  page: number;
-  pageSize: number;
-  total: number;
-}
-
-export interface AdminRole {
-  created_at: string;
-  description: string | null;
-  id: string;
-  is_system: boolean;
-  name: string;
-  permission_count: number;
-  permissions?: string[];
-  updated_at: string;
-  user_count: number;
-}
-
-export interface AdminPermission {
-  children?: AdminPermission[];
-  code: string;
-  created_at?: string;
-  description: string | null;
-  id: string;
-  name: string;
-  parent_id: string | null;
-  type: PermissionType;
-  updated_at?: string;
-}
-
-export type PermissionType = 'data' | 'module' | 'operation' | 'page' | 'system';
-
-export interface ListParams {
-  page?: number;
-  pageSize?: number;
-  searchTerm?: string;
-  tree?: boolean;
-  type?: PermissionType | 'all';
-}
-
-export interface RolePayload {
-  description?: string;
-  is_system?: boolean;
-  name: string;
-  permissions?: string[];
-}
-
-export interface PermissionPayload {
-  code: string;
-  description?: string;
-  name: string;
-  parent_id: number | null;
-  type: PermissionType;
-}
-
-export interface SystemSettings {
-  allowRegistration: boolean;
-  byokAllowedOrigins: string;
-  defaultLanguage: 'en-US' | 'zh-CN';
-  displayName: string;
-  maintenanceMode: boolean;
-  sessionPolicy: 'standard' | 'strict';
-  supportEmail: string;
-  updatedAt: string;
-}
-
-export type SystemSettingsPayload = Omit<SystemSettings, 'updatedAt'>;
-
-export interface AiProviderOption {
-  color: string;
-  enabled: boolean;
-  label: string;
-  value: string;
-}
+export type AdminPermission = IApiAdmin.AdminPermission;
+export type AdminRole = IApiAdmin.AdminRole;
+export type AiProviderOption = IApiAdmin.AiProviderOption;
+export type ListParams = IApiAdmin.ListParams;
+export type PermissionPayload = IApiAdmin.PermissionPayload;
+export type PermissionType = IApiAdmin.PermissionType;
+export type RolePayload = IApiAdmin.RolePayload;
+export type SystemSettings = IApiAdmin.SystemSettings;
+export type SystemSettingsPayload = IApiAdmin.SystemSettingsPayload;
 
 function getQueryParams(params: ListParams): Record<string, unknown> {
   return Object.fromEntries(
@@ -82,8 +16,10 @@ function getQueryParams(params: ListParams): Record<string, unknown> {
   );
 }
 
-export async function getRoles(params: ListParams = {}): Promise<PaginatedData<AdminRole>> {
-  return alovaGet<PaginatedData<AdminRole>>('/roles', getQueryParams(params));
+export async function getRoles(
+  params: ListParams = {},
+): Promise<IHttpCommon.PaginatedData<AdminRole>> {
+  return alovaGet<IHttpCommon.PaginatedData<AdminRole>>('/roles', getQueryParams(params));
 }
 
 export async function getRole(id: string): Promise<AdminRole> {
@@ -104,8 +40,11 @@ export async function deleteRole(id: string): Promise<void> {
 
 export async function getPermissions(
   params: ListParams = {},
-): Promise<PaginatedData<AdminPermission>> {
-  return alovaGet<PaginatedData<AdminPermission>>('/permissions', getQueryParams(params));
+): Promise<IHttpCommon.PaginatedData<AdminPermission>> {
+  return alovaGet<IHttpCommon.PaginatedData<AdminPermission>>(
+    '/permissions',
+    getQueryParams(params),
+  );
 }
 
 export async function getPermission(id: string): Promise<AdminPermission> {

@@ -14,10 +14,7 @@ import { usePermission } from '@/hooks/use-permission';
 import { getPermissions, getRoles } from '@/api/modules/admin';
 import styles from './page.module.scss';
 
-interface OverviewData {
-  permissionCount: number;
-  roleCount: number;
-}
+type OverviewData = IAppPages.AdminOverviewData;
 
 const initialData: OverviewData = { permissionCount: 0, roleCount: 0 };
 
