@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const userId = await requireByokUser(request, requestId);
     const result = await listUserApiCredentials(userId);
 
-    return createByokJsonResponse(result);
+    return createByokJsonResponse(result.credentials);
   } catch (error) {
     return createByokErrorResponse(error, requestId);
   }

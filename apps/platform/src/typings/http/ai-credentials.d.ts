@@ -27,7 +27,5 @@ declare namespace IApiAiCredentials {
     value: AiCredentialProvider;
   }
 
-  interface AiCredentialListResponse {
-    credentials: AiCredential[];
-  }
+  type AiCredentialListResponse = AiCredential[];
 }

@@ -9,8 +9,7 @@ export type AiProviderOption = IApiAiCredentials.AiProviderOption;
 export type SaveAiCredentialPayload = IApiAiCredentials.SaveAiCredentialPayload;
 
 export async function getAiCredentials(): Promise<AiCredential[]> {
-  const response = await alovaGet<AiCredentialListResponse>('/user/ai-credentials');
-  return response.credentials;
+  return alovaGet<AiCredentialListResponse>('/user/ai-credentials');
 }
 
 export async function getAiProviderOptions(): Promise<AiProviderOption[]> {

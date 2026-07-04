@@ -125,14 +125,14 @@ describe('BYOK route handlers', () => {
   });
 
   it('creates BYOK JSON responses without wildcard CORS', async () => {
-    const response = createByokJsonResponse({ credentials: [] });
-    const body = (await response.json()) as IServer.ApiResponse<{ credentials: unknown[] }>;
+    const response = createByokJsonResponse([] as unknown[]);
+    const body = (await response.json()) as IServer.ApiResponse<unknown[]>;
 
     expect(body).toMatchObject({
       code: 200,
       success: true,
       message: '操作成功',
-      data: { credentials: [] },
+      data: [],
     });
     expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
     expect(response.headers.get('Cache-Control')).toBe('no-store, max-age=0');
