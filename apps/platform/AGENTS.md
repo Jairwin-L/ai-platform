@@ -1,13 +1,13 @@
 # AGENTS 规范（Codex 可识别）
 
 本文件定义 Codex 在 `nextjs-starter-kit` 仓库中的默认行为规范。
-除非用户在当前对话中明确覆盖，否则按以下规则执行。
+除非用户在当前对话中明确覆盖，否则统一按以下规则执行。
 
 ## 1. 项目背景
 
 - 技术栈：`Next.js (App Router) + React 19 + TypeScript + Tailwind CSS`
 - 请求层：`alova`，请求封装与业务请求模块统一位于 `src/api/`
-- 包管理与工具链：Vite+ (`vp`) + `pnpm`
+- 包管理与工具链：Vite+（`vp`）+ `pnpm`
 - 部署：GitHub Actions 构建 Docker 镜像并推送到 GHCR，再通过 SSH 登录服务器执行 Docker Compose 拉取镜像并重启服务。
 - Node 版本要求：`22.x`
 - 主要代码目录：`src/`（包含 `api/`、`app/`、`components/`、`constants/`、`lib/`、`styles/`、`utils/` 等）
@@ -16,23 +16,26 @@
 
 ## 2. 工作优先级
 
-1. 正确性优先：先保证功能和行为正确，再考虑重构。
-2. 最小改动优先：仅修改和需求直接相关的文件与代码路径。
-3. 可验证优先：改动后要说明建议用户手动执行的最小必要检查。
-4. 与现有风格一致：遵守当前项目 Vite+ lint/format、Prettier、Stylelint 规范。
+1. 正确性优先：先保证功能与行为正确，再考虑重构。
+2. 最小改动优先：仅修改与需求直接相关的文件和代码路径。
+3. 可验证优先：改动后说明建议用户手动执行的最小必要检查。
+4. 官方文档优先：涉及框架、第三方库或复杂功能开发时，必须以官方文档和当前项目既有实现为依据。
+5. 与现有风格一致：遵守当前项目 Vite+ lint/format、Prettier、Stylelint 规范。
 
 ## 3. 执行流程
 
 1. 先理解需求与影响范围，再动手改代码。
-2. 先查现有实现（`src/app/` 路由、`src/api/` 请求封装、`src/components/` 组件、`src/utils/`、`src/lib/`），优先复用。
-3. 修改完成后默认不主动执行构建、lint、test、`vp check` 等生成构建和代码检测相关命令；仅列出建议用户手动执行的最小必要校验命令。用户明确要求执行时再运行。
-4. 公开仓库在提交、发布或用户要求检查时，需要检查是否包含隐私或敏感数据；重点覆盖 `.env*`、部署配置、GitHub Actions、Docker/Compose、源码、文档、Git 跟踪文件与必要的 Git 历史。
-5. 隐私与敏感数据检查至少关注：密钥、token、密码、私钥、真实服务器地址、数据库连接串、Webhook、第三方服务凭证、个人邮箱/手机号、内部业务地址与生产环境配置；发现风险时先报告并给出最小修复建议。
-6. 检测到用户明确提出“提交代码”指令时，默认不主动执行构建、lint、test、`vp check` 等校验命令；应先提示建议用户手动校验，用户确认提交后再提交代码。若用户明确要求 Codex 执行校验，则在校验通过后提交代码。
-7. 提交说明必须参考 [conventional-changelog/commitlint](https://github.com/conventional-changelog/commitlint) 的 Conventional Commits 风格，格式为 `type(scope?): subject`；`scope` 可选，`subject` 必须使用简洁英文说明本次改动。
-8. commit 内容必须使用英文，不使用中文提交说明。
-9. 常用提交类型包括：`feat`、`fix`、`docs`、`style`、`refactor`、`perf`、`test`、`build`、`ci`、`chore`、`revert`。
-10. 输出时必须说明：
+2. 先查现有实现（`src/app/` 路由、`src/api/` 请求封装、`src/components/` 组件、`src/utils/`、`src/lib/`），优先复用已有代码。
+3. 涉及功能开发、框架能力或第三方库集成时，必须严格依据官方文档实现；例如 Tiptap 富文本、Next.js App Router、React、alova、Ant Design 等。若不确定 API、配置项或最佳实践，先查官方文档、官方仓库或项目内已安装文档，再实现。
+4. 如果官方文档与项目既有实现存在冲突，应优先说明差异、影响与取舍，再采用当前仓库成本最低且风险最小的方案。
+5. 修改完成后默认不主动执行构建、lint、test、`vp check` 等生成构建和代码检测相关命令；仅列出建议用户手动执行的最小必要校验命令。用户明确要求执行时再运行。
+6. 公开仓库在提交、发布或用户要求检查时，需要检查是否包含隐私或敏感数据；重点覆盖 `.env*`、部署配置、GitHub Actions、Docker/Compose、源码、文档、Git 跟踪文件与必要的 Git 历史。
+7. 隐私与敏感数据检查至少关注：密钥、token、密码、私钥、真实服务器地址、数据库连接串、Webhook、第三方服务凭证、个人邮箱/手机号、内部业务地址与生产环境配置；发现风险时先报告并给出最小修复建议。
+8. 检测到用户明确提出“提交代码”指令时，默认不主动执行构建、lint、test、`vp check` 等校验命令；应先提示建议用户手动校验，用户确认提交后再提交代码。若用户明确要求 Codex 执行校验，则在校验通过后提交代码。
+9. 提交说明必须参考 [conventional-changelog/commitlint](https://github.com/conventional-changelog/commitlint) 的 Conventional Commits 风格，格式为 `type(scope?): subject`；`scope` 可选，`subject` 必须使用简洁英文说明本次改动。
+10. commit 内容必须使用英文，不使用中文提交说明。
+11. 常用提交类型包括：`feat`、`fix`、`docs`、`style`、`refactor`、`perf`、`test`、`build`、`ci`、`chore`、`revert`。
+12. 输出时必须说明：
 
 - 改了哪些文件
 - 为什么这样改
