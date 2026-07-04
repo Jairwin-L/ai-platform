@@ -1,18 +1,4 @@
-export const BYOK_PROVIDER = {
-  OPENAI: 'openai',
-  ANTHROPIC: 'anthropic',
-  GEMINI: 'gemini',
-  DEEPSEEK: 'deepseek',
-} as const;
-
 export type ByokProvider = IByok.Provider;
-
-export const SUPPORTED_BYOK_PROVIDERS = [
-  BYOK_PROVIDER.OPENAI,
-  BYOK_PROVIDER.ANTHROPIC,
-  BYOK_PROVIDER.GEMINI,
-  BYOK_PROVIDER.DEEPSEEK,
-] as const;
 
 export const BYOK_PROVIDER_VALUE_PATTERN = /^[a-z][a-z0-9_-]{0,39}$/u;
 
@@ -75,34 +61,6 @@ export const BYOK_SAFE_RESPONSE_HEADERS = {
 
 export const BYOK_SUCCESS_RESPONSE_OPTIONS = {
   headers: BYOK_SAFE_RESPONSE_HEADERS,
-} as const;
-
-export const OPENAI_CHAT_COMPLETIONS_URL = 'https://api.openai.com/v1/chat/completions';
-export const OPENAI_ALLOWED_MODELS = ['gpt-4o-mini', 'gpt-4.1-mini'] as const;
-
-export const ANTHROPIC_MESSAGES_URL = 'https://api.anthropic.com/v1/messages';
-export const ANTHROPIC_ALLOWED_MODELS = ['claude-3-5-haiku-latest'] as const;
-export const ANTHROPIC_VERSION = '2023-06-01';
-
-export const GEMINI_GENERATE_CONTENT_URL_PREFIX =
-  'https://generativelanguage.googleapis.com/v1beta/models';
-export const GEMINI_ALLOWED_MODELS = ['gemini-2.5-flash'] as const;
-
-export const DEEPSEEK_CHAT_COMPLETIONS_URL = 'https://api.deepseek.com/chat/completions';
-export const DEEPSEEK_ALLOWED_MODELS = ['deepseek-chat', 'deepseek-reasoner'] as const;
-
-export const BYOK_ALLOWED_CHAT_MODELS = [
-  ...OPENAI_ALLOWED_MODELS,
-  ...ANTHROPIC_ALLOWED_MODELS,
-  ...GEMINI_ALLOWED_MODELS,
-  ...DEEPSEEK_ALLOWED_MODELS,
-] as const;
-
-export const BYOK_ALLOWED_MODELS_BY_PROVIDER = {
-  [BYOK_PROVIDER.OPENAI]: OPENAI_ALLOWED_MODELS,
-  [BYOK_PROVIDER.ANTHROPIC]: ANTHROPIC_ALLOWED_MODELS,
-  [BYOK_PROVIDER.GEMINI]: GEMINI_ALLOWED_MODELS,
-  [BYOK_PROVIDER.DEEPSEEK]: DEEPSEEK_ALLOWED_MODELS,
 } as const;
 
 export const BYOK_CHAT_LIMITS = {

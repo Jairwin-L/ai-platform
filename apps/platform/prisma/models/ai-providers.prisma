@@ -4,8 +4,8 @@ model AiProviders {
   label       String
   color       String
   api_key_url String?
-  protocol    String   @default("openai-compatible")
-  chat_base_url String
+  protocol    String   @default("chat-completions")
+  chat_base_url String   @default("")
   models      String[] @default([])
   enabled     Boolean  @default(true)
   sort_order  Int      @default(0)

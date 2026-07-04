@@ -22,7 +22,7 @@ describe('BYOK redaction', () => {
     expect(result.nested.ciphertext).toBe('[REDACTED]');
   });
 
-  it('redacts bearer and OpenAI-like secrets in text', () => {
+  it('redacts bearer and API-key-like secrets in text', () => {
     const projectKey = ['sk', 'proj', 'abcdef123456'].join('-');
     const legacyKey = ['sk', 'abcdef123456'].join('-');
     const text = redactText(

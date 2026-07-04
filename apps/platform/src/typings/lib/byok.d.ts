@@ -77,6 +77,7 @@ declare namespace IByok {
     deleteStoredApiCredential?: typeof import('@/lib/ai/byok/key-store').deleteStoredApiCredential;
     encryptApiKey?: typeof import('@/lib/ai/byok/crypto').encryptApiKey;
     getStoredApiCredential?: typeof import('@/lib/ai/byok/key-store').getStoredApiCredential;
+    getStoredAiProviderOptions?: typeof import('@/lib/ai/byok/provider-options-store').getStoredAiProviderOptions;
     listStoredApiCredentials?: typeof import('@/lib/ai/byok/key-store').listStoredApiCredentials;
     saveStoredApiCredential?: typeof import('@/lib/ai/byok/key-store').saveStoredApiCredential;
     touchStoredApiCredentialLastUsed?: typeof import('@/lib/ai/byok/key-store').touchStoredApiCredentialLastUsed;
@@ -102,15 +103,15 @@ declare namespace IByok {
     };
   }
 
-  interface OpenAiCompatibleResponse {
+  interface ChatCompletionsResponse {
     choices?: Array<{ message?: { content?: string } }>;
   }
 
-  interface AnthropicResponse {
+  interface MessagesResponse {
     content?: Array<{ text?: string; type?: string }>;
   }
 
-  interface GeminiResponse {
+  interface GenerateContentResponse {
     candidates?: Array<{
       content?: {
         parts?: Array<{ text?: string }>;
@@ -120,13 +121,19 @@ declare namespace IByok {
 
   interface AiProviderOption {
     apiKeyUrl?: string;
+    chatBaseUrl: string;
     color: string;
     enabled: boolean;
     label: string;
+    models: string[];
+    protocol: AiProviderProtocol;
     value: Provider;
   }
 
   type EnabledAiProviderOption = Omit<AiProviderOption, 'enabled'>;
+  type PublicAiProviderOption = Omit<AiProviderOption, 'chatBaseUrl' | 'enabled' | 'protocol'>;
+
+  type AiProviderProtocol = 'chat-completions' | 'generate-content' | 'messages';
 
   interface AuditEvent {
     eventType: string;
@@ -184,9 +191,12 @@ declare namespace IByok {
 
   interface ProviderOptionRow {
     api_key_url: string | null;
+    chat_base_url: string;
     color: string;
     enabled: boolean;
     label: string;
+    models: string[];
+    protocol: AiProviderProtocol;
     sort_order: number;
     value: string;
   }

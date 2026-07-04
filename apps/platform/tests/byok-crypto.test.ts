@@ -26,7 +26,7 @@ function tamperBase64(value: string): string {
 }
 
 describe('BYOK crypto', () => {
-  it('creates masked key hints without exposing short non-OpenAI keys', () => {
+  it('creates masked key hints without exposing short keys', () => {
     expect(createKeyHint(['sk', 'test', 'secret', '1234'].join('-'))).toBe('sk-****1234');
     expect(createKeyHint('abcdefgh')).toBe('key-****efgh');
   });
@@ -35,11 +35,11 @@ describe('BYOK crypto', () => {
     const provider = new TestKeyProvider();
     const context = {
       userId: 'user-1',
-      provider: 'openai' as const,
+      provider: 'test-provider',
       credentialId: 'cred_11111111111111111111111111111111',
     };
     const metadata = {
-      label: 'OpenAI main',
+      label: 'Test provider main',
       expiresAt: '2026-07-09T00:00:00.000Z',
     };
     const first = await encryptApiKey(API_KEY, context, metadata, provider);
@@ -56,11 +56,11 @@ describe('BYOK crypto', () => {
     const provider = new TestKeyProvider();
     const context = {
       userId: 'user-1',
-      provider: 'openai' as const,
+      provider: 'test-provider',
       credentialId: 'cred_11111111111111111111111111111111',
     };
     const metadata = {
-      label: 'OpenAI main',
+      label: 'Test provider main',
       expiresAt: '2026-07-09T00:00:00.000Z',
     };
     const payload = await encryptApiKey(API_KEY, context, metadata, provider);
@@ -83,11 +83,7 @@ describe('BYOK crypto', () => {
       decryptApiKey(payload, { ...context, userId: 'user-2' }, provider),
     ).rejects.toThrow();
     await expect(
-      decryptApiKey(
-        payload,
-        { ...context, provider: 'anthropic' as unknown as 'openai' },
-        provider,
-      ),
+      decryptApiKey(payload, { ...context, provider: 'other-provider' }, provider),
     ).rejects.toThrow();
     await expect(
       decryptApiKey(

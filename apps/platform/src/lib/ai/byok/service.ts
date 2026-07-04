@@ -5,6 +5,8 @@ import {
 import { decryptApiKey, encryptApiKey } from './crypto';
 import type { EncryptedApiKeyPayload } from './crypto';
 import { ByokPublicError } from './errors';
+import { getEnabledAiProviderOptions } from './provider-options';
+import { getStoredAiProviderOptions } from './provider-options-store';
 import {
   buildCredentialExpiry,
   createCredentialId,
@@ -218,11 +220,18 @@ export async function createByokChatCompletion(
   );
   const callProvider = dependencies.callAiProvider ?? callAiProvider;
   const deleteCredential = dependencies.deleteStoredApiCredential ?? deleteStoredApiCredential;
+  const getProviderOptions = dependencies.getStoredAiProviderOptions ?? getStoredAiProviderOptions;
   const touchCredential =
     dependencies.touchStoredApiCredentialLastUsed ?? touchStoredApiCredentialLastUsed;
+  const providerOptions = getEnabledAiProviderOptions(await getProviderOptions());
+  const providerOption = providerOptions.find((option) => option.value === payload.provider);
+
+  if (!providerOption) {
+    throw new ByokPublicError(BYOK_ERROR_CODE.UNSUPPORTED_PROVIDER, 400);
+  }
 
   try {
-    const result = await callProvider(apiKey, payload.provider, input);
+    const result = await callProvider(apiKey, providerOption, input);
 
     try {
       await touchCredential(userId, payload, remainingSeconds);

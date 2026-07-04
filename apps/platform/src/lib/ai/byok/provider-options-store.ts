@@ -1,5 +1,9 @@
 import { prisma } from '@/lib/prisma';
-import { normalizeAiProviderOptions, type AiProviderOption } from './provider-options';
+import {
+  normalizeAiProviderOptions,
+  normalizeStoredAiProviderOptions,
+  type AiProviderOption,
+} from './provider-options';
 
 function isMissingProviderOptionsStorage(error: unknown): boolean {
   if (typeof error !== 'object' || error === null) {
@@ -29,12 +33,15 @@ export function getProviderOptionsStorageErrorMessage(error: unknown, fallback: 
 }
 
 function toAiProviderOptions(rows: IByok.ProviderOptionRow[]): AiProviderOption[] {
-  return normalizeAiProviderOptions(
+  return normalizeStoredAiProviderOptions(
     rows.map((row) => ({
       value: row.value,
       label: row.label,
       color: row.color,
       apiKeyUrl: row.api_key_url ?? undefined,
+      protocol: row.protocol,
+      chatBaseUrl: row.chat_base_url,
+      models: row.models,
       enabled: row.enabled,
     })),
   );
@@ -42,7 +49,7 @@ function toAiProviderOptions(rows: IByok.ProviderOptionRow[]): AiProviderOption[
 
 async function fetchAiProviderRows(): Promise<IByok.ProviderOptionRow[]> {
   return prisma.$queryRaw<IByok.ProviderOptionRow[]>`
-    SELECT value, label, color, api_key_url, enabled, sort_order
+    SELECT value, label, color, api_key_url, protocol, chat_base_url, models, enabled, sort_order
     FROM ai_providers
     ORDER BY sort_order ASC, id ASC
   `;
@@ -81,12 +88,25 @@ export async function updateStoredAiProviderOptions(options: AiProviderOption[])
 
     const upsertResults = await Promise.allSettled(
       normalizedOptions.map((option, index) => transaction.$executeRaw`
-        INSERT INTO ai_providers (value, label, color, api_key_url, enabled, sort_order)
+        INSERT INTO ai_providers (
+          value,
+          label,
+          color,
+          api_key_url,
+          protocol,
+          chat_base_url,
+          models,
+          enabled,
+          sort_order
+        )
         VALUES (
           ${option.value},
           ${option.label},
           ${option.color},
           ${option.apiKeyUrl ?? null},
+          ${option.protocol},
+          ${option.chatBaseUrl},
+          ${option.models},
           ${option.enabled},
           ${index}
         )
@@ -94,6 +114,9 @@ export async function updateStoredAiProviderOptions(options: AiProviderOption[])
         SET label = EXCLUDED.label,
             color = EXCLUDED.color,
             api_key_url = EXCLUDED.api_key_url,
+            protocol = EXCLUDED.protocol,
+            chat_base_url = EXCLUDED.chat_base_url,
+            models = EXCLUDED.models,
             enabled = EXCLUDED.enabled,
             sort_order = EXCLUDED.sort_order,
             updated_at = NOW()

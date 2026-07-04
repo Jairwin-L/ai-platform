@@ -4,9 +4,19 @@ import { callAiProvider, validateProviderApiKey } from '@/lib/ai/byok/provider';
 import type { ChatRequestInput } from '@/lib/ai/byok/schemas';
 
 const API_KEY = ['sk', 'test', 'secret'].join('-');
+const PROVIDER_OPTION: IByok.AiProviderOption = {
+  value: 'test-provider',
+  label: 'Test Provider',
+  color: 'blue',
+  apiKeyUrl: 'https://provider.example/keys',
+  protocol: 'chat-completions',
+  chatBaseUrl: 'https://provider.example/v1/chat/completions',
+  models: ['test-model'],
+  enabled: true,
+};
 const CHAT_INPUT: ChatRequestInput = {
   credentialId: 'cred_11111111111111111111111111111111',
-  model: 'gpt-4o-mini',
+  model: 'test-model',
   messages: [{ role: 'user', content: 'hello' }],
 };
 
@@ -36,7 +46,7 @@ describe('BYOK provider', () => {
       ),
     );
 
-    await expect(callAiProvider(API_KEY, 'openai', CHAT_INPUT)).rejects.toMatchObject({
+    await expect(callAiProvider(API_KEY, PROVIDER_OPTION, CHAT_INPUT)).rejects.toMatchObject({
       code: BYOK_ERROR_CODE.BYOK_KEY_INVALID,
       status: 401,
     });
@@ -45,14 +55,14 @@ describe('BYOK provider', () => {
   it('maps provider rate limit and server errors without treating them as invalid keys', async () => {
     mockFetchResponse(Response.json({ error: { type: 'rate_limit_error' } }, { status: 429 }));
 
-    await expect(callAiProvider(API_KEY, 'openai', CHAT_INPUT)).rejects.toMatchObject({
+    await expect(callAiProvider(API_KEY, PROVIDER_OPTION, CHAT_INPUT)).rejects.toMatchObject({
       code: BYOK_ERROR_CODE.RATE_LIMITED,
       status: 429,
     });
 
     mockFetchResponse(Response.json({ error: { type: 'server_error' } }, { status: 500 }));
 
-    await expect(callAiProvider(API_KEY, 'openai', CHAT_INPUT)).rejects.toMatchObject({
+    await expect(callAiProvider(API_KEY, PROVIDER_OPTION, CHAT_INPUT)).rejects.toMatchObject({
       code: BYOK_ERROR_CODE.AI_PROVIDER_UNAVAILABLE,
       status: 503,
     });
@@ -66,25 +76,25 @@ describe('BYOK provider', () => {
       }),
     );
 
-    await expect(callAiProvider(API_KEY, 'openai', CHAT_INPUT)).rejects.toMatchObject({
+    await expect(callAiProvider(API_KEY, PROVIDER_OPTION, CHAT_INPUT)).rejects.toMatchObject({
       code: BYOK_ERROR_CODE.AI_PROVIDER_UNAVAILABLE,
       status: 503,
     });
   });
 
-  it('rejects models that do not belong to the credential provider', async () => {
-    await expect(callAiProvider(API_KEY, 'anthropic', CHAT_INPUT)).rejects.toMatchObject({
+  it('rejects models that are not configured for the credential provider', async () => {
+    await expect(
+      callAiProvider(API_KEY, { ...PROVIDER_OPTION, models: ['other-model'] }, CHAT_INPUT),
+    ).rejects.toMatchObject({
       code: BYOK_ERROR_CODE.INVALID_REQUEST,
       status: 400,
     });
   });
 
-  it('validates provider-specific api key formats before storage', () => {
-    expect(validateProviderApiKey('openai', ['sk', 'test', 'secret'].join('-'))).toBe(true);
-    expect(validateProviderApiKey('anthropic', ['sk', 'ant', 'test'].join('-'))).toBe(true);
-    expect(validateProviderApiKey('gemini', 'AIzaSyExampleKey')).toBe(true);
-    expect(validateProviderApiKey('deepseek', ['sk', 'deepseek', 'test'].join('-'))).toBe(true);
-    expect(validateProviderApiKey('openai', 'AIzaSyExampleKey')).toBe(false);
-    expect(validateProviderApiKey('gemini', 'short')).toBe(false);
+  it('validates generic api key formatting before storage', () => {
+    expect(validateProviderApiKey('test-provider', ['sk', 'test', 'secret'].join('-'))).toBe(true);
+    expect(validateProviderApiKey('test-provider', 'AIzaSyExampleKey')).toBe(true);
+    expect(validateProviderApiKey('test-provider', ' leading')).toBe(false);
+    expect(validateProviderApiKey('test-provider', 'has whitespace')).toBe(false);
   });
 });

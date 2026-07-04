@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import {
-  BYOK_ALLOWED_CHAT_MODELS,
   BYOK_CHAT_LIMITS,
   BYOK_PROVIDER_VALUE_PATTERN,
   BYOK_TTL_OPTION_SECONDS,
@@ -77,7 +76,12 @@ const chatMessageSchema = z.object({
 export const chatRequestSchema = z
   .object({
     credentialId: credentialIdSchema,
-    model: z.enum(BYOK_ALLOWED_CHAT_MODELS),
+    model: z
+      .string()
+      .trim()
+      .min(1)
+      .max(128)
+      .refine((value) => !hasWhitespaceOrControlCharacter(value), '模型名称不能包含空白或控制字符'),
     messages: z.array(chatMessageSchema).min(1).max(BYOK_CHAT_LIMITS.maxMessages),
   })
   .strict()

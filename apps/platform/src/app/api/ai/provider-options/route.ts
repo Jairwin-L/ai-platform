@@ -5,7 +5,7 @@ import {
   withApiHandler,
   type ApiHandler,
 } from '@/lib/server';
-import { getEnabledAiProviderOptions } from '@/lib/ai/byok/provider-options';
+import { getPublicAiProviderOptions } from '@/lib/ai/byok/provider-options';
 import {
   getProviderOptionsStorageErrorMessage,
   getStoredAiProviderOptions,
@@ -13,7 +13,7 @@ import {
 
 const getAiProviderOptionsHandler: ApiHandler = async () => {
   try {
-    const providerOptions = getEnabledAiProviderOptions(await getStoredAiProviderOptions());
+    const providerOptions = getPublicAiProviderOptions(await getStoredAiProviderOptions());
 
     return createSuccessResponse(providerOptions, 'AI Provider 配置查询成功');
   } catch (error) {

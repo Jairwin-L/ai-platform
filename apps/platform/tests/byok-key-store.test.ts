@@ -14,8 +14,8 @@ const CREDENTIAL_ID = 'cred_11111111111111111111111111111111';
 const PAYLOAD: EncryptedApiKeyPayload = {
   version: 1,
   credentialId: CREDENTIAL_ID,
-  provider: 'openai',
-  label: 'OpenAI main',
+  provider: 'test-provider',
+  label: 'Test provider main',
   algorithm: 'aes-256-gcm',
   keyVersion: 'v1',
   ciphertext: 'Y2lwaGVydGV4dA==',
@@ -112,8 +112,8 @@ describe('BYOK key store', () => {
 
     expect(status).toMatchObject({
       credentialId: CREDENTIAL_ID,
-      provider: 'openai',
-      label: 'OpenAI main',
+      provider: 'test-provider',
+      label: 'Test provider main',
       keyHint: 'sk-****7890',
       status: 'active',
     });

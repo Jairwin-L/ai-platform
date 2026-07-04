@@ -63,9 +63,12 @@ declare namespace IApiAdmin {
 
   interface AiProviderOption {
     apiKeyUrl?: string;
+    chatBaseUrl: string;
     color: string;
     enabled: boolean;
     label: string;
+    models: string[];
+    protocol: IByok.AiProviderProtocol;
     value: string;
   }
 

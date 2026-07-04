@@ -32,6 +32,7 @@ declare namespace IApiAiCredentials {
     apiKeyUrl?: string;
     color: string;
     label: string;
+    models: string[];
     value: AiCredentialProvider;
   }
 

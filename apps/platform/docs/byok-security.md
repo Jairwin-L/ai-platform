@@ -19,7 +19,7 @@
 - `src/lib/ai/byok/crypto.ts`: AES-256-GCM、AAD、密钥版本。
 - `src/lib/ai/byok/encryption-key-provider.ts`: 环境变量密钥 Provider，预留 KMS / Vault 扩展。
 - `src/lib/ai/byok/key-store.ts`: Credential Redis key、ZSET 索引、value、TTL、状态、删除。
-- `src/lib/ai/byok/provider.ts`: Provider / 模型 / URL allowlist 与 OpenAI、Anthropic、Gemini、DeepSeek 调用。
+- `src/lib/ai/byok/provider.ts`: 基于管理端 AI Provider 配置的协议、模型、URL allowlist 调用。
 - `src/lib/ai/byok/schemas.ts`: Zod 请求校验。
 - `src/lib/ai/byok/service.ts`: 保存、列表、删除、解密调用、无效 Credential 自动删除。
 - `src/lib/ai/security/redact.ts`: 日志与错误上报脱敏。
@@ -58,15 +58,15 @@ Redis TTL 到期表示在线 Redis 中的数据自动失效与删除；历史 RD
 - `POST /api/user/ai-credentials`: 保存当前登录用户的一条 Credential，服务端生成 `credentialId`。
 - `GET /api/user/ai-credentials`: 查询当前登录用户的 Credential 列表，只返回掩码信息和状态，不解密。
 - `DELETE /api/user/ai-credentials/[credentialId]`: 删除当前登录用户的指定 Credential，不接受客户端传入 `userId`。
-- `POST /api/ai/chat`: 请求体携带 `credentialId` 和显式 `model`，服务端根据当前登录用户和 Credential 归属读取 Provider 并调用 allowlist Provider。
+- `POST /api/ai/chat`: 请求体携带 `credentialId` 和显式 `model`，服务端根据当前登录用户和 Credential 归属读取管理端 AI Provider 配置并调用。
 
-所有接口只从服务端 session 解析用户，不接受客户端传入的 `userId`、`role`、`redisKey`、Provider URL、Base URL 或模型 URL。保存 Credential 前会执行 Provider-specific API Key 基础格式校验，但不会向第三方发起网络验证。Chat 请求不接受客户端传入 `provider`，Provider 只能来自服务端保存的 Credential。模型名称先通过全局 allowlist 校验，调用前再按 Credential 的 Provider allowlist 二次校验，避免跨 Provider 混用模型。
+所有接口只从服务端 session 解析用户，不接受客户端传入的 `userId`、`role`、`redisKey`、Provider URL、Base URL 或模型 URL。保存 Credential 前只执行通用 API Key 格式校验，不会向第三方发起网络验证。Chat 请求不接受客户端传入 `provider`，Provider 只能来自服务端保存的 Credential。服务端按 Credential 的 Provider 读取当前启用的管理端配置，并使用配置中的模型 allowlist、协议和调用地址，避免跨 Provider 混用模型或接受客户端控制 URL。
 
 ## 7. 认证、HTTPS、CSRF、CORS、限流
 
 所有 BYOK 接口要求登录态。生产环境只允许 HTTPS；状态变更接口必须提供并通过精确 Origin 校验，Cookie Session 场景下校验 `Sec-Fetch-Site`，默认不返回 `Access-Control-Allow-Origin: *`。BYOK 允许 Origin 只从管理系统配置读取，不使用 env 兜底；配置为空时保存、删除和聊天请求会被拒绝。只有在可信反向代理已经清洗客户端伪造头时，才可设置 `BYOK_TRUST_PROXY_HEADERS=true` 并信任 `X-Forwarded-Proto`。
 
-限流维度为 `userId + IP + route`，保存 Credential 每小时 10 次，删除 Credential 每小时 20 次，AI Chat 每小时 120 次、每天 1000 次。AI Chat 额外限制单用户同一路由最多 3 个并发请求，同时限制请求体大小、消息条数、单条长度、总字符数和模型 allowlist。
+限流维度为 `userId + IP + route`，保存 Credential 每小时 10 次，删除 Credential 每小时 20 次，AI Chat 每小时 120 次、每天 1000 次。AI Chat 额外限制单用户同一路由最多 3 个并发请求，同时限制请求体大小、消息条数、单条长度、总字符数，并按管理端 Provider 配置校验模型 allowlist。
 
 ## 8. 日志、审计与错误处理
 
@@ -89,6 +89,7 @@ vp run build
 - 为开发、测试、预发、生产分别配置不同 AES 主密钥和 Redis HMAC secret。
 - 确认 `.env` 未被 Git 跟踪，真实 secret 不进入镜像、日志、错误上报或前端 bundle。
 - 在管理系统配置中维护 BYOK 允许 Origin，只填写精确 origin，不使用通配符。
+- seed 会预置常见 AI Provider 的协议、Chat Base URL、模型和 API Key 链接；上线前应在管理端确认这些配置符合当前使用的服务。
 - Redis 使用私网或 TLS、ACL、密码、最小权限和 `ai:byok:*` key pattern。
 - 关闭任何后台“查看用户 API Key”“查看 Redis 原始 Value”的能力。
 - 配置 RDB、AOF、快照和灾备副本的加密、访问控制、保留期和销毁策略。

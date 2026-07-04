@@ -13,8 +13,8 @@ const CREDENTIAL_ID = 'cred_11111111111111111111111111111111';
 const PAYLOAD: EncryptedApiKeyPayload = {
   version: 1,
   credentialId: CREDENTIAL_ID,
-  provider: 'openai',
-  label: 'OpenAI main',
+  provider: 'test-provider',
+  label: 'Test provider main',
   algorithm: 'aes-256-gcm',
   keyVersion: 'v1',
   ciphertext: 'Y2lwaGVydGV4dA==',
@@ -28,14 +28,25 @@ const PAYLOAD: EncryptedApiKeyPayload = {
 
 const CHAT_INPUT: ChatRequestInput = {
   credentialId: CREDENTIAL_ID,
-  model: 'gpt-4o-mini',
+  model: 'test-model',
   messages: [{ role: 'user' as const, content: 'hello' }],
+};
+
+const PROVIDER_OPTION: IByok.AiProviderOption = {
+  value: 'test-provider',
+  label: 'Test Provider',
+  color: 'blue',
+  apiKeyUrl: 'https://provider.example/keys',
+  protocol: 'chat-completions',
+  chatBaseUrl: 'https://provider.example/v1/chat/completions',
+  models: ['test-model'],
+  enabled: true,
 };
 
 describe('BYOK service', () => {
   const apiKey = ['sk', 'test', 'secret'].join('-');
 
-  it('rejects invalid provider key format before encryption or storage', async () => {
+  it('rejects invalid key format before encryption or storage', async () => {
     const encryptApiKey = vi.fn();
     const saveStoredApiCredential = vi.fn();
 
@@ -43,9 +54,9 @@ describe('BYOK service', () => {
       saveUserApiCredential(
         'user-1',
         {
-          provider: 'openai',
-          label: 'OpenAI main',
-          apiKey: 'not-an-openai-key',
+          provider: 'test-provider',
+          label: 'Test provider main',
+          apiKey: 'bad key',
           ttlOption: '7d',
         },
         {},
@@ -68,8 +79,8 @@ describe('BYOK service', () => {
       listStoredApiCredentials: async () => [
         {
           credentialId: CREDENTIAL_ID,
-          provider: 'openai',
-          label: 'OpenAI main',
+          provider: 'test-provider',
+          label: 'Test provider main',
           keyHint: 'sk-****7890',
           expiresAt: '2026-07-09T00:00:00.000Z',
           remainingSeconds: 604800,
@@ -92,6 +103,7 @@ describe('BYOK service', () => {
         {},
         {
           getStoredApiCredential: async () => ({ payload: PAYLOAD, remainingSeconds: 604800 }),
+          getStoredAiProviderOptions: async () => [PROVIDER_OPTION],
           decryptApiKey: async () => apiKey,
           callAiProvider: async () => {
             throw new ByokPublicError(BYOK_ERROR_CODE.BYOK_KEY_INVALID, 401);
@@ -114,6 +126,7 @@ describe('BYOK service', () => {
         {},
         {
           getStoredApiCredential: async () => ({ payload: PAYLOAD, remainingSeconds: 604800 }),
+          getStoredAiProviderOptions: async () => [PROVIDER_OPTION],
           decryptApiKey: async () => apiKey,
           callAiProvider: async () => {
             throw new ByokPublicError(BYOK_ERROR_CODE.RATE_LIMITED, 429);
@@ -130,6 +143,7 @@ describe('BYOK service', () => {
         {},
         {
           getStoredApiCredential: async () => ({ payload: PAYLOAD, remainingSeconds: 604800 }),
+          getStoredAiProviderOptions: async () => [PROVIDER_OPTION],
           decryptApiKey: async () => apiKey,
           callAiProvider: async () => {
             throw new ByokPublicError(BYOK_ERROR_CODE.AI_PROVIDER_UNAVAILABLE, 503);

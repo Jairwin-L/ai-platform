@@ -30,8 +30,23 @@ const initialValues: IAppForms.ProviderOptionsValues = {
   aiProviderOptions: [],
 };
 
+const providerProtocolOptions: Array<{ label: string; value: IByok.AiProviderProtocol }> = [
+  { label: 'Chat Completions', value: 'chat-completions' },
+  { label: 'Messages', value: 'messages' },
+  { label: 'Generate Content', value: 'generate-content' },
+];
+
 function createAiProviderOption(): AiProviderOption {
-  return { apiKeyUrl: '', color: 'blue', enabled: true, label: '', value: '' };
+  return {
+    apiKeyUrl: '',
+    chatBaseUrl: '',
+    color: 'blue',
+    enabled: true,
+    label: '',
+    models: [],
+    protocol: 'chat-completions',
+    value: '',
+  };
 }
 
 function normalizeAiProviderOptions(options?: AiProviderOption[]): AiProviderOption[] {
@@ -41,8 +56,10 @@ function normalizeAiProviderOptions(options?: AiProviderOption[]): AiProviderOpt
     const value = option.value.trim();
     const label = option.label.trim();
     const apiKeyUrl = option.apiKeyUrl?.trim();
+    const chatBaseUrl = option.chatBaseUrl?.trim();
+    const models = (option.models ?? []).map((model) => model.trim()).filter(Boolean);
 
-    if (!value || !label || selectedValues.has(value)) {
+    if (!value || !label || !chatBaseUrl || models.length === 0 || selectedValues.has(value)) {
       return [];
     }
 
@@ -54,6 +71,9 @@ function normalizeAiProviderOptions(options?: AiProviderOption[]): AiProviderOpt
         label,
         color: option.color,
         ...(apiKeyUrl ? { apiKeyUrl } : {}),
+        protocol: option.protocol,
+        chatBaseUrl,
+        models: Array.from(new Set(models)),
         enabled: option.enabled,
       },
     ];
@@ -218,7 +238,7 @@ export default function AiProviderSettingsPage() {
                                 },
                               ]}
                             >
-                              <Input maxLength={40} placeholder="openai 或 custom_provider" />
+                              <Input maxLength={40} placeholder="provider_key" />
                             </Form.Item>
                             <Form.Item
                               label="展示名称"
@@ -261,6 +281,49 @@ export default function AiProviderSettingsPage() {
                               <Input
                                 maxLength={2048}
                                 placeholder="https://platform.example.com/api-keys"
+                              />
+                            </Form.Item>
+                            <Form.Item
+                              label="协议"
+                              name={[field.name, 'protocol']}
+                              rules={[{ required: true, message: '请选择协议' }]}
+                            >
+                              <Select options={providerProtocolOptions} />
+                            </Form.Item>
+                            <Form.Item
+                              label="Chat Base URL"
+                              name={[field.name, 'chatBaseUrl']}
+                              rules={[
+                                { required: true, whitespace: true, message: '请输入调用地址' },
+                                { max: 2048, message: '调用地址不能超过 2048 个字符' },
+                                {
+                                  validator: (_, value?: string) => {
+                                    const trimmedValue = value?.trim();
+
+                                    if (trimmedValue && isHttpsUrl(trimmedValue)) {
+                                      return Promise.resolve();
+                                    }
+
+                                    return Promise.reject(new Error('请输入有效的 https 调用地址'));
+                                  },
+                                },
+                              ]}
+                            >
+                              <Input
+                                maxLength={2048}
+                                placeholder="https://api.example.com/v1/chat/completions"
+                              />
+                            </Form.Item>
+                            <Form.Item
+                              label="模型"
+                              name={[field.name, 'models']}
+                              rules={[{ required: true, message: '请至少配置一个模型' }]}
+                            >
+                              <Select
+                                mode="tags"
+                                open={false}
+                                placeholder="输入模型名称后回车"
+                                tokenSeparators={[',', '\n']}
                               />
                             </Form.Item>
                           </div>

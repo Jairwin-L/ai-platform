@@ -57,8 +57,8 @@ describe('BYOK route handlers', () => {
           origin: 'http://localhost:8060',
         },
         body: JSON.stringify({
-          provider: 'openai',
-          label: 'OpenAI main',
+          provider: 'test-provider',
+          label: 'Test provider main',
           apiKey,
           ttlOption: '7d',
         }),
@@ -82,7 +82,7 @@ describe('BYOK route handlers', () => {
         },
         body: JSON.stringify({
           credentialId,
-          model: 'gpt-4o-mini',
+          model: 'test-model',
           messages: [{ role: 'user', content: 'hello' }],
         }),
       }),
@@ -106,8 +106,8 @@ describe('BYOK route handlers', () => {
           origin: 'http://localhost:8060',
         },
         body: JSON.stringify({
-          provider: 'openai',
-          label: 'OpenAI main',
+          provider: 'test-provider',
+          label: 'Test provider main',
           apiKey: 'x'.repeat(9000),
         }),
       }),

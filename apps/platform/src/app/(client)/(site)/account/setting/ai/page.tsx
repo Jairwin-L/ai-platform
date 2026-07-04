@@ -39,7 +39,7 @@ import styles from './page.module.scss';
 
 const initialValues: IAppForms.CredentialFormValues = {
   label: '',
-  provider: 'openai',
+  provider: '',
   apiKey: '',
   ttlOption: '7d',
 };
@@ -397,7 +397,7 @@ export default function AiSettingsPage() {
             name="label"
             rules={[{ required: true, whitespace: true, message: '请输入密钥名称' }]}
           >
-            <Input maxLength={80} placeholder="例如：OpenAI 工作密钥" />
+            <Input maxLength={80} placeholder="例如：工作密钥" />
           </Form.Item>
           {isOverwriteMode ? (
             <Form.Item label="Provider">

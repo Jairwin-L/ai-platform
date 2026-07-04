@@ -15,7 +15,7 @@ describe('BYOK audit', () => {
     writeByokAuditEvent({
       eventType: BYOK_AUDIT_EVENT.KEY_SAVE_SUCCESS,
       actorId: 'user-1',
-      provider: 'openai',
+      provider: 'test-provider',
       requestId: 'req_test',
       ip,
       result: 'success',

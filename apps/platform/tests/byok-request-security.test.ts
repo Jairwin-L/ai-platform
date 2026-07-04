@@ -85,8 +85,8 @@ describe('BYOK request security', () => {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        provider: 'openai',
-        label: 'OpenAI main',
+        provider: 'test-provider',
+        label: 'Test provider main',
         apiKey: 'x'.repeat(9000),
       }),
     });
@@ -122,8 +122,8 @@ describe('BYOK request security', () => {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        provider: 'openai',
-        label: 'OpenAI main',
+        provider: 'test-provider',
+        label: 'Test provider main',
         apiKey,
         credentialId: 'cred_11111111111111111111111111111111',
         userId: 'attacker',
@@ -142,8 +142,8 @@ describe('BYOK request security', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         credentialId: 'cred_11111111111111111111111111111111',
-        provider: 'openai',
-        model: 'gpt-4o-mini',
+        provider: 'test-provider',
+        model: 'test-model',
         baseUrl: 'https://evil.example',
         messages: [{ role: 'user', content: 'hello' }],
       }),

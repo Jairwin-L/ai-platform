@@ -1,33 +1,18 @@
 import {
-  ANTHROPIC_MESSAGES_URL,
-  ANTHROPIC_VERSION,
-  BYOK_ALLOWED_MODELS_BY_PROVIDER,
   BYOK_CHAT_LIMITS,
   BYOK_ERROR_CODE,
-  BYOK_PROVIDER,
-  DEEPSEEK_CHAT_COMPLETIONS_URL,
-  GEMINI_GENERATE_CONTENT_URL_PREFIX,
-  OPENAI_CHAT_COMPLETIONS_URL,
-  SUPPORTED_BYOK_PROVIDERS,
   type ByokProvider,
 } from './constants';
 import { ByokPublicError } from './errors';
 import type { ChatRequestInput } from './schemas';
 
 export type ChatCompletionResult = IByok.ChatCompletionResult;
+export type CallableAiProviderOption = IByok.EnabledAiProviderOption;
 
-function isBuiltInProvider(
-  provider: ByokProvider,
-): provider is (typeof SUPPORTED_BYOK_PROVIDERS)[number] {
-  return (SUPPORTED_BYOK_PROVIDERS as readonly string[]).includes(provider);
-}
+const MESSAGES_API_VERSION = '2023-06-01';
 
-function isModelAllowed(provider: ByokProvider, model: string): boolean {
-  if (!isBuiltInProvider(provider)) {
-    return false;
-  }
-
-  return (BYOK_ALLOWED_MODELS_BY_PROVIDER[provider] as readonly string[]).includes(model);
+function isModelAllowed(providerOption: CallableAiProviderOption, model: string): boolean {
+  return providerOption.models.includes(model);
 }
 
 function hasWhitespaceOrControlCharacter(value: string): boolean {
@@ -38,28 +23,12 @@ function hasWhitespaceOrControlCharacter(value: string): boolean {
   });
 }
 
-export function validateProviderApiKey(provider: ByokProvider, apiKey: string): boolean {
-  if (!apiKey || apiKey.trim() !== apiKey || hasWhitespaceOrControlCharacter(apiKey)) {
-    return false;
-  }
-
-  if (provider === BYOK_PROVIDER.OPENAI) {
-    return apiKey.startsWith('sk-');
-  }
-
-  if (provider === BYOK_PROVIDER.ANTHROPIC) {
-    return apiKey.startsWith('sk-ant-');
-  }
-
-  if (provider === BYOK_PROVIDER.GEMINI) {
-    return apiKey.length >= 16;
-  }
-
-  if (provider === BYOK_PROVIDER.DEEPSEEK) {
-    return apiKey.startsWith('sk-');
-  }
-
-  return true;
+export function validateProviderApiKey(_provider: ByokProvider, apiKey: string): boolean {
+  return Boolean(
+    apiKey &&
+      apiKey.trim() === apiKey &&
+      !hasWhitespaceOrControlCharacter(apiKey),
+  );
 }
 
 async function getProviderErrorPayload(response: Response): Promise<IByok.ProviderErrorPayload | null> {
@@ -131,14 +100,14 @@ async function assertProviderResponseOk(response: Response): Promise<void> {
   throw toProviderUnavailableError(response);
 }
 
-function getOpenAiCompatibleContent(data: unknown): string | null {
-  const value = data as IByok.OpenAiCompatibleResponse;
+function getChatCompletionsContent(data: unknown): string | null {
+  const value = data as IByok.ChatCompletionsResponse;
 
   return value.choices?.[0]?.message?.content ?? null;
 }
 
-function getAnthropicContent(data: unknown): string | null {
-  const value = data as IByok.AnthropicResponse;
+function getMessagesContent(data: unknown): string | null {
+  const value = data as IByok.MessagesResponse;
 
   return value.content
     ?.filter((part) => part.type === 'text' || typeof part.text === 'string')
@@ -146,13 +115,13 @@ function getAnthropicContent(data: unknown): string | null {
     .join('') ?? null;
 }
 
-function getGeminiContent(data: unknown): string | null {
-  const value = data as IByok.GeminiResponse;
+function getGenerateContent(data: unknown): string | null {
+  const value = data as IByok.GenerateContentResponse;
 
   return value.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('') ?? null;
 }
 
-function buildAnthropicBody(input: ChatRequestInput) {
+function buildMessagesBody(input: ChatRequestInput) {
   const system = input.messages
     .filter((message) => message.role === 'system')
     .map((message) => message.content)
@@ -172,7 +141,7 @@ function buildAnthropicBody(input: ChatRequestInput) {
   };
 }
 
-function buildGeminiBody(input: ChatRequestInput) {
+function buildGenerateContentBody(input: ChatRequestInput) {
   const system = input.messages
     .filter((message) => message.role === 'system')
     .map((message) => message.content)
@@ -190,6 +159,10 @@ function buildGeminiBody(input: ChatRequestInput) {
   };
 }
 
+function buildGenerateContentUrl(baseUrl: string, model: string): string {
+  return `${baseUrl.replace(/\/+$/u, '')}/${encodeURIComponent(model)}:generateContent`;
+}
+
 async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => {
@@ -203,13 +176,12 @@ async function fetchWithTimeout(url: string, init: RequestInit): Promise<Respons
   }
 }
 
-async function callOpenAiCompatibleProvider(
+async function callChatCompletionsProvider(
   apiKey: string,
-  provider: ByokProvider,
+  providerOption: CallableAiProviderOption,
   input: ChatRequestInput,
-  url: string,
 ): Promise<ChatCompletionResult> {
-  const response = await fetchWithTimeout(url, {
+  const response = await fetchWithTimeout(providerOption.chatBaseUrl, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -223,105 +195,89 @@ async function callOpenAiCompatibleProvider(
 
   await assertProviderResponseOk(response);
   const data = (await response.json()) as unknown;
-  const content = getOpenAiCompatibleContent(data);
+  const content = getChatCompletionsContent(data);
 
   if (content === null) {
     throw new ByokPublicError(BYOK_ERROR_CODE.AI_PROVIDER_UNAVAILABLE, 503);
   }
 
-  return { provider, model: input.model, content };
+  return { provider: providerOption.value, model: input.model, content };
 }
 
-async function callAnthropicProvider(
+async function callMessagesProvider(
   apiKey: string,
+  providerOption: CallableAiProviderOption,
   input: ChatRequestInput,
 ): Promise<ChatCompletionResult> {
-  const response = await fetchWithTimeout(ANTHROPIC_MESSAGES_URL, {
+  const response = await fetchWithTimeout(providerOption.chatBaseUrl, {
     method: 'POST',
     headers: {
-      'anthropic-version': ANTHROPIC_VERSION,
+      'anthropic-version': MESSAGES_API_VERSION,
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
     },
-    body: JSON.stringify(buildAnthropicBody(input)),
+    body: JSON.stringify(buildMessagesBody(input)),
   });
 
   await assertProviderResponseOk(response);
   const data = (await response.json()) as unknown;
-  const content = getAnthropicContent(data);
+  const content = getMessagesContent(data);
 
   if (content === null) {
     throw new ByokPublicError(BYOK_ERROR_CODE.AI_PROVIDER_UNAVAILABLE, 503);
   }
 
-  return { provider: BYOK_PROVIDER.ANTHROPIC, model: input.model, content };
+  return { provider: providerOption.value, model: input.model, content };
 }
 
-async function callGeminiProvider(
+async function callGenerateContentProvider(
   apiKey: string,
+  providerOption: CallableAiProviderOption,
   input: ChatRequestInput,
 ): Promise<ChatCompletionResult> {
   const response = await fetchWithTimeout(
-    `${GEMINI_GENERATE_CONTENT_URL_PREFIX}/${encodeURIComponent(input.model)}:generateContent`,
+    buildGenerateContentUrl(providerOption.chatBaseUrl, input.model),
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-goog-api-key': apiKey,
       },
-      body: JSON.stringify(buildGeminiBody(input)),
+      body: JSON.stringify(buildGenerateContentBody(input)),
     },
   );
 
   await assertProviderResponseOk(response);
   const data = (await response.json()) as unknown;
-  const content = getGeminiContent(data);
+  const content = getGenerateContent(data);
 
   if (content === null) {
     throw new ByokPublicError(BYOK_ERROR_CODE.AI_PROVIDER_UNAVAILABLE, 503);
   }
 
-  return { provider: BYOK_PROVIDER.GEMINI, model: input.model, content };
+  return { provider: providerOption.value, model: input.model, content };
 }
 
 export async function callAiProvider(
   apiKey: string,
-  provider: ByokProvider,
+  providerOption: CallableAiProviderOption,
   input: ChatRequestInput,
 ): Promise<ChatCompletionResult> {
-  if (!isBuiltInProvider(provider)) {
-    throw new ByokPublicError(BYOK_ERROR_CODE.UNSUPPORTED_PROVIDER, 400);
-  }
-
-  if (!isModelAllowed(provider, input.model)) {
+  if (!isModelAllowed(providerOption, input.model)) {
     throw new ByokPublicError(BYOK_ERROR_CODE.INVALID_REQUEST, 400);
   }
 
   try {
-    if (provider === BYOK_PROVIDER.OPENAI) {
-      return await callOpenAiCompatibleProvider(
-        apiKey,
-        provider,
-        input,
-        OPENAI_CHAT_COMPLETIONS_URL,
-      );
+    if (providerOption.protocol === 'chat-completions') {
+      return await callChatCompletionsProvider(apiKey, providerOption, input);
     }
 
-    if (provider === BYOK_PROVIDER.ANTHROPIC) {
-      return await callAnthropicProvider(apiKey, input);
+    if (providerOption.protocol === 'messages') {
+      return await callMessagesProvider(apiKey, providerOption, input);
     }
 
-    if (provider === BYOK_PROVIDER.GEMINI) {
-      return await callGeminiProvider(apiKey, input);
-    }
-
-    if (provider === BYOK_PROVIDER.DEEPSEEK) {
-      return await callOpenAiCompatibleProvider(
-        apiKey,
-        provider,
-        input,
-        DEEPSEEK_CHAT_COMPLETIONS_URL,
-      );
+    if (providerOption.protocol === 'generate-content') {
+      return await callGenerateContentProvider(apiKey, providerOption, input);
     }
 
     throw new ByokPublicError(BYOK_ERROR_CODE.UNSUPPORTED_PROVIDER, 400);
