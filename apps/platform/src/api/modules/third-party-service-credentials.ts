@@ -2,6 +2,8 @@ import { alovaDelete, alovaGet, alovaPost } from '@/api/alova';
 
 export type CredentialStatus = IApiThirdPartyServiceCredentials.CredentialStatus;
 export type CredentialTtlOption = IApiThirdPartyServiceCredentials.CredentialTtlOption;
+export type OverwriteThirdPartyServiceCredentialPayload =
+  IApiThirdPartyServiceCredentials.OverwriteThirdPartyServiceCredentialPayload;
 export type SaveThirdPartyServiceCredentialPayload =
   IApiThirdPartyServiceCredentials.SaveThirdPartyServiceCredentialPayload;
 export type ThirdPartyServiceOption = IApiThirdPartyServiceCredentials.ThirdPartyServiceOption;
@@ -20,6 +22,17 @@ export async function getThirdPartyServiceOptions(): Promise<ThirdPartyServiceOp
 
 export async function createThirdPartyServiceCredential(
   payload: SaveThirdPartyServiceCredentialPayload,
+): Promise<ThirdPartyServiceCredential> {
+  const response = await alovaPost<ThirdPartyServiceCredential & { saved: true }>(
+    '/user/third-party-service',
+    payload,
+  );
+
+  return response;
+}
+
+export async function overwriteThirdPartyServiceCredential(
+  payload: OverwriteThirdPartyServiceCredentialPayload,
 ): Promise<ThirdPartyServiceCredential> {
   const response = await alovaPost<ThirdPartyServiceCredential & { saved: true }>(
     '/user/third-party-service',

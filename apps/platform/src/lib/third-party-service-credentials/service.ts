@@ -13,7 +13,7 @@ import {
   type StoredCredentialStatus,
 } from './store';
 import { CREDENTIAL_STATUS } from './constants';
-import type { SaveCredentialInput } from './schemas';
+import type { OverwriteCredentialInput, SaveCredentialInput } from './schemas';
 
 export type CredentialRequestMeta = IThirdPartyServiceCredentials.RequestMeta;
 export type CredentialServiceDependencies = IThirdPartyServiceCredentials.ServiceDependencies;
@@ -176,4 +176,60 @@ export async function deleteUserThirdPartyServiceCredential(
   });
 
   return { credentialId, deleted: true };
+}
+
+export async function overwriteUserThirdPartyServiceCredential(
+  userId: string,
+  credentialId: string,
+  input: OverwriteCredentialInput,
+  meta: CredentialRequestMeta = {},
+  dependencies: CredentialServiceDependencies = {},
+): Promise<SavedCredentialResult> {
+  const getCredential = dependencies.getStoredCredential ?? getStoredCredential;
+  const encrypt = dependencies.encryptCredential ?? encryptCredential;
+  const save = dependencies.saveStoredCredential ?? saveStoredCredential;
+  const validateKey = dependencies.validateApiKey ?? validateApiKey;
+  const stored = await getCredential(userId, credentialId);
+
+  if (!stored) {
+    throw new ByokPublicError(
+      BYOK_ERROR_CODE.BYOK_KEY_UNAVAILABLE,
+      404,
+      '未找到有效的第三方服务 API Key，请先保存凭据。',
+    );
+  }
+
+  if (!validateKey(input.apiKey)) {
+    throw new ByokPublicError(BYOK_ERROR_CODE.INVALID_REQUEST, 400);
+  }
+
+  const expiry = buildCredentialExpiry(input.ttlOption);
+  const payload = await encrypt(
+    input.apiKey,
+    { credentialId, serviceName: stored.payload.serviceName, userId },
+    { expiresAt: expiry.expiresAt, label: input.label },
+  );
+  const status = await save(
+    userId,
+    {
+      ...payload,
+      createdAt: stored.payload.createdAt,
+      lastUsedAt: stored.payload.lastUsedAt,
+    },
+    expiry.ttlSeconds,
+  );
+
+  writeByokAuditEvent({
+    eventType: 'THIRD_PARTY_SERVICE_CREDENTIAL_OVERWRITE_SUCCESS',
+    actorId: userId,
+    provider: stored.payload.serviceName,
+    requestId: meta.requestId,
+    ip: meta.ip,
+    result: 'success',
+  });
+
+  return {
+    saved: true,
+    ...status,
+  };
 }

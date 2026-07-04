@@ -6,8 +6,12 @@ import {
   getRequestIp,
   parseLimitedJsonBody,
 } from '@/lib/ai/security/request-security';
-import { listUserApiCredentials, saveUserApiCredential } from '@/lib/ai/byok/service';
-import { saveApiCredentialSchema } from '@/lib/ai/byok/schemas';
+import {
+  listUserApiCredentials,
+  overwriteUserApiCredential,
+  saveUserApiCredential,
+} from '@/lib/ai/byok/service';
+import { saveOrOverwriteApiCredentialSchema } from '@/lib/ai/byok/schemas';
 import { BYOK_ERROR_CODE, BYOK_SUCCESS_RESPONSE_OPTIONS } from '@/lib/ai/byok/constants';
 import { ByokPublicError } from '@/lib/ai/byok/errors';
 import { createByokErrorResponse, requireByokUser } from '@/lib/ai/byok/route-helpers';
@@ -53,7 +57,18 @@ export async function POST(request: NextRequest) {
       requestId,
     });
 
-    const input = await parseLimitedJsonBody(request, saveApiCredentialSchema);
+    const input = await parseLimitedJsonBody(request, saveOrOverwriteApiCredentialSchema);
+
+    if ('credentialId' in input) {
+      const { credentialId, ...payload } = input;
+      const result = await overwriteUserApiCredential(userId, credentialId, payload, {
+        requestId,
+        ip,
+      });
+
+      return createSuccessResponse(result, '操作成功', 200, BYOK_SUCCESS_RESPONSE_OPTIONS);
+    }
+
     const providerOptions = getEnabledAiProviderOptions(await getStoredAiProviderOptions());
 
     if (!providerOptions.some((option) => option.value === input.provider)) {

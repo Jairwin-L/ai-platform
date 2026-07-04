@@ -21,7 +21,11 @@ import {
   validateProviderApiKey,
   type ChatCompletionResult,
 } from './provider';
-import type { ChatRequestInput, SaveApiCredentialInput } from './schemas';
+import type {
+  ChatRequestInput,
+  OverwriteApiCredentialInput,
+  SaveApiCredentialInput,
+} from './schemas';
 import { writeByokAuditEvent } from '@/lib/ai/security/audit';
 
 export type ByokRequestMeta = IByok.RequestMeta;
@@ -94,6 +98,58 @@ export async function deleteUserApiCredential(
   });
 
   return { deleted: true, credentialId };
+}
+
+export async function overwriteUserApiCredential(
+  userId: string,
+  credentialId: string,
+  input: OverwriteApiCredentialInput,
+  meta: ByokRequestMeta = {},
+  dependencies: ByokServiceDependencies = {},
+): Promise<SavedCredentialResult> {
+  const getCredential = dependencies.getStoredApiCredential ?? getStoredApiCredential;
+  const encrypt = dependencies.encryptApiKey ?? encryptApiKey;
+  const save = dependencies.saveStoredApiCredential ?? saveStoredApiCredential;
+  const validateKey = dependencies.validateProviderApiKey ?? validateProviderApiKey;
+  const stored = await getCredential(userId, credentialId);
+
+  if (!stored) {
+    throw new ByokPublicError(BYOK_ERROR_CODE.BYOK_KEY_UNAVAILABLE, 404);
+  }
+
+  if (!validateKey(stored.payload.provider, input.apiKey)) {
+    throw new ByokPublicError(BYOK_ERROR_CODE.INVALID_REQUEST, 400);
+  }
+
+  const expiry = buildCredentialExpiry(input.ttlOption);
+  const payload = await encrypt(
+    input.apiKey,
+    { userId, provider: stored.payload.provider, credentialId },
+    { label: input.label, expiresAt: expiry.expiresAt },
+  );
+  const status = await save(
+    userId,
+    {
+      ...payload,
+      createdAt: stored.payload.createdAt,
+      lastUsedAt: stored.payload.lastUsedAt,
+    },
+    expiry.ttlSeconds,
+  );
+
+  writeByokAuditEvent({
+    eventType: BYOK_AUDIT_EVENT.KEY_OVERWRITE_SUCCESS,
+    actorId: userId,
+    provider: stored.payload.provider,
+    requestId: meta.requestId,
+    ip: meta.ip,
+    result: 'success',
+  });
+
+  return {
+    saved: true,
+    ...status,
+  };
 }
 
 async function getDecryptedApiKey(

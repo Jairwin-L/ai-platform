@@ -88,6 +88,12 @@
   gap: 0.125rem;
 }
 
+.readonly-value {
+  min-height: 2rem;
+  display: flex;
+  align-items: center;
+}
+
 .modal-help {
   margin: 0 0 1rem;
   color: #667085;

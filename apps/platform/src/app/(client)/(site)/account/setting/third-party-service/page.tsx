@@ -3,6 +3,7 @@
 import {
   ApiOutlined,
   DeleteOutlined,
+  EditOutlined,
   LinkOutlined,
   PlusOutlined,
   ReloadOutlined,
@@ -16,6 +17,7 @@ import {
   Select,
   Table,
   Tag,
+  Tooltip,
   type TableColumnsType,
 } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
@@ -24,8 +26,10 @@ import {
   deleteThirdPartyServiceCredential,
   getThirdPartyServiceCredentials,
   getThirdPartyServiceOptions,
+  overwriteThirdPartyServiceCredential,
   type CredentialStatus,
   type CredentialTtlOption,
+  type OverwriteThirdPartyServiceCredentialPayload,
   type SaveThirdPartyServiceCredentialPayload,
   type ThirdPartyServiceCredential,
   type ThirdPartyServiceOption,
@@ -106,6 +110,8 @@ export default function ThirdPartyServiceCredentialsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [overwriteCredential, setOverwriteCredential] =
+    useState<ThirdPartyServiceCredential | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
@@ -135,31 +141,61 @@ export default function ThirdPartyServiceCredentialsPage() {
   }, [loadData]);
 
   function onCreateClick(): void {
+    setOverwriteCredential(null);
+    form.setFieldsValue({
+      ...initialValues,
+      serviceName: serviceOptions[0]?.value ?? initialValues.serviceName,
+    });
     setModalOpen(true);
   }
 
-  function onCreateCancel(): void {
+  function onModalCancel(): void {
     if (saving) {
       return;
     }
 
     setModalOpen(false);
+    setOverwriteCredential(null);
     form.resetFields();
+  }
+
+  function onOverwriteClick(credential: ThirdPartyServiceCredential): void {
+    setOverwriteCredential(credential);
+    form.setFieldsValue({
+      apiKey: '',
+      label: credential.label,
+      serviceName: credential.serviceName,
+      ttlOption: initialValues.ttlOption,
+    });
+    setModalOpen(true);
   }
 
   async function onFinish(values: IAppForms.ThirdPartyServiceCredentialFormValues): Promise<void> {
     setSaving(true);
 
     try {
-      const payload: SaveThirdPartyServiceCredentialPayload = {
-        ...values,
-        apiKey: values.apiKey.trim(),
-        label: values.label.trim(),
-        serviceName: values.serviceName.trim(),
-      };
+      if (overwriteCredential) {
+        const payload: OverwriteThirdPartyServiceCredentialPayload = {
+          credentialId: overwriteCredential.credentialId,
+          apiKey: values.apiKey.trim(),
+          label: values.label.trim(),
+          ttlOption: values.ttlOption,
+        };
 
-      await createThirdPartyServiceCredential(payload);
+        await overwriteThirdPartyServiceCredential(payload);
+      } else {
+        const payload: SaveThirdPartyServiceCredentialPayload = {
+          ...values,
+          apiKey: values.apiKey.trim(),
+          label: values.label.trim(),
+          serviceName: values.serviceName.trim(),
+        };
+
+        await createThirdPartyServiceCredential(payload);
+      }
+
       setModalOpen(false);
+      setOverwriteCredential(null);
       form.resetFields();
       await loadData();
     } catch {
@@ -186,6 +222,10 @@ export default function ThirdPartyServiceCredentialsPage() {
     serviceOptions,
     selectedService ?? serviceOptions[0]?.value ?? initialValues.serviceName,
   );
+  const isOverwriteMode = Boolean(overwriteCredential);
+  const overwriteServiceOption = overwriteCredential
+    ? getServiceOption(serviceOptions, overwriteCredential.serviceName)
+    : undefined;
 
   const columns: TableColumnsType<ThirdPartyServiceCredential> = [
     {
@@ -243,10 +283,19 @@ export default function ThirdPartyServiceCredentialsPage() {
     {
       title: '操作',
       key: 'actions',
-      width: 96,
+      width: 112,
       fixed: 'right',
       render: (_, credential) => (
         <div className={styles.actions}>
+          <Tooltip title="覆盖凭据">
+            <Button
+              aria-label={`覆盖 ${credential.label}`}
+              icon={<EditOutlined />}
+              size="small"
+              type="text"
+              onClick={() => onOverwriteClick(credential)}
+            />
+          </Tooltip>
           <Popconfirm
             cancelText="取消"
             description="删除后需要重新保存凭据才能继续使用。"
@@ -319,14 +368,16 @@ export default function ThirdPartyServiceCredentialsPage() {
         cancelText="取消"
         confirmLoading={saving}
         destroyOnHidden
-        okText="保存凭据"
+        okText={isOverwriteMode ? '覆盖凭据' : '保存凭据'}
         open={modalOpen}
-        title="新增第三方服务 API 凭据"
-        onCancel={onCreateCancel}
+        title={isOverwriteMode ? '覆盖第三方服务 API 凭据' : '新增第三方服务 API 凭据'}
+        onCancel={onModalCancel}
         onOk={() => form.submit()}
       >
         <p className={styles['modal-help']}>
-          API Key 保存后只展示脱敏尾号。请确认凭据可用于对应第三方服务，过期后需要重新添加。
+          {isOverwriteMode
+            ? '仅覆盖凭据名称、API Key 和有效期，第三方服务保持不变。覆盖后列表仍只展示脱敏尾号。'
+            : 'API Key 保存后只展示脱敏尾号。请确认凭据可用于对应第三方服务，过期后需要重新添加。'}
         </p>
         <Form
           form={form}
@@ -345,19 +396,29 @@ export default function ThirdPartyServiceCredentialsPage() {
           >
             <Input maxLength={80} placeholder="例如：图片压缩服务密钥" />
           </Form.Item>
-          <Form.Item
-            label="第三方服务"
-            name="serviceName"
-            rules={[{ required: true, message: '请选择第三方服务' }]}
-          >
-            <Select
-              options={serviceOptions.map((option) => ({
-                label: option.label,
-                value: option.value,
-              }))}
-              placeholder="请选择第三方服务"
-            />
-          </Form.Item>
+          {isOverwriteMode ? (
+            <Form.Item label="第三方服务">
+              <div className={styles['readonly-value']}>
+                <Tag color={overwriteServiceOption?.color ?? 'default'}>
+                  {overwriteServiceOption?.label ?? overwriteCredential?.serviceName}
+                </Tag>
+              </div>
+            </Form.Item>
+          ) : (
+            <Form.Item
+              label="第三方服务"
+              name="serviceName"
+              rules={[{ required: true, message: '请选择第三方服务' }]}
+            >
+              <Select
+                options={serviceOptions.map((option) => ({
+                  label: option.label,
+                  value: option.value,
+                }))}
+                placeholder="请选择第三方服务"
+              />
+            </Form.Item>
+          )}
           <Form.Item
             label="API Key"
             name="apiKey"

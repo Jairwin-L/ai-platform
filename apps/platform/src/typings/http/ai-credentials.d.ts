@@ -21,6 +21,13 @@ declare namespace IApiAiCredentials {
     ttlOption: AiCredentialTtlOption;
   }
 
+  interface OverwriteAiCredentialPayload {
+    apiKey: string;
+    credentialId: string;
+    label: string;
+    ttlOption: AiCredentialTtlOption;
+  }
+
   interface AiProviderOption {
     apiKeyUrl?: string;
     color: string;

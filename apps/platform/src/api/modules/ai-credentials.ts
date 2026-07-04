@@ -6,6 +6,7 @@ export type AiCredentialProvider = IApiAiCredentials.AiCredentialProvider;
 export type AiCredentialStatus = IApiAiCredentials.AiCredentialStatus;
 export type AiCredentialTtlOption = IApiAiCredentials.AiCredentialTtlOption;
 export type AiProviderOption = IApiAiCredentials.AiProviderOption;
+export type OverwriteAiCredentialPayload = IApiAiCredentials.OverwriteAiCredentialPayload;
 export type SaveAiCredentialPayload = IApiAiCredentials.SaveAiCredentialPayload;
 
 export async function getAiCredentials(): Promise<AiCredential[]> {
@@ -17,6 +18,13 @@ export async function getAiProviderOptions(): Promise<AiProviderOption[]> {
 }
 
 export async function createAiCredential(payload: SaveAiCredentialPayload): Promise<AiCredential> {
+  const response = await alovaPost<AiCredential & { saved: true }>('/user/ai-credentials', payload);
+  return response;
+}
+
+export async function overwriteAiCredential(
+  payload: OverwriteAiCredentialPayload,
+): Promise<AiCredential> {
   const response = await alovaPost<AiCredential & { saved: true }>('/user/ai-credentials', payload);
   return response;
 }

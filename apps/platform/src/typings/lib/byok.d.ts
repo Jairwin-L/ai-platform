@@ -168,6 +168,14 @@ declare namespace IByok {
     typeof import('@/lib/ai/byok/schemas').saveApiCredentialSchema
   >;
 
+  type OverwriteApiCredentialInput = import('zod').infer<
+    typeof import('@/lib/ai/byok/schemas').overwriteApiCredentialSchema
+  >;
+
+  type SaveOrOverwriteApiCredentialInput = import('zod').infer<
+    typeof import('@/lib/ai/byok/schemas').saveOrOverwriteApiCredentialSchema
+  >;
+
   type ChatRequestInput = import('zod').infer<
     typeof import('@/lib/ai/byok/schemas').chatRequestSchema
   >;

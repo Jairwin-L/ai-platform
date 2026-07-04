@@ -2,6 +2,7 @@
 
 import {
   DeleteOutlined,
+  EditOutlined,
   KeyOutlined,
   LinkOutlined,
   PlusOutlined,
@@ -16,6 +17,7 @@ import {
   Select,
   Table,
   Tag,
+  Tooltip,
   type TableColumnsType,
 } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
@@ -24,11 +26,13 @@ import {
   deleteAiCredential,
   getAiCredentials,
   getAiProviderOptions,
+  overwriteAiCredential,
   type AiCredential,
   type AiCredentialProvider,
   type AiCredentialStatus,
   type AiCredentialTtlOption,
   type AiProviderOption,
+  type OverwriteAiCredentialPayload,
   type SaveAiCredentialPayload,
 } from '@/api/modules/ai-credentials';
 import styles from './page.module.scss';
@@ -107,6 +111,7 @@ export default function AiSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [overwriteCredential, setOverwriteCredential] = useState<AiCredential | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
@@ -136,30 +141,60 @@ export default function AiSettingsPage() {
   }, [loadData]);
 
   function onCreateClick(): void {
+    setOverwriteCredential(null);
+    form.setFieldsValue({
+      ...initialValues,
+      provider: providerOptions[0]?.value ?? initialValues.provider,
+    });
     setModalOpen(true);
   }
 
-  function onCreateCancel(): void {
+  function onModalCancel(): void {
     if (saving) {
       return;
     }
 
     setModalOpen(false);
+    setOverwriteCredential(null);
     form.resetFields();
+  }
+
+  function onOverwriteClick(credential: AiCredential): void {
+    setOverwriteCredential(credential);
+    form.setFieldsValue({
+      apiKey: '',
+      label: credential.label,
+      provider: credential.provider,
+      ttlOption: initialValues.ttlOption,
+    });
+    setModalOpen(true);
   }
 
   async function onFinish(values: IAppForms.CredentialFormValues): Promise<void> {
     setSaving(true);
 
     try {
-      const payload: SaveAiCredentialPayload = {
-        ...values,
-        label: values.label.trim(),
-        apiKey: values.apiKey.trim(),
-      };
+      if (overwriteCredential) {
+        const payload: OverwriteAiCredentialPayload = {
+          credentialId: overwriteCredential.credentialId,
+          label: values.label.trim(),
+          apiKey: values.apiKey.trim(),
+          ttlOption: values.ttlOption,
+        };
 
-      await createAiCredential(payload);
+        await overwriteAiCredential(payload);
+      } else {
+        const payload: SaveAiCredentialPayload = {
+          ...values,
+          label: values.label.trim(),
+          apiKey: values.apiKey.trim(),
+        };
+
+        await createAiCredential(payload);
+      }
+
       setModalOpen(false);
+      setOverwriteCredential(null);
       form.resetFields();
       await loadData();
     } catch {
@@ -186,6 +221,10 @@ export default function AiSettingsPage() {
     providerOptions,
     selectedProvider ?? providerOptions[0]?.value ?? initialValues.provider,
   );
+  const isOverwriteMode = Boolean(overwriteCredential);
+  const overwriteProviderOption = overwriteCredential
+    ? getProviderOption(providerOptions, overwriteCredential.provider)
+    : undefined;
 
   const columns: TableColumnsType<AiCredential> = [
     {
@@ -243,10 +282,19 @@ export default function AiSettingsPage() {
     {
       title: '操作',
       key: 'actions',
-      width: 96,
+      width: 112,
       fixed: 'right',
       render: (_, credential) => (
         <div className={styles.actions}>
+          <Tooltip title="覆盖密钥">
+            <Button
+              aria-label={`覆盖 ${credential.label}`}
+              icon={<EditOutlined />}
+              size="small"
+              type="text"
+              onClick={() => onOverwriteClick(credential)}
+            />
+          </Tooltip>
           <Popconfirm
             cancelText="取消"
             description="删除后需要重新保存密钥才能继续使用。"
@@ -318,14 +366,16 @@ export default function AiSettingsPage() {
         cancelText="取消"
         confirmLoading={saving}
         destroyOnHidden
-        okText="保存密钥"
+        okText={isOverwriteMode ? '覆盖密钥' : '保存密钥'}
         open={modalOpen}
-        title="新增 AI 密钥"
-        onCancel={onCreateCancel}
+        title={isOverwriteMode ? '覆盖 AI 密钥' : '新增 AI 密钥'}
+        onCancel={onModalCancel}
         onOk={() => form.submit()}
       >
         <p className={styles['modal-help']}>
-          API Key 保存后只展示脱敏尾号。请确认密钥可用于所选 Provider，过期后需要重新添加。
+          {isOverwriteMode
+            ? '仅覆盖密钥名称、API Key 和有效期，Provider 保持不变。覆盖后列表仍只展示脱敏尾号。'
+            : 'API Key 保存后只展示脱敏尾号。请确认密钥可用于所选 Provider，过期后需要重新添加。'}
         </p>
         <Form
           form={form}
@@ -344,15 +394,25 @@ export default function AiSettingsPage() {
           >
             <Input maxLength={80} placeholder="例如：OpenAI 工作密钥" />
           </Form.Item>
-          <Form.Item label="Provider" name="provider" rules={[{ required: true }]}>
-            <Select
-              options={providerOptions.map((option) => ({
-                label: option.label,
-                value: option.value,
-              }))}
-              placeholder="请选择 Provider"
-            />
-          </Form.Item>
+          {isOverwriteMode ? (
+            <Form.Item label="Provider">
+              <div className={styles['readonly-value']}>
+                <Tag color={overwriteProviderOption?.color ?? 'default'}>
+                  {overwriteProviderOption?.label ?? overwriteCredential?.provider}
+                </Tag>
+              </div>
+            </Form.Item>
+          ) : (
+            <Form.Item label="Provider" name="provider" rules={[{ required: true }]}>
+              <Select
+                options={providerOptions.map((option) => ({
+                  label: option.label,
+                  value: option.value,
+                }))}
+                placeholder="请选择 Provider"
+              />
+            </Form.Item>
+          )}
           <Form.Item
             label="API Key"
             name="apiKey"

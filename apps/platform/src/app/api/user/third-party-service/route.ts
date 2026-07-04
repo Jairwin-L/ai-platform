@@ -7,9 +7,10 @@ import {
   getRequestIp,
   parseLimitedJsonBody,
 } from '@/lib/ai/security/request-security';
-import { saveCredentialSchema } from '@/lib/third-party-service-credentials/schemas';
+import { saveOrOverwriteCredentialSchema } from '@/lib/third-party-service-credentials/schemas';
 import {
   listUserThirdPartyServiceCredentials,
+  overwriteUserThirdPartyServiceCredential,
   saveUserThirdPartyServiceCredential,
 } from '@/lib/third-party-service-credentials/service';
 import { ByokPublicError } from '@/lib/ai/byok/errors';
@@ -56,7 +57,17 @@ export async function POST(request: NextRequest) {
       requestId,
     });
 
-    const input = await parseLimitedJsonBody(request, saveCredentialSchema);
+    const input = await parseLimitedJsonBody(request, saveOrOverwriteCredentialSchema);
+
+    if ('credentialId' in input) {
+      const { credentialId, ...payload } = input;
+      const result = await overwriteUserThirdPartyServiceCredential(userId, credentialId, payload, {
+        requestId,
+        ip,
+      });
+
+      return createSuccessResponse(result, '操作成功', 200, BYOK_SUCCESS_RESPONSE_OPTIONS);
+    }
 
     const serviceOptions = getEnabledThirdPartyServiceOptions(
       await getStoredThirdPartyServiceOptions(),

@@ -77,4 +77,12 @@ declare namespace IThirdPartyServiceCredentials {
   type SaveCredentialInput = import('zod').infer<
     typeof import('@/lib/third-party-service-credentials/schemas').saveCredentialSchema
   >;
+
+  type OverwriteCredentialInput = import('zod').infer<
+    typeof import('@/lib/third-party-service-credentials/schemas').overwriteCredentialSchema
+  >;
+
+  type SaveOrOverwriteCredentialInput = import('zod').infer<
+    typeof import('@/lib/third-party-service-credentials/schemas').saveOrOverwriteCredentialSchema
+  >;
 }

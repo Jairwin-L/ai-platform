@@ -48,6 +48,21 @@ export const saveApiCredentialSchema = z.object({
   ttlOption: ttlOptionSchema.default('7d'),
 }).strict();
 
+export const overwriteApiCredentialSchema = saveApiCredentialSchema.omit({
+  provider: true,
+});
+
+export const overwriteApiCredentialPayloadSchema = overwriteApiCredentialSchema
+  .extend({
+    credentialId: credentialIdSchema,
+  })
+  .strict();
+
+export const saveOrOverwriteApiCredentialSchema = z.union([
+  saveApiCredentialSchema,
+  overwriteApiCredentialPayloadSchema,
+]);
+
 const chatMessageSchema = z.object({
   role: z.enum(['system', 'user', 'assistant']),
   content: z.string().min(1).max(BYOK_CHAT_LIMITS.maxMessageLength),
@@ -74,3 +89,5 @@ export const chatRequestSchema = z
 
 export type ChatRequestInput = IByok.ChatRequestInput;
 export type SaveApiCredentialInput = IByok.SaveApiCredentialInput;
+export type OverwriteApiCredentialInput = IByok.OverwriteApiCredentialInput;
+export type SaveOrOverwriteApiCredentialInput = IByok.SaveOrOverwriteApiCredentialInput;

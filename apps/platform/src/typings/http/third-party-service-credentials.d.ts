@@ -20,6 +20,13 @@ declare namespace IApiThirdPartyServiceCredentials {
     ttlOption: CredentialTtlOption;
   }
 
+  interface OverwriteThirdPartyServiceCredentialPayload {
+    apiKey: string;
+    credentialId: string;
+    label: string;
+    ttlOption: CredentialTtlOption;
+  }
+
   interface ThirdPartyServiceOption {
     apiKeyUrl?: string;
     color: string;

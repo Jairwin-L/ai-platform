@@ -50,4 +50,22 @@ export const saveCredentialSchema = z
   })
   .strict();
 
+export const overwriteCredentialSchema = saveCredentialSchema.omit({
+  serviceName: true,
+});
+
+export const overwriteCredentialPayloadSchema = overwriteCredentialSchema
+  .extend({
+    credentialId: credentialIdSchema,
+  })
+  .strict();
+
+export const saveOrOverwriteCredentialSchema = z.union([
+  saveCredentialSchema,
+  overwriteCredentialPayloadSchema,
+]);
+
 export type SaveCredentialInput = IThirdPartyServiceCredentials.SaveCredentialInput;
+export type OverwriteCredentialInput = IThirdPartyServiceCredentials.OverwriteCredentialInput;
+export type SaveOrOverwriteCredentialInput =
+  IThirdPartyServiceCredentials.SaveOrOverwriteCredentialInput;
