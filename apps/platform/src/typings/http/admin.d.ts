@@ -68,4 +68,12 @@ declare namespace IApiAdmin {
     label: string;
     value: string;
   }
+
+  interface ThirdPartyServiceOption {
+    apiKeyUrl?: string;
+    color: string;
+    enabled: boolean;
+    label: string;
+    value: string;
+  }
 }

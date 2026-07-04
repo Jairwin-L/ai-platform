@@ -12,6 +12,10 @@ declare namespace ISettingsApi {
   interface AiProviderPayload {
     options?: unknown;
   }
+
+  interface ThirdPartyServicePayload {
+    options?: unknown;
+  }
 }
 
 declare namespace IRouteApi {
@@ -37,6 +41,10 @@ declare namespace IRouteApi {
   }
 
   interface AiCredentialRouteContext {
+    params: Promise<{ credentialId: string }>;
+  }
+
+  interface ThirdPartyServiceCredentialRouteContext {
     params: Promise<{ credentialId: string }>;
   }
 }

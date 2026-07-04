@@ -1,6 +1,6 @@
 'use client';
 
-import { KeyOutlined, UserOutlined } from '@ant-design/icons';
+import { ApiOutlined, KeyOutlined, UserOutlined } from '@ant-design/icons';
 import { usePathname, useRouter } from 'next/navigation';
 import ClientSideOnly from '@/components/client-side-only';
 import { usePermission } from '@/hooks/use-permission';
@@ -24,6 +24,13 @@ function buildAccountNavItems(userId?: string): IAppPages.AccountNavItem[] {
       icon: <KeyOutlined />,
       isActive: (pathname) => pathname.startsWith('/account/setting/ai'),
       label: 'AI 密钥',
+    },
+    {
+      disabled: !userId,
+      href: '/account/setting/third-party-service',
+      icon: <ApiOutlined />,
+      isActive: (pathname) => pathname.startsWith('/account/setting/third-party-service'),
+      label: '第三方服务凭据',
     },
   ];
 }

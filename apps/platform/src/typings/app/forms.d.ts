@@ -29,6 +29,10 @@ declare namespace IAppForms {
     aiProviderOptions: IApiAdmin.AiProviderOption[];
   }
 
+  interface ThirdPartyServiceOptionsValues {
+    thirdPartyServiceOptions: IApiAdmin.ThirdPartyServiceOption[];
+  }
+
   interface UserFormValues {
     bio?: string;
     full_name?: string;
@@ -48,6 +52,13 @@ declare namespace IAppForms {
     label: string;
     provider: IApiAiCredentials.AiCredentialProvider;
     ttlOption: IApiAiCredentials.AiCredentialTtlOption;
+  }
+
+  interface ThirdPartyServiceCredentialFormValues {
+    apiKey: string;
+    label: string;
+    serviceName: string;
+    ttlOption: IApiThirdPartyServiceCredentials.CredentialTtlOption;
   }
 
   interface PermissionFormValues {

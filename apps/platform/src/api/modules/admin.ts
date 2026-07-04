@@ -9,6 +9,7 @@ export type PermissionType = IApiAdmin.PermissionType;
 export type RolePayload = IApiAdmin.RolePayload;
 export type SystemSettings = IApiAdmin.SystemSettings;
 export type SystemSettingsPayload = IApiAdmin.SystemSettingsPayload;
+export type ThirdPartyServiceOption = IApiAdmin.ThirdPartyServiceOption;
 
 function getQueryParams(params: ListParams): Record<string, unknown> {
   return Object.fromEntries(
@@ -84,4 +85,14 @@ export async function updateAdminAiProviderOptions(
   options: AiProviderOption[],
 ): Promise<AiProviderOption[]> {
   return alovaPut<AiProviderOption[]>('/admin/ai-providers', { options });
+}
+
+export async function getAdminThirdPartyServiceOptions(): Promise<ThirdPartyServiceOption[]> {
+  return alovaGet<ThirdPartyServiceOption[]>('/admin/third-party-services');
+}
+
+export async function updateAdminThirdPartyServiceOptions(
+  options: ThirdPartyServiceOption[],
+): Promise<ThirdPartyServiceOption[]> {
+  return alovaPut<ThirdPartyServiceOption[]>('/admin/third-party-services', { options });
 }

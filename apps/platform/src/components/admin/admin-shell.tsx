@@ -38,6 +38,7 @@ const menuItems: IComponent.AdminMenuItem[] = [
         children: [
           { key: '/admin/settings', label: '基础配置' },
           { key: '/admin/settings/ai-provider', label: 'AI Provider' },
+          { key: '/admin/settings/third-party-service', label: '第三方服务' },
         ],
       },
     ],

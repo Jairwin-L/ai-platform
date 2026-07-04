@@ -65,6 +65,11 @@ export function AccountMenu() {
       return;
     }
 
+    if (key === 'third-party-service') {
+      router.push('/account/setting/third-party-service');
+      return;
+    }
+
     if (key === 'admin') {
       router.push('/admin');
       return;
@@ -80,6 +85,7 @@ export function AccountMenu() {
   const menuItems: MenuProps['items'] = [
     { key: 'profile', label: '我的资料' },
     { key: 'ai-settings', label: 'AI 密钥' },
+    { key: 'third-party-service', label: '第三方服务凭据' },
     ...(hasRole('admin') ? [{ key: 'admin', label: '管理系统' }] : []),
     { key: 'sign-out', disabled: signingOut, label: signingOut ? '退出中...' : '退出登录' },
   ];
