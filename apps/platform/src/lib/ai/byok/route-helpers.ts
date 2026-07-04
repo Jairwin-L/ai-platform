@@ -16,8 +16,6 @@ import { getAuthPayloadBySessionToken, getSessionCookieName } from '@/lib/server
 import { writeByokAuditEvent } from '@/lib/ai/security/audit';
 import { getRequestIp } from '@/lib/ai/security/request-security';
 
-type ByokErrorResponseBody = IByok.RouteErrorResponseBody;
-
 function getByokResponseCode(status: number): number {
   return HTTP_STATUS_TO_ERROR_CODE[status] ?? COMMON_ERROR.REQUEST_ERROR.code;
 }
@@ -52,7 +50,7 @@ function createByokErrorHeaders(requestId: string): HeadersInit {
 export function createByokErrorResponse(
   error: unknown,
   requestId: string,
-): NextResponse<ByokErrorResponseBody> {
+): NextResponse<IByok.RouteErrorResponseBody> {
   const publicError = toByokPublicError(error);
   const body: ApiErrorResponse = {
     code: getByokResponseCode(publicError.status),

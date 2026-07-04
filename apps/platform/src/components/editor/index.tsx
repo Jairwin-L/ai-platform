@@ -166,10 +166,8 @@ const MobileToolbarContent = ({
   </>
 );
 
-type SimpleEditorProps = IEditorComponent.SimpleEditorProps;
-
 export const SimpleEditor = React.forwardRef(
-  ({ content, value, onUpdate, onChange }: SimpleEditorProps, ref) => {
+  ({ content, value, onUpdate, onChange }: IEditorComponent.SimpleEditorProps, ref) => {
     const isMobile = useMobile();
     const windowSize = useWindowSize();
     const editorContent = value ?? content ?? '';

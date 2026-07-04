@@ -1,8 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { normalizeAiProviderOptions, type AiProviderOption } from './provider-options';
 
-type ProviderOptionRow = IByok.ProviderOptionRow;
-
 function isMissingProviderOptionsTable(error: unknown): boolean {
   if (typeof error !== 'object' || error === null) {
     return false;
@@ -30,7 +28,7 @@ export function getProviderOptionsStorageErrorMessage(error: unknown, fallback: 
   return fallback;
 }
 
-function toAiProviderOptions(rows: ProviderOptionRow[]): AiProviderOption[] {
+function toAiProviderOptions(rows: IByok.ProviderOptionRow[]): AiProviderOption[] {
   return normalizeAiProviderOptions(
     rows.map((row) => ({
       value: row.value,
@@ -41,8 +39,8 @@ function toAiProviderOptions(rows: ProviderOptionRow[]): AiProviderOption[] {
   );
 }
 
-async function fetchAiProviderRows(): Promise<ProviderOptionRow[]> {
-  return prisma.$queryRaw<ProviderOptionRow[]>`
+async function fetchAiProviderRows(): Promise<IByok.ProviderOptionRow[]> {
+  return prisma.$queryRaw<IByok.ProviderOptionRow[]>`
     SELECT value, label, color, enabled, sort_order
     FROM ai_providers
     ORDER BY sort_order ASC, id ASC

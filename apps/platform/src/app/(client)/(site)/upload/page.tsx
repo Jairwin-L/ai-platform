@@ -14,8 +14,6 @@ import styles from './page.module.scss';
 const { Dragger } = Upload;
 const MAX_UPLOAD_FILE_COUNT = 5;
 
-type UploadListFile = IAppPages.UploadListFile;
-
 function getTodayPath(): string {
   const now = new Date();
   const year = now.getFullYear();
@@ -25,13 +23,13 @@ function getTodayPath(): string {
   return `upload/${year}/${month}/${day}`;
 }
 
-function getFileObject(file: UploadListFile): File | null {
+function getFileObject(file: IAppPages.UploadListFile): File | null {
   return file.originFileObj instanceof File ? file.originFileObj : null;
 }
 
 export default function Page() {
   const { message } = App.useApp();
-  const [fileList, setFileList] = useState<UploadListFile[]>([]);
+  const [fileList, setFileList] = useState<IAppPages.UploadListFile[]>([]);
   const [compressStrategy, setCompressStrategy] = useState<CompressStrategy>('sharp');
   const [uploading, setUploading] = useState(false);
   const previewUrls = useRef(new Map<string, string>());
@@ -81,7 +79,7 @@ export default function Page() {
     },
   };
 
-  function getPreviewUrl(file: UploadListFile): string | undefined {
+  function getPreviewUrl(file: IAppPages.UploadListFile): string | undefined {
     const fileObject = getFileObject(file);
     if (!fileObject) return undefined;
 
@@ -115,7 +113,7 @@ export default function Page() {
     setFileList([]);
   }
 
-  function collectEntries(items: UploadListFile[]): Array<{ uid: string; file: File }> {
+  function collectEntries(items: IAppPages.UploadListFile[]): Array<{ uid: string; file: File }> {
     return items.flatMap((item) => {
       const file = getFileObject(item);
       return file ? [{ uid: item.uid, file }] : [];

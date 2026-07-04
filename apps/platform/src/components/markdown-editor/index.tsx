@@ -157,10 +157,8 @@ const MobileToolbarContent = ({
   </>
 );
 
-type MarkdownEditorProps = IEditorComponent.MarkdownEditorProps;
-
 export const MarkdownEditor = React.forwardRef(
-  ({ content, value, onUpdate, onChange }: MarkdownEditorProps, ref) => {
+  ({ content, value, onUpdate, onChange }: IEditorComponent.MarkdownEditorProps, ref) => {
     const isMobile = useMobile();
     const windowSize = useWindowSize();
     const editorContent = value ?? content ?? '';

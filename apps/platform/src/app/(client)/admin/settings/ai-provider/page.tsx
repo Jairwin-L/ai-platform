@@ -11,8 +11,6 @@ import {
 import styles from '../../resource-page.module.scss';
 import pageStyles from './page.module.scss';
 
-type ProviderOptionsValues = IAppForms.ProviderOptionsValues;
-
 const providerColorOptions = [
   'blue',
   'cyan',
@@ -27,7 +25,7 @@ const providerColorOptions = [
   'volcano',
 ].map((color) => ({ label: color, value: color }));
 
-const initialValues: ProviderOptionsValues = {
+const initialValues: IAppForms.ProviderOptionsValues = {
   aiProviderOptions: [],
 };
 
@@ -72,7 +70,7 @@ function hasDuplicateProviderValue(options: AiProviderOption[], value: string, i
 }
 
 export default function AiProviderSettingsPage() {
-  const [form] = Form.useForm<ProviderOptionsValues>();
+  const [form] = Form.useForm<IAppForms.ProviderOptionsValues>();
   const aiProviderOptions = Form.useWatch('aiProviderOptions', form) ?? [];
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -95,7 +93,7 @@ export default function AiProviderSettingsPage() {
     loadSettings();
   }, [loadSettings]);
 
-  async function onFinish(values: ProviderOptionsValues): Promise<void> {
+  async function onFinish(values: IAppForms.ProviderOptionsValues): Promise<void> {
     setSaving(true);
 
     try {

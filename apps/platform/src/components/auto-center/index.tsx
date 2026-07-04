@@ -1,8 +1,6 @@
 import styles from './index.module.scss';
 
-type AutoCenterProps = IComponent.AutoCenterProps;
-
-export default function AutoCenter(props: AutoCenterProps) {
+export default function AutoCenter(props: IComponent.AutoCenterProps) {
   const { children, className } = props;
   const rootClassName = [styles.root, className].filter(Boolean).join(' ');
 

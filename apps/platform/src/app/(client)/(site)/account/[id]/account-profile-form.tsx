@@ -7,12 +7,9 @@ import { usePermission } from '@/hooks/use-permission';
 import { updateUser } from '@/api/modules/users';
 import styles from './page.module.scss';
 
-type AccountProfileFormProps = IAppPages.AccountProfileFormProps;
-type ProfileFormValues = IAppForms.ProfileFormValues;
-
-export function AccountProfileForm({ profile }: AccountProfileFormProps) {
+export function AccountProfileForm({ profile }: IAppPages.AccountProfileFormProps) {
   const { setCurrentUserProfile } = usePermission();
-  const [form] = Form.useForm<ProfileFormValues>();
+  const [form] = Form.useForm<IAppForms.ProfileFormValues>();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -32,7 +29,7 @@ export function AccountProfileForm({ profile }: AccountProfileFormProps) {
     form.submit();
   }
 
-  async function onFinish(values: ProfileFormValues) {
+  async function onFinish(values: IAppForms.ProfileFormValues) {
     setSaving(true);
 
     try {

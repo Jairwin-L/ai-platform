@@ -14,8 +14,6 @@ const MarkdownEditor = dynamic(
   },
 );
 
-type DynamicMarkdownEditorProps = IEditorComponent.MarkdownEditorProps;
-
-export function DynamicMarkdownEditor(props: DynamicMarkdownEditorProps) {
+export function DynamicMarkdownEditor(props: IEditorComponent.MarkdownEditorProps) {
   return <MarkdownEditor {...props} />;
 }

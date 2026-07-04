@@ -14,17 +14,14 @@ import {
 } from '@/api/modules/admin';
 import styles from './admin-form-page.module.scss';
 
-type PermissionTreeNode = IComponent.PermissionTreeNode;
-type RoleFormValues = IAppForms.RoleFormValues;
-
-const defaultRoleValues: RoleFormValues = {
+const defaultRoleValues: IAppForms.RoleFormValues = {
   description: '',
   is_system: false,
   name: '',
   permissions: [],
 };
 
-function getPermissionTree(nodes: AdminPermission[]): PermissionTreeNode[] {
+function getPermissionTree(nodes: AdminPermission[]): IComponent.PermissionTreeNode[] {
   return nodes.map((permission) => ({
     title: `${permission.name} · ${permission.code}`,
     value: permission.id,
@@ -34,8 +31,8 @@ function getPermissionTree(nodes: AdminPermission[]): PermissionTreeNode[] {
 
 export function RoleFormPage({ roleId }: IComponent.RoleFormPageProps) {
   const router = useRouter();
-  const [form] = Form.useForm<RoleFormValues>();
-  const [permissionTree, setPermissionTree] = useState<PermissionTreeNode[]>([]);
+  const [form] = Form.useForm<IAppForms.RoleFormValues>();
+  const [permissionTree, setPermissionTree] = useState<IComponent.PermissionTreeNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const isEditing = Boolean(roleId);
@@ -79,7 +76,7 @@ export function RoleFormPage({ roleId }: IComponent.RoleFormPageProps) {
     loadForm();
   }, [loadForm]);
 
-  async function onFinish(values: RoleFormValues) {
+  async function onFinish(values: IAppForms.RoleFormValues) {
     const payload: RolePayload = {
       name: values.name.trim(),
       description: values.description?.trim() || undefined,

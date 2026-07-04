@@ -31,8 +31,6 @@ const systemSettingsSelect = {
   updated_at: true,
 } as const;
 
-type SystemSettingsPayload = ISettingsApi.SystemSettingsPayload;
-
 function toSettingsResponse(settings: {
   allow_registration: boolean;
   byok_allowed_origins: string;
@@ -172,7 +170,7 @@ function getStorageErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-function validatePayload(payload: SystemSettingsPayload) {
+function validatePayload(payload: ISettingsApi.SystemSettingsPayload) {
   return {
     display_name: getStringValue(payload.displayName, 'displayName', 80),
     support_email: getOptionalEmail(payload.supportEmail),
@@ -213,9 +211,9 @@ const getSystemSettingsHandler: ApiHandler = async () => {
 };
 
 const updateSystemSettingsHandler: ApiHandler = async (request: NextRequest) => {
-  let payload: SystemSettingsPayload;
+  let payload: ISettingsApi.SystemSettingsPayload;
   try {
-    payload = (await request.json()) as SystemSettingsPayload;
+    payload = (await request.json()) as ISettingsApi.SystemSettingsPayload;
   } catch (error) {
     return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, '请求 JSON 格式无效', error, 400);
   }

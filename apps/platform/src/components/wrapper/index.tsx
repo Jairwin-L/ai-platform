@@ -18,9 +18,7 @@ function isAdminPath(pathname: string): boolean {
   return pathname === ADMIN_PATH || pathname.startsWith(`${ADMIN_PATH}/`);
 }
 
-type WrapperProps = IComponent.WrapperProps;
-
-export default function Wrapper({ children, initialAuthPayload }: WrapperProps) {
+export default function Wrapper({ children, initialAuthPayload }: IComponent.WrapperProps) {
   const pathname = usePathname();
   const router = useRouter();
   const setPayload = useAuthSessionStore((state) => state.setPayload);

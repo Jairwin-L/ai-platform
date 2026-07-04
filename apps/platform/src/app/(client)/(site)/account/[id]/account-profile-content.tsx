@@ -6,8 +6,6 @@ import type { UserProfile } from '@/api/modules/users';
 import { AccountProfileForm } from './account-profile-form';
 import styles from './page.module.scss';
 
-type AccountProfileContentProps = IAppPages.AccountProfileContentProps;
-
 function getDisplayName(profile: UserProfile): string {
   return profile.nick_name || profile.full_name || profile.user_name || profile.email || profile.id;
 }
@@ -28,7 +26,7 @@ function getInitials(name: string): string {
   return name.trim().slice(0, 2).toUpperCase();
 }
 
-export function AccountProfileContent({ profile }: AccountProfileContentProps) {
+export function AccountProfileContent({ profile }: IAppPages.AccountProfileContentProps) {
   const currentUserProfile = useAuthSessionStore((state) => state.currentUserProfile);
   const setCurrentUserProfile = useAuthSessionStore((state) => state.setCurrentUserProfile);
 

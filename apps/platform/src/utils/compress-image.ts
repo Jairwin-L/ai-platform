@@ -8,8 +8,6 @@ const RETRY_DELAY_MS = 800;
 
 export type CompressStrategy = IUtils.CompressStrategy;
 
-type CompressApiErrorResponse = IUtils.CompressApiErrorResponse;
-
 const SUPPORTED_MIME_TYPES: Record<CompressStrategy, Set<string>> = {
   sharp: new Set(['image/avif', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']),
   tinify: new Set(['image/avif', 'image/jpeg', 'image/png', 'image/webp']),
@@ -42,7 +40,7 @@ async function getCompressErrorMessage(response: Response): Promise<string> {
   }
 
   try {
-    const result = (await response.json()) as CompressApiErrorResponse;
+    const result = (await response.json()) as IUtils.CompressApiErrorResponse;
     return result.message || fallback;
   } catch {
     return fallback;

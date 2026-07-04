@@ -17,9 +17,7 @@ import { ByokPublicError } from '@/lib/ai/byok/errors';
 
 export const runtime = 'nodejs';
 
-type RouteContext = IRouteApi.AiCredentialRouteContext;
-
-export async function DELETE(request: NextRequest, context: RouteContext) {
+export async function DELETE(request: NextRequest, context: IRouteApi.AiCredentialRouteContext) {
   const requestId = createRequestId();
 
   try {

@@ -9,8 +9,6 @@ import {
   type ApiHandler,
 } from '@/lib/server';
 
-type PermissionNode = IRouteApi.RolePermissionNode;
-
 async function getRoleId(context: ApiContext): Promise<number | null> {
   const params = await context.params;
   const id = params?.id;
@@ -20,9 +18,11 @@ async function getRoleId(context: ApiContext): Promise<number | null> {
   return Number.isInteger(parsed) ? parsed : null;
 }
 
-function buildPermissionTree(permissions: PermissionNode[]): PermissionNode[] {
-  const nodeMap = new Map<string, PermissionNode>();
-  const roots: PermissionNode[] = [];
+function buildPermissionTree(
+  permissions: IRouteApi.RolePermissionNode[],
+): IRouteApi.RolePermissionNode[] {
+  const nodeMap = new Map<string, IRouteApi.RolePermissionNode>();
+  const roots: IRouteApi.RolePermissionNode[] = [];
 
   for (const permission of permissions) {
     nodeMap.set(permission.id, { ...permission, children: [] });

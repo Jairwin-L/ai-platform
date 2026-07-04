@@ -13,8 +13,6 @@ import {
   updateStoredAiProviderOptions,
 } from '@/lib/ai/byok/provider-options-store';
 
-type AiProviderPayload = ISettingsApi.AiProviderPayload;
-
 const getAiProvidersHandler: ApiHandler = async () => {
   try {
     const providerOptions = await getStoredAiProviderOptions();
@@ -31,10 +29,10 @@ const getAiProvidersHandler: ApiHandler = async () => {
 };
 
 const updateAiProvidersHandler: ApiHandler = async (request: NextRequest) => {
-  let payload: AiProviderPayload;
+  let payload: ISettingsApi.AiProviderPayload;
 
   try {
-    payload = (await request.json()) as AiProviderPayload;
+    payload = (await request.json()) as ISettingsApi.AiProviderPayload;
   } catch (error) {
     return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, '请求 JSON 格式无效', error, 400);
   }

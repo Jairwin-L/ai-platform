@@ -7,9 +7,8 @@ import { CloseIcon } from '@/components/tiptap-icons/close-icon';
 import '@/components/tiptap-node/image-upload-node/image-upload-node.scss';
 
 export type FileItem = ITiptapNode.FileItem;
-type UploadOptions = ITiptapNode.UploadOptions;
 
-function useFileUpload(options: UploadOptions) {
+function useFileUpload(options: ITiptapNode.UploadOptions) {
   const [fileItem, setFileItem] = React.useState<FileItem | null>(null);
 
   const uploadFile = async (file: File): Promise<string | null> => {
@@ -177,9 +176,10 @@ const FileCornerIcon: React.FC = () => (
   </svg>
 );
 
-type ImageUploadDragAreaProps = ITiptapNode.ImageUploadDragAreaProps;
-
-const ImageUploadDragArea: React.FC<ImageUploadDragAreaProps> = ({ onFile, children }) => {
+const ImageUploadDragArea: React.FC<ITiptapNode.ImageUploadDragAreaProps> = ({
+  onFile,
+  children,
+}) => {
   const [dragover, setDragover] = React.useState(false);
 
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -215,9 +215,7 @@ const ImageUploadDragArea: React.FC<ImageUploadDragAreaProps> = ({ onFile, child
   );
 };
 
-type ImageUploadPreviewProps = ITiptapNode.ImageUploadPreviewProps;
-
-const ImageUploadPreview: React.FC<ImageUploadPreviewProps> = ({
+const ImageUploadPreview: React.FC<ITiptapNode.ImageUploadPreviewProps> = ({
   file,
   progress,
   status,
@@ -292,7 +290,7 @@ export const ImageUploadNode: React.FC<NodeViewProps> = (props) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const { extension } = props;
 
-  const uploadOptions: UploadOptions = {
+  const uploadOptions: ITiptapNode.UploadOptions = {
     maxSize,
     limit,
     accept,

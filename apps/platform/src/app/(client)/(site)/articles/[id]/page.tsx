@@ -7,9 +7,7 @@ import styles from './page.module.scss';
 
 const { Title, Text } = Typography;
 
-type PageProps = IAppPages.ArticleDetailPageProps;
-
-export default async function Page({ params }: PageProps) {
+export default async function Page({ params }: IAppPages.ArticleDetailPageProps) {
   const { id } = await params;
   const article = await fetchArticleById(id);
 

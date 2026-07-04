@@ -15,8 +15,6 @@ import {
 } from '@/api/modules/admin';
 import styles from './admin-form-page.module.scss';
 
-type PermissionFormValues = IAppForms.PermissionFormValues;
-
 const typeLabel: Record<PermissionType, string> = {
   system: '系统',
   page: '页面',
@@ -34,7 +32,7 @@ function flattenPermissions(permissions: AdminPermission[]): AdminPermission[] {
 
 export function PermissionFormPage({ permissionId, parentId }: IComponent.PermissionFormPageProps) {
   const router = useRouter();
-  const [form] = Form.useForm<PermissionFormValues>();
+  const [form] = Form.useForm<IAppForms.PermissionFormValues>();
   const [permissions, setPermissions] = useState<AdminPermission[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -88,7 +86,7 @@ export function PermissionFormPage({ permissionId, parentId }: IComponent.Permis
     loadForm();
   }, [loadForm]);
 
-  async function onFinish(values: PermissionFormValues) {
+  async function onFinish(values: IAppForms.PermissionFormValues) {
     const payload: PermissionPayload = {
       name: values.name.trim(),
       code: values.code.trim().toUpperCase(),

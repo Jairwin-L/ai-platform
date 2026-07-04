@@ -2,24 +2,11 @@
 
 import { KeyOutlined, UserOutlined } from '@ant-design/icons';
 import { usePathname, useRouter } from 'next/navigation';
-import type { ReactNode } from 'react';
 import ClientSideOnly from '@/components/client-side-only';
 import { usePermission } from '@/hooks/use-permission';
 import styles from './layout.module.scss';
 
-interface AccountLayoutProps {
-  children: ReactNode;
-}
-
-interface AccountNavItem {
-  disabled?: boolean;
-  href: string;
-  icon: ReactNode;
-  isActive: (pathname: string) => boolean;
-  label: string;
-}
-
-function buildAccountNavItems(userId?: string): AccountNavItem[] {
+function buildAccountNavItems(userId?: string): IAppPages.AccountNavItem[] {
   const profileHref = userId ? `/account/${userId}` : '/sign-in';
 
   return [
@@ -41,14 +28,14 @@ function buildAccountNavItems(userId?: string): AccountNavItem[] {
   ];
 }
 
-export default function AccountLayout({ children }: AccountLayoutProps) {
+export default function AccountLayout({ children }: IAppPages.AccountLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { isReady, user } = usePermission();
   const navItems = buildAccountNavItems(user?.id);
   const isSettingPath = pathname.startsWith('/account/setting');
 
-  function onGoPage(item: AccountNavItem): void {
+  function onGoPage(item: IAppPages.AccountNavItem): void {
     if (item.disabled || pathname === item.href) {
       return;
     }

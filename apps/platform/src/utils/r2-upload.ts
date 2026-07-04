@@ -6,8 +6,6 @@
 export type PresignedUrlItem = IUploadApi.PresignedUrlItem;
 export type UploadProgressInfo = IUtils.UploadProgressInfo;
 
-type PresignedResponse = IUploadApi.PresignedResponse;
-
 /**
  * @func getFileMimeType
  * @desc 获取浏览器 File 的 MIME 类型，必要时根据扩展名兜底。
@@ -55,7 +53,7 @@ export async function requestPresignedUrls(
       })),
     }),
   });
-  const result = (await response.json()) as PresignedResponse;
+  const result = (await response.json()) as IUploadApi.PresignedResponse;
 
   if (!response.ok || !result.success || !result.data) {
     throw new Error(result.message || '生成预签名上传地址失败');

@@ -4,9 +4,6 @@ import * as React from 'react';
 import { Separator } from '@/components/tiptap-ui-primitive/separator';
 import '@/components/tiptap-ui-primitive/toolbar/toolbar.scss';
 
-type BaseProps = ITiptapPrimitive.ToolbarBaseProps;
-type ToolbarProps = ITiptapPrimitive.ToolbarProps;
-
 const mergeRefs = <T,>(
   refs: Array<React.RefObject<T> | React.Ref<T> | null | undefined>,
 ): React.RefCallback<T> => {
@@ -207,7 +204,7 @@ const useSeparatorVisibility = (ref: React.RefObject<HTMLDivElement | null>): bo
   return isVisible;
 };
 
-export const Toolbar = React.forwardRef<HTMLDivElement, ToolbarProps>(
+export const Toolbar = React.forwardRef<HTMLDivElement, ITiptapPrimitive.ToolbarProps>(
   ({ children, className, variant = 'fixed', ...props }, ref) => {
     const toolbarRef = React.useRef<HTMLDivElement>(null);
     const isVisible = useToolbarVisibility(toolbarRef);
@@ -233,7 +230,7 @@ export const Toolbar = React.forwardRef<HTMLDivElement, ToolbarProps>(
 
 Toolbar.displayName = 'Toolbar';
 
-export const ToolbarGroup = React.forwardRef<HTMLDivElement, BaseProps>(
+export const ToolbarGroup = React.forwardRef<HTMLDivElement, ITiptapPrimitive.ToolbarBaseProps>(
   ({ children, className, ...props }, ref) => {
     const groupRef = React.useRef<HTMLDivElement>(null);
     const isVisible = useGroupVisibility(groupRef);
@@ -255,15 +252,22 @@ export const ToolbarGroup = React.forwardRef<HTMLDivElement, BaseProps>(
 
 ToolbarGroup.displayName = 'ToolbarGroup';
 
-export const ToolbarSeparator = React.forwardRef<HTMLDivElement, BaseProps>(({ ...props }, ref) => {
-  const separatorRef = React.useRef<HTMLDivElement>(null);
-  const isVisible = useSeparatorVisibility(separatorRef);
+export const ToolbarSeparator = React.forwardRef<HTMLDivElement, ITiptapPrimitive.ToolbarBaseProps>(
+  ({ ...props }, ref) => {
+    const separatorRef = React.useRef<HTMLDivElement>(null);
+    const isVisible = useSeparatorVisibility(separatorRef);
 
-  if (!isVisible) return null;
+    if (!isVisible) return null;
 
-  return (
-    <Separator ref={mergeRefs([separatorRef, ref])} orientation="vertical" decorative {...props} />
-  );
-});
+    return (
+      <Separator
+        ref={mergeRefs([separatorRef, ref])}
+        orientation="vertical"
+        decorative
+        {...props}
+      />
+    );
+  },
+);
 
 ToolbarSeparator.displayName = 'ToolbarSeparator';

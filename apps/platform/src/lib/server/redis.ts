@@ -1,9 +1,6 @@
 import { Socket, connect as connectNet } from 'node:net';
 import { TLSSocket, connect as connectTls } from 'node:tls';
 
-type RedisValue = IServer.RedisValue;
-type RedisArrayValue = IServer.RedisArrayValue;
-
 const REDIS_COMMAND_TIMEOUT_MS = 5000;
 
 function encodeCommand(parts: string[]): string {
@@ -40,7 +37,7 @@ function getReadyEvent(url: URL): 'connect' | 'secureConnect' {
 function parseRedisResponse(
   buffer: Buffer,
   offset = 0,
-): { nextOffset: number; value: RedisValue } | null {
+): { nextOffset: number; value: IServer.RedisValue } | null {
   const marker = buffer.subarray(offset, offset + 1).toString();
   const payload = buffer.subarray(offset + 1).toString();
   const lineEnd = buffer.indexOf('\r\n', offset);
@@ -87,7 +84,7 @@ function parseRedisResponse(
       return { nextOffset: lineEnd + 2, value: null };
     }
 
-    const values: RedisArrayValue = [];
+    const values: IServer.RedisArrayValue = [];
     let nextOffset = lineEnd + 2;
 
     for (let index = 0; index < count; index += 1) {
@@ -114,7 +111,7 @@ function parseRedisResponse(
   throw new Error('不支持的 Redis 响应');
 }
 
-async function runRawRedisCommand(parts: string[]): Promise<RedisValue> {
+async function runRawRedisCommand(parts: string[]): Promise<IServer.RedisValue> {
   const url = getRedisUrl();
 
   return new Promise((resolve, reject) => {
@@ -140,7 +137,7 @@ async function runRawRedisCommand(parts: string[]): Promise<RedisValue> {
       chunks.push(chunk);
       const buffer = Buffer.concat(chunks);
       let offset = 0;
-      let value: RedisValue = null;
+      let value: IServer.RedisValue = null;
       let replyCount = 0;
 
       try {

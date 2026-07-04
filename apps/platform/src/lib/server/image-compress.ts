@@ -6,24 +6,21 @@ const INITIAL_QUALITY = 75;
 const MIN_QUALITY = 30;
 const QUALITY_STEP = 5;
 
-type SharpInstance = IServer.SharpInstance;
-type SharpOutputType = IServer.SharpOutputType;
-
 async function loadSharp(): Promise<typeof sharp> {
   return (await import(/* webpackIgnore: true */ 'sharp')).default;
 }
 
 async function createOutput(
-  pipeline: SharpInstance,
-  outputType: SharpOutputType,
+  pipeline: IServer.SharpInstance,
+  outputType: IServer.SharpOutputType,
   quality: number,
 ): Promise<Buffer> {
   return pipeline.clone().toFormat(outputType, { quality }).toBuffer();
 }
 
 async function compressToTargetBytes(
-  pipeline: SharpInstance,
-  outputType: SharpOutputType,
+  pipeline: IServer.SharpInstance,
+  outputType: IServer.SharpOutputType,
   quality: number,
 ): Promise<Buffer> {
   const data = await createOutput(pipeline, outputType, quality);
@@ -40,7 +37,7 @@ export async function compressWithSharp(
 ): Promise<{ data: Buffer; mime: string }> {
   const sharpFn = await loadSharp();
   const isPng = mime === 'image/png';
-  const outputType: SharpOutputType = isPng ? 'png' : 'jpeg';
+  const outputType: IServer.SharpOutputType = isPng ? 'png' : 'jpeg';
   const outputMime = isPng ? 'image/png' : 'image/jpeg';
 
   const pipeline = sharpFn(input).rotate().resize({

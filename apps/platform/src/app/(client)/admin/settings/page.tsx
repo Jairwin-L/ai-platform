@@ -12,9 +12,7 @@ import { getSystemSettings, updateSystemSettings, type SystemSettings } from '@/
 import styles from '../resource-page.module.scss';
 import settingsStyles from './page.module.scss';
 
-type SettingsValues = IAppForms.SettingsValues;
-
-const initialValues: SettingsValues = {
+const initialValues: IAppForms.SettingsValues = {
   displayName: 'Next.js Starter Kit',
   supportEmail: '',
   defaultLanguage: 'zh-CN',
@@ -24,7 +22,7 @@ const initialValues: SettingsValues = {
   sessionPolicy: 'standard',
 };
 
-function getSettingsFormValues(settings: SystemSettings): SettingsValues {
+function getSettingsFormValues(settings: SystemSettings): IAppForms.SettingsValues {
   return {
     displayName: settings.displayName,
     supportEmail: settings.supportEmail,
@@ -37,7 +35,7 @@ function getSettingsFormValues(settings: SystemSettings): SettingsValues {
 }
 
 export default function SystemSettingsPage() {
-  const [form] = Form.useForm<SettingsValues>();
+  const [form] = Form.useForm<IAppForms.SettingsValues>();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -57,7 +55,7 @@ export default function SystemSettingsPage() {
     loadSettings();
   }, [loadSettings]);
 
-  async function onFinish(values: SettingsValues) {
+  async function onFinish(values: IAppForms.SettingsValues) {
     setSaving(true);
     try {
       await updateSystemSettings({

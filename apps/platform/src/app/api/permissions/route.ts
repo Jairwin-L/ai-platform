@@ -10,11 +10,9 @@ import {
   type ApiHandler,
 } from '@/lib/server';
 
-type PermissionNode = IRouteApi.PermissionNode;
-
-function buildPermissionTree(permissions: PermissionNode[]): PermissionNode[] {
-  const nodeMap = new Map<number, PermissionNode>();
-  const roots: PermissionNode[] = [];
+function buildPermissionTree(permissions: IRouteApi.PermissionNode[]): IRouteApi.PermissionNode[] {
+  const nodeMap = new Map<number, IRouteApi.PermissionNode>();
+  const roots: IRouteApi.PermissionNode[] = [];
 
   for (const permission of permissions) {
     nodeMap.set(permission.id, { ...permission, children: [] });

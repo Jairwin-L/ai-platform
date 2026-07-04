@@ -11,8 +11,6 @@ const SimpleEditor = dynamic(() => import('@/components/editor').then((mod) => m
   ),
 });
 
-type DynamicSimpleEditorProps = IEditorComponent.SimpleEditorProps;
-
-export function DynamicSimpleEditor(props: DynamicSimpleEditorProps) {
+export function DynamicSimpleEditor(props: IEditorComponent.SimpleEditorProps) {
   return <SimpleEditor {...props} />;
 }

@@ -10,9 +10,6 @@ import { requestVerificationCode, signInWithCode, signInWithPassword } from '@/a
 import { useAuthSessionStore } from '@/stores/auth-session';
 import styles from './page.module.scss';
 
-type CodeSignInValues = IAppForms.CodeSignInValues;
-type PasswordSignInValues = IAppForms.PasswordSignInValues;
-
 async function requestCode(
   form: FormInstance,
   setCountdown: (seconds: number) => void,
@@ -53,8 +50,8 @@ function getRedirectPath(): string {
 export default function SignInPage() {
   const router = useRouter();
   const setPayload = useAuthSessionStore((state) => state.setPayload);
-  const [passwordForm] = Form.useForm<PasswordSignInValues>();
-  const [codeForm] = Form.useForm<CodeSignInValues>();
+  const [passwordForm] = Form.useForm<IAppForms.PasswordSignInValues>();
+  const [codeForm] = Form.useForm<IAppForms.CodeSignInValues>();
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [codeLoading, setCodeLoading] = useState(false);
   const [codeCountdown, setCodeCountdown] = useState(0);
@@ -72,7 +69,7 @@ export default function SignInPage() {
     return () => window.clearTimeout(timer);
   }, [codeCountdown]);
 
-  async function onPasswordFinish(values: PasswordSignInValues): Promise<void> {
+  async function onPasswordFinish(values: IAppForms.PasswordSignInValues): Promise<void> {
     setPasswordLoading(true);
 
     try {
@@ -86,7 +83,7 @@ export default function SignInPage() {
     }
   }
 
-  async function onCodeFinish(values: CodeSignInValues): Promise<void> {
+  async function onCodeFinish(values: IAppForms.CodeSignInValues): Promise<void> {
     setCodeLoading(true);
 
     try {

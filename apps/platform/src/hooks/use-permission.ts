@@ -4,13 +4,12 @@ import { useCallback } from 'react';
 import { useAuthSessionStore } from '@/stores/auth-session';
 
 export type PermissionCode = IHooks.PermissionCode;
-type PermissionResult = IHooks.PermissionResult;
 
 /**
  * Reads the global session's roles and permission codes for client-side display decisions.
  * Server-side authorization must still be enforced by the corresponding route or API handler.
  */
-export function usePermission(): PermissionResult {
+export function usePermission(): IHooks.PermissionResult {
   const payload = useAuthSessionStore((state) => state.payload);
   const isLoading = useAuthSessionStore((state) => state.isLoading);
   const isReady = useAuthSessionStore((state) => state.isReady);

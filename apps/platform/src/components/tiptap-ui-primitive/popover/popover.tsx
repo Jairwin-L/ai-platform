@@ -17,11 +17,7 @@ import {
 } from '@floating-ui/react';
 import '@/components/tiptap-ui-primitive/popover/popover.scss';
 
-type PopoverContextValue = ITiptapPrimitive.PopoverContextValue;
-type PopoverOptions = ITiptapPrimitive.PopoverOptions;
-type PopoverProps = ITiptapPrimitive.PopoverProps;
-
-const PopoverContext = React.createContext<PopoverContextValue | null>(null);
+const PopoverContext = React.createContext<ITiptapPrimitive.PopoverContextValue | null>(null);
 
 function usePopoverContext() {
   const context = React.useContext(PopoverContext);
@@ -38,7 +34,7 @@ function usePopover({
   onOpenChange: setControlledOpen,
   side = 'bottom',
   align = 'center',
-}: PopoverOptions = {}) {
+}: ITiptapPrimitive.PopoverOptions = {}) {
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(initialOpen);
   const [labelId, setLabelId] = React.useState<string>();
   const [descriptionId, setDescriptionId] = React.useState<string>();
@@ -101,14 +97,12 @@ function usePopover({
   );
 }
 
-function Popover({ children, modal = false, ...options }: PopoverProps) {
+function Popover({ children, modal = false, ...options }: ITiptapPrimitive.PopoverProps) {
   const popover = usePopover({ modal, ...options });
   return <PopoverContext.Provider value={popover}>{children}</PopoverContext.Provider>;
 }
 
-type TriggerElementProps = ITiptapPrimitive.PopoverTriggerProps;
-
-const PopoverTrigger = React.forwardRef<HTMLElement, TriggerElementProps>(
+const PopoverTrigger = React.forwardRef<HTMLElement, ITiptapPrimitive.PopoverTriggerProps>(
   ({ children, asChild = false, ...props }, propRef) => {
     const context = usePopoverContext();
     const childrenRef = React.isValidElement(children) ? (children.props as any).ref : undefined;
@@ -138,9 +132,7 @@ const PopoverTrigger = React.forwardRef<HTMLElement, TriggerElementProps>(
   },
 );
 
-type PopoverContentProps = ITiptapPrimitive.PopoverContentProps;
-
-const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
+const PopoverContent = React.forwardRef<HTMLDivElement, ITiptapPrimitive.PopoverContentProps>(
   (
     {
       className,

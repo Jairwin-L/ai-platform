@@ -7,10 +7,9 @@ import '@/components/tiptap-ui-primitive/button/button-colors.scss';
 import '@/components/tiptap-ui-primitive/button/button-group.scss';
 import '@/components/tiptap-ui-primitive/button/button.scss';
 
-type PlatformShortcuts = ITiptapPrimitive.PlatformShortcuts;
 export type ButtonProps = ITiptapPrimitive.ButtonProps;
 
-export const MAC_SYMBOLS: PlatformShortcuts = {
+export const MAC_SYMBOLS: ITiptapPrimitive.PlatformShortcuts = {
   ctrl: '⌘',
   alt: '⌥',
   shift: '⇧',

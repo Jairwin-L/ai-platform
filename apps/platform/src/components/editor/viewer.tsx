@@ -22,10 +22,8 @@ import '@/components/tiptap-node/image-node/image-node.scss';
 import '@/components/tiptap-node/paragraph-node/paragraph-node.scss';
 import '@/components/tiptap-templates/simple/simple-editor.scss';
 
-type SimpleEditorViewerProps = IEditorComponent.SimpleEditorViewerProps;
-
 export const SimpleEditorViewer = React.forwardRef(
-  ({ content, onUpdate }: SimpleEditorViewerProps, ref) => {
+  ({ content, onUpdate }: IEditorComponent.SimpleEditorViewerProps, ref) => {
     const editor = useEditor({
       immediatelyRender: false,
       editable: false,

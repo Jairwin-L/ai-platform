@@ -11,9 +11,10 @@ const { Title, Text } = Typography;
 
 const DEFAULT_LIMIT = 10;
 
-type ArticlesClientProps = IAppPages.ArticlesClientProps;
-
-export default function ArticlesClient({ initialData, initialKeyword }: ArticlesClientProps) {
+export default function ArticlesClient({
+  initialData,
+  initialKeyword,
+}: IAppPages.ArticlesClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [articles, setArticles] = useState<Article[]>(initialData.data);

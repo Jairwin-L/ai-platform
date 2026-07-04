@@ -23,16 +23,11 @@ const ALLOWED_MIME_TYPES = new Set([
   'image/avif',
 ]);
 
-type PresignedRequestBody = IUploadApi.PresignedRequestBody;
-type PresignedRequestFile = IUploadApi.PresignedRequestFile;
-type PresignedUrlItem = IUploadApi.PresignedUrlItem;
-type StorageConfig = IUploadApi.StorageConfig;
-
 function getEnv(name: string): string | undefined {
   return process.env[name];
 }
 
-function getStorageConfig(): StorageConfig {
+function getStorageConfig(): IUploadApi.StorageConfig {
   const missing = [
     'R2_ACCESS_KEY_ID',
     'R2_SECRET_ACCESS_KEY',
@@ -110,10 +105,10 @@ async function createPresignedUrl(
   client: AwsClient,
   endpointUrl: string,
   bucketName: string,
-  file: PresignedRequestFile,
+  file: IUploadApi.PresignedRequestFile,
   path: string,
   expiresIn: number,
-): Promise<PresignedUrlItem> {
+): Promise<IUploadApi.PresignedUrlItem> {
   const fileType = file.fileType?.toLowerCase();
 
   if (fileType && !ALLOWED_MIME_TYPES.has(fileType)) {
@@ -203,7 +198,7 @@ function getRejectedReason(reason: unknown): string {
  *         description: 预签名上传地址生成失败
  */
 const createPresignedUrlsHandler = async (request: NextRequest) => {
-  let storageConfig: StorageConfig;
+  let storageConfig: IUploadApi.StorageConfig;
 
   try {
     storageConfig = getStorageConfig();
@@ -216,7 +211,7 @@ const createPresignedUrlsHandler = async (request: NextRequest) => {
     );
   }
 
-  const body = (await request.json()) as PresignedRequestBody;
+  const body = (await request.json()) as IUploadApi.PresignedRequestBody;
   const files = body.files || [];
 
   if (!Array.isArray(files) || files.length === 0) {

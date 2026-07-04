@@ -24,9 +24,7 @@ function getEditorText(html?: string): string {
     .trim();
 }
 
-type ArticleFormProps = IAppPages.ArticleFormProps;
-
-export default function ArticleForm(props: ArticleFormProps) {
+export default function ArticleForm(props: IAppPages.ArticleFormProps) {
   const { mode, article, articleId } = props;
   const router = useRouter();
   const [form] = Form.useForm<ArticleFormValues>();

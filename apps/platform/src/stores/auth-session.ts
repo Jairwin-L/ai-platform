@@ -2,9 +2,7 @@
 
 import { create } from 'zustand';
 
-type AuthSessionState = IStore.AuthSessionState;
-
-export const useAuthSessionStore = create<AuthSessionState>((set) => ({
+export const useAuthSessionStore = create<IStore.AuthSessionState>((set) => ({
   currentUserProfile: null,
   isLoading: false,
   isReady: false,

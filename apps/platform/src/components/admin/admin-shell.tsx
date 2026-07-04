@@ -15,9 +15,7 @@ import { usePermission } from '@/hooks/use-permission';
 import styles from './admin-shell.module.scss';
 import { APP_WHITE_LOGO } from '@/constants/app';
 
-type AdminMenuItem = IComponent.AdminMenuItem;
-
-const menuItems: AdminMenuItem[] = [
+const menuItems: IComponent.AdminMenuItem[] = [
   { key: '/admin', icon: <DashboardOutlined />, label: '概览' },
   {
     key: '/admin/system',
@@ -46,7 +44,7 @@ const menuItems: AdminMenuItem[] = [
   },
 ];
 
-function getMenuPaths(items: AdminMenuItem[], parentKeys: string[] = []): string[][] {
+function getMenuPaths(items: IComponent.AdminMenuItem[], parentKeys: string[] = []): string[][] {
   return items.flatMap((menuItem) => {
     const menuPath = [...parentKeys, menuItem.key];
 

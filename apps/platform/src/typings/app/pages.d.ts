@@ -26,6 +26,18 @@ declare namespace IAppPages {
     }>;
   }
 
+  interface AccountLayoutProps {
+    children: React.ReactNode;
+  }
+
+  interface AccountNavItem {
+    disabled?: boolean;
+    href: string;
+    icon: React.ReactNode;
+    isActive: (pathname: string) => boolean;
+    label: string;
+  }
+
   interface AccountProfileContentProps {
     profile: IApiUsers.UserProfile;
   }

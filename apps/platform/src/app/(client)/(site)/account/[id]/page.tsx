@@ -4,8 +4,6 @@ import { getAuthUserBySessionToken, getSessionCookieName } from '@/lib/server/au
 import { getUserProfile } from '@/lib/server/user-profile';
 import { AccountProfileContent } from './account-profile-content';
 
-type AccountPageProps = IAppPages.AccountPageProps;
-
 async function getCurrentUserId() {
   const cookieStore = await cookies();
   const token = cookieStore.get(getSessionCookieName())?.value;
@@ -14,7 +12,7 @@ async function getCurrentUserId() {
   return user?.userId;
 }
 
-export default async function Page({ params }: AccountPageProps) {
+export default async function Page({ params }: IAppPages.AccountPageProps) {
   const { id } = await params;
   if (!id) {
     notFound();

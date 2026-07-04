@@ -23,11 +23,7 @@ import {
 import '@/components/tiptap-ui-primitive/dropdown-menu/dropdown-menu.scss';
 import { Separator } from '../separator';
 
-type ContextType = ITiptapPrimitive.DropdownContextValue;
-type DropdownMenuOptions = ITiptapPrimitive.DropdownMenuOptions;
-type DropdownMenuProps = ITiptapPrimitive.DropdownMenuProps;
-
-const DropdownMenuContext = React.createContext<ContextType | null>(null);
+const DropdownMenuContext = React.createContext<ITiptapPrimitive.DropdownContextValue | null>(null);
 
 function useDropdownMenuContext() {
   const context = React.useContext(DropdownMenuContext);
@@ -43,7 +39,7 @@ function useDropdownMenu({
   onOpenChange: setControlledOpen,
   side = 'bottom',
   align = 'start',
-}: DropdownMenuOptions) {
+}: ITiptapPrimitive.DropdownMenuOptions) {
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(initialOpen);
   const [currentPlacement, setCurrentPlacement] = React.useState<Placement>(
     `${side}-${align}` as Placement,
@@ -113,7 +109,7 @@ function useDropdownMenu({
   );
 }
 
-export function DropdownMenu({ children, ...options }: DropdownMenuProps) {
+export function DropdownMenu({ children, ...options }: ITiptapPrimitive.DropdownMenuProps) {
   const dropdown = useDropdownMenu(options);
   return (
     <DropdownMenuContext.Provider value={dropdown}>
@@ -124,61 +120,61 @@ export function DropdownMenu({ children, ...options }: DropdownMenuProps) {
   );
 }
 
-type DropdownMenuTriggerProps = ITiptapPrimitive.DropdownMenuTriggerProps;
+export const DropdownMenuTrigger = React.forwardRef<
+  HTMLButtonElement,
+  ITiptapPrimitive.DropdownMenuTriggerProps
+>(({ children, asChild = false, ...props }, propRef) => {
+  const context = useDropdownMenuContext();
+  let childrenRef: React.Ref<unknown> | undefined;
 
-export const DropdownMenuTrigger = React.forwardRef<HTMLButtonElement, DropdownMenuTriggerProps>(
-  ({ children, asChild = false, ...props }, propRef) => {
-    const context = useDropdownMenuContext();
-    let childrenRef: React.Ref<unknown> | undefined;
-
-    if (React.isValidElement(children)) {
-      if (parseInt(React.version, 10) >= 19) {
-        childrenRef = (children as { props: { ref?: React.Ref<unknown> } }).props.ref;
-      } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        childrenRef = (children as any).ref;
-      }
+  if (React.isValidElement(children)) {
+    if (parseInt(React.version, 10) >= 19) {
+      childrenRef = (children as { props: { ref?: React.Ref<unknown> } }).props.ref;
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      childrenRef = (children as any).ref;
     }
+  }
 
-    const ref = useMergeRefs([context.refs.setReference, propRef, childrenRef]);
+  const ref = useMergeRefs([context.refs.setReference, propRef, childrenRef]);
 
-    if (asChild && React.isValidElement(children)) {
-      const dataAttributes = {
-        'data-state': context.open ? 'open' : 'closed',
-      };
+  if (asChild && React.isValidElement(children)) {
+    const dataAttributes = {
+      'data-state': context.open ? 'open' : 'closed',
+    };
 
-      return React.cloneElement(
-        children,
-        context.getReferenceProps({
-          ref,
-          ...props,
-          ...(typeof children.props === 'object' ? children.props : {}),
-          'aria-expanded': context.open,
-          'aria-haspopup': 'menu' as const,
-          ...dataAttributes,
-        }),
-      );
-    }
-
-    return (
-      <button
-        ref={ref}
-        aria-expanded={context.open}
-        aria-haspopup="menu"
-        data-state={context.open ? 'open' : 'closed'}
-        {...context.getReferenceProps(props)}
-      >
-        {children}
-      </button>
+    return React.cloneElement(
+      children,
+      context.getReferenceProps({
+        ref,
+        ...props,
+        ...(typeof children.props === 'object' ? children.props : {}),
+        'aria-expanded': context.open,
+        'aria-haspopup': 'menu' as const,
+        ...dataAttributes,
+      }),
     );
-  },
-);
+  }
+
+  return (
+    <button
+      ref={ref}
+      aria-expanded={context.open}
+      aria-haspopup="menu"
+      data-state={context.open ? 'open' : 'closed'}
+      {...context.getReferenceProps(props)}
+    >
+      {children}
+    </button>
+  );
+});
 
 DropdownMenuTrigger.displayName = 'DropdownMenuTrigger';
 
-type DropdownMenuContentProps = ITiptapPrimitive.DropdownMenuContentProps;
-
-export const DropdownMenuContent = React.forwardRef<HTMLDivElement, DropdownMenuContentProps>(
+export const DropdownMenuContent = React.forwardRef<
+  HTMLDivElement,
+  ITiptapPrimitive.DropdownMenuContentProps
+>(
   (
     {
       style,
@@ -235,93 +231,91 @@ export const DropdownMenuContent = React.forwardRef<HTMLDivElement, DropdownMenu
 
 DropdownMenuContent.displayName = 'DropdownMenuContent';
 
-type DropdownMenuItemProps = ITiptapPrimitive.DropdownMenuItemProps;
+export const DropdownMenuItem = React.forwardRef<
+  HTMLDivElement,
+  ITiptapPrimitive.DropdownMenuItemProps
+>(({ children, disabled, asChild = false, onSelect, className, ...props }, ref) => {
+  const context = useDropdownMenuContext();
+  const itemLabel = typeof children === 'string' ? children : null;
+  const item = useListItem({ label: disabled ? null : itemLabel });
+  const isActive = context.activeIndex === item.index;
 
-export const DropdownMenuItem = React.forwardRef<HTMLDivElement, DropdownMenuItemProps>(
-  ({ children, disabled, asChild = false, onSelect, className, ...props }, ref) => {
-    const context = useDropdownMenuContext();
-    const itemLabel = typeof children === 'string' ? children : null;
-    const item = useListItem({ label: disabled ? null : itemLabel });
-    const isActive = context.activeIndex === item.index;
+  const handleSelect = React.useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (disabled) return;
+      onSelect?.();
+      props.onClick?.(event);
+      context.setOpen(false);
+    },
+    [context, disabled, onSelect, props],
+  );
 
-    const handleSelect = React.useCallback(
-      (event: React.MouseEvent<HTMLDivElement>) => {
-        if (disabled) return;
-        onSelect?.();
-        props.onClick?.(event);
-        context.setOpen(false);
-      },
-      [context, disabled, onSelect, props],
-    );
+  const itemProps: React.HTMLAttributes<HTMLDivElement> & {
+    ref: React.Ref<HTMLDivElement>;
+    role: string;
+    tabIndex: number;
+    'aria-disabled'?: boolean;
+    'data-highlighted'?: boolean;
+  } = {
+    ref: useMergeRefs([item.ref, ref]),
+    role: 'menuitem',
+    className,
+    tabIndex: isActive ? 0 : -1,
+    'data-highlighted': isActive,
+    'aria-disabled': disabled,
+    ...context.getItemProps({
+      ...props,
+      onClick: handleSelect,
+    }),
+  };
 
-    const itemProps: React.HTMLAttributes<HTMLDivElement> & {
-      ref: React.Ref<HTMLDivElement>;
-      role: string;
-      tabIndex: number;
-      'aria-disabled'?: boolean;
-      'data-highlighted'?: boolean;
-    } = {
-      ref: useMergeRefs([item.ref, ref]),
-      role: 'menuitem',
-      className,
-      tabIndex: isActive ? 0 : -1,
-      'data-highlighted': isActive,
-      'aria-disabled': disabled,
-      ...context.getItemProps({
-        ...props,
-        onClick: handleSelect,
-      }),
+  if (asChild && React.isValidElement(children)) {
+    const childProps = children.props as {
+      onClick?: (event: React.MouseEvent<HTMLElement>) => void;
     };
 
-    if (asChild && React.isValidElement(children)) {
-      const childProps = children.props as {
-        onClick?: (event: React.MouseEvent<HTMLElement>) => void;
-      };
+    // Create merged props without adding onClick directly to the props object
+    const mergedProps = {
+      ...itemProps,
+      ...(typeof children.props === 'object' ? children.props : {}),
+    };
 
-      // Create merged props without adding onClick directly to the props object
-      const mergedProps = {
-        ...itemProps,
-        ...(typeof children.props === 'object' ? children.props : {}),
-      };
+    // Handle onClick separately based on the element type
+    const eventHandlers = {
+      onClick: (event: React.MouseEvent<HTMLElement>) => {
+        // Cast the event to make it compatible with handleSelect
+        handleSelect(event as unknown as React.MouseEvent<HTMLDivElement>);
+        childProps.onClick?.(event);
+      },
+    };
 
-      // Handle onClick separately based on the element type
-      const eventHandlers = {
-        onClick: (event: React.MouseEvent<HTMLElement>) => {
-          // Cast the event to make it compatible with handleSelect
-          handleSelect(event as unknown as React.MouseEvent<HTMLDivElement>);
-          childProps.onClick?.(event);
-        },
-      };
+    return React.cloneElement(children, {
+      ...mergedProps,
+      ...eventHandlers,
+    });
+  }
 
-      return React.cloneElement(children, {
-        ...mergedProps,
-        ...eventHandlers,
-      });
-    }
-
-    return <div {...itemProps}>{children}</div>;
-  },
-);
+  return <div {...itemProps}>{children}</div>;
+});
 
 DropdownMenuItem.displayName = 'DropdownMenuItem';
 
-type DropdownMenuGroupProps = ITiptapPrimitive.DropdownMenuGroupProps;
-
-export const DropdownMenuGroup = React.forwardRef<HTMLDivElement, DropdownMenuGroupProps>(
-  ({ children, label, className, ...props }, ref) => {
-    return (
-      <div
-        {...props}
-        ref={ref}
-        role="group"
-        aria-label={label}
-        className={`tiptap-button-group ${className || ''}`}
-      >
-        {children}
-      </div>
-    );
-  },
-);
+export const DropdownMenuGroup = React.forwardRef<
+  HTMLDivElement,
+  ITiptapPrimitive.DropdownMenuGroupProps
+>(({ children, label, className, ...props }, ref) => {
+  return (
+    <div
+      {...props}
+      ref={ref}
+      role="group"
+      aria-label={label}
+      className={`tiptap-button-group ${className || ''}`}
+    >
+      {children}
+    </div>
+  );
+});
 
 DropdownMenuGroup.displayName = 'DropdownMenuGroup';
 

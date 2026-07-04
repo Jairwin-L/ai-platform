@@ -27,9 +27,7 @@ import {
 } from '@/api/modules/ai-credentials';
 import styles from './page.module.scss';
 
-type CredentialFormValues = IAppForms.CredentialFormValues;
-
-const initialValues: CredentialFormValues = {
+const initialValues: IAppForms.CredentialFormValues = {
   label: '',
   provider: 'openai',
   apiKey: '',
@@ -96,7 +94,7 @@ function hasBlankCharacter(value: string): boolean {
 }
 
 export default function AiSettingsPage() {
-  const [form] = Form.useForm<CredentialFormValues>();
+  const [form] = Form.useForm<IAppForms.CredentialFormValues>();
   const [credentials, setCredentials] = useState<AiCredential[]>([]);
   const [providerOptions, setProviderOptions] = useState<AiProviderOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -143,7 +141,7 @@ export default function AiSettingsPage() {
     form.resetFields();
   }
 
-  async function onFinish(values: CredentialFormValues): Promise<void> {
+  async function onFinish(values: IAppForms.CredentialFormValues): Promise<void> {
     setSaving(true);
 
     try {

@@ -14,8 +14,6 @@ import {
 } from '@/api/modules/users';
 import styles from '@/components/admin/admin-form-page.module.scss';
 
-type UserFormValues = IAppForms.UserFormValues;
-
 const statusOptions: Array<{ label: string; value: UserStatus }> = [
   { label: '正常', value: 'active' },
   { label: '待激活', value: 'pending' },
@@ -31,7 +29,7 @@ function getRoleIds(user: UserProfile): number[] {
 export default function EditUserPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [form] = Form.useForm<UserFormValues>();
+  const [form] = Form.useForm<IAppForms.UserFormValues>();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [roles, setRoles] = useState<AdminRole[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,7 +70,7 @@ export default function EditUserPage() {
     loadForm().catch(() => undefined);
   }, [loadForm]);
 
-  async function onFinish(values: UserFormValues) {
+  async function onFinish(values: IAppForms.UserFormValues) {
     if (!id) {
       return;
     }

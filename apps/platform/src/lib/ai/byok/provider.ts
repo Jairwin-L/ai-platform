@@ -22,11 +22,6 @@ export class ProviderAuthenticationError extends Error {
   }
 }
 
-type AnthropicResponse = IByok.AnthropicResponse;
-type GeminiResponse = IByok.GeminiResponse;
-type OpenAiCompatibleResponse = IByok.OpenAiCompatibleResponse;
-type ProviderErrorPayload = IByok.ProviderErrorPayload;
-
 function isModelAllowed(provider: ByokProvider, model: string): boolean {
   return (BYOK_ALLOWED_MODELS_BY_PROVIDER[provider] as readonly string[]).includes(model);
 }
@@ -63,7 +58,7 @@ export function validateProviderApiKey(provider: ByokProvider, apiKey: string): 
   return false;
 }
 
-async function getProviderErrorPayload(response: Response): Promise<ProviderErrorPayload | null> {
+async function getProviderErrorPayload(response: Response): Promise<IByok.ProviderErrorPayload | null> {
   const contentType = response.headers.get('content-type') || '';
 
   if (!contentType.toLowerCase().includes('application/json')) {
@@ -73,7 +68,7 @@ async function getProviderErrorPayload(response: Response): Promise<ProviderErro
   try {
     const value = (await response.json()) as unknown;
 
-    return typeof value === 'object' && value !== null ? (value as ProviderErrorPayload) : null;
+    return typeof value === 'object' && value !== null ? (value as IByok.ProviderErrorPayload) : null;
   } catch {
     return null;
   }
@@ -85,7 +80,7 @@ function getErrorText(value: unknown): string {
 
 function isProviderAuthenticationFailure(
   response: Response,
-  payload: ProviderErrorPayload | null,
+  payload: IByok.ProviderErrorPayload | null,
 ): boolean {
   if (response.status === 401 || response.status === 403) {
     return true;
@@ -133,13 +128,13 @@ async function assertProviderResponseOk(response: Response): Promise<void> {
 }
 
 function getOpenAiCompatibleContent(data: unknown): string | null {
-  const value = data as OpenAiCompatibleResponse;
+  const value = data as IByok.OpenAiCompatibleResponse;
 
   return value.choices?.[0]?.message?.content ?? null;
 }
 
 function getAnthropicContent(data: unknown): string | null {
-  const value = data as AnthropicResponse;
+  const value = data as IByok.AnthropicResponse;
 
   return value.content
     ?.filter((part) => part.type === 'text' || typeof part.text === 'string')
@@ -148,7 +143,7 @@ function getAnthropicContent(data: unknown): string | null {
 }
 
 function getGeminiContent(data: unknown): string | null {
-  const value = data as GeminiResponse;
+  const value = data as IByok.GeminiResponse;
 
   return value.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('') ?? null;
 }
