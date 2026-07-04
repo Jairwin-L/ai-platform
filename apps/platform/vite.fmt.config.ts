@@ -1,0 +1,30 @@
+import type { UserConfig } from 'vite-plus';
+
+export const fmtConfig = {
+  printWidth: 100,
+  tabWidth: 2,
+  useTabs: false,
+  semi: true,
+  singleQuote: true,
+  quoteProps: 'as-needed',
+  jsxSingleQuote: false,
+  trailingComma: 'all',
+  bracketSpacing: true,
+  bracketSameLine: false,
+  arrowParens: 'always',
+  endOfLine: 'lf',
+  sortPackageJson: false,
+  ignorePatterns: [
+    'build',
+    'coverage',
+    'dist',
+    'es',
+    'lib',
+    'node_modules',
+    'package-lock.json',
+    'pnpm-lock.yaml',
+    'yarn.lock',
+    '*.min.js',
+    '*.min.css',
+  ],
+} satisfies NonNullable<UserConfig['fmt']>;
