@@ -30,6 +30,7 @@ const getAiProvidersHandler: ApiHandler = async () => {
 
 const updateAiProvidersHandler: ApiHandler = async (request: NextRequest) => {
   let payload: ISettingsApi.AiProviderPayload;
+  let providerOptions: IByok.AiProviderOption[];
 
   try {
     payload = (await request.json()) as ISettingsApi.AiProviderPayload;
@@ -38,8 +39,17 @@ const updateAiProvidersHandler: ApiHandler = async (request: NextRequest) => {
   }
 
   try {
-    const providerOptions = normalizeAiProviderOptions(payload.options);
+    providerOptions = normalizeAiProviderOptions(payload.options);
+  } catch (error) {
+    return createErrorResponse(
+      DATA_ERROR.VALIDATION_FAILED,
+      error instanceof Error ? error.message : 'AI Provider 配置无效',
+      error,
+      422,
+    );
+  }
 
+  try {
     await updateStoredAiProviderOptions(providerOptions);
 
     return createSuccessResponse(await getStoredAiProviderOptions(), 'AI Provider 配置更新成功');

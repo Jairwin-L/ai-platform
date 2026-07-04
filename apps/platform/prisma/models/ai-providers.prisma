@@ -4,6 +4,9 @@ model AiProviders {
   label       String
   color       String
   api_key_url String?
+  protocol    String   @default("openai-compatible")
+  chat_base_url String
+  models      String[] @default([])
   enabled     Boolean  @default(true)
   sort_order  Int      @default(0)
   created_at  DateTime @default(now()) @db.Timestamptz(6)

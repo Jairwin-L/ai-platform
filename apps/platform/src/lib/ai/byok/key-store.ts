@@ -6,9 +6,9 @@ import {
   BYOK_DEFAULT_TTL_SECONDS,
   BYOK_ENCRYPTION_ALGORITHM,
   BYOK_PAYLOAD_VERSION,
+  BYOK_PROVIDER_VALUE_PATTERN,
   BYOK_REDIS_KEY_PREFIX,
   BYOK_TTL_OPTION_SECONDS,
-  SUPPORTED_BYOK_PROVIDERS,
   type ByokTtlOption,
 } from './constants';
 import type { EncryptedApiKeyPayload } from './crypto';
@@ -31,7 +31,7 @@ export type StoredCredentialStatus = IByok.StoredCredentialStatus;
 const encryptedPayloadSchema = z.object({
   version: z.literal(BYOK_PAYLOAD_VERSION),
   credentialId: z.string().regex(/^cred_[a-f0-9]{32}$/u),
-  provider: z.enum(SUPPORTED_BYOK_PROVIDERS),
+  provider: z.string().regex(BYOK_PROVIDER_VALUE_PATTERN),
   label: z.string().min(1).max(80),
   algorithm: z.literal(BYOK_ENCRYPTION_ALGORITHM),
   keyVersion: z.string().min(1),

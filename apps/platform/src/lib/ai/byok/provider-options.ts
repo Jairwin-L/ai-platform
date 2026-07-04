@@ -1,4 +1,4 @@
-import { SUPPORTED_BYOK_PROVIDERS, type ByokProvider } from './constants';
+import { BYOK_PROVIDER_VALUE_PATTERN } from './constants';
 
 export type AiProviderOption = IByok.AiProviderOption;
 export type EnabledAiProviderOption = IByok.EnabledAiProviderOption;
@@ -16,12 +16,6 @@ const allowedProviderColors = new Set([
   'red',
   'volcano',
 ]);
-
-function isSupportedProvider(value: unknown): value is ByokProvider {
-  return (
-    typeof value === 'string' && (SUPPORTED_BYOK_PROVIDERS as readonly string[]).includes(value)
-  );
-}
 
 function getStringField(value: unknown, fieldName: string, maxLength: number): string {
   if (typeof value !== 'string') {
@@ -89,8 +83,8 @@ function normalizeProviderOption(value: unknown): AiProviderOption {
   const option = value as Partial<AiProviderOption>;
   const provider = getStringField(option.value, 'provider value', 40);
 
-  if (!isSupportedProvider(provider)) {
-    throw new Error('aiProviderOptions 包含不支持的 provider');
+  if (!BYOK_PROVIDER_VALUE_PATTERN.test(provider)) {
+    throw new Error('Provider 标识只能包含小写字母、数字、下划线和连字符，且必须以小写字母开头');
   }
 
   const color = getStringField(option.color, 'provider color', 32);
@@ -113,7 +107,7 @@ export function normalizeAiProviderOptions(value: unknown): AiProviderOption[] {
     throw new Error('aiProviderOptions 必须是数组');
   }
 
-  const selectedValues = new Set<ByokProvider>();
+  const selectedValues = new Set<string>();
   const normalizedOptions: AiProviderOption[] = [];
 
   for (const item of value) {

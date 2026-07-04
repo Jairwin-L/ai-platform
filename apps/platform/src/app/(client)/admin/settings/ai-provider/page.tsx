@@ -8,6 +8,7 @@ import {
   updateAdminAiProviderOptions,
   type AiProviderOption,
 } from '@/api/modules/admin';
+import { BYOK_PROVIDER_VALUE_PATTERN } from '@/lib/ai/byok/constants';
 import styles from '../../resource-page.module.scss';
 import pageStyles from './page.module.scss';
 
@@ -197,9 +198,27 @@ export default function AiProviderSettingsPage() {
                                     return Promise.reject(new Error('Provider 标识不能重复'));
                                   },
                                 },
+                                {
+                                  validator: (_, value?: string) => {
+                                    const trimmedValue = value?.trim();
+
+                                    if (
+                                      !trimmedValue ||
+                                      BYOK_PROVIDER_VALUE_PATTERN.test(trimmedValue)
+                                    ) {
+                                      return Promise.resolve();
+                                    }
+
+                                    return Promise.reject(
+                                      new Error(
+                                        'Provider 标识只能包含小写字母、数字、下划线和连字符，且必须以小写字母开头',
+                                      ),
+                                    );
+                                  },
+                                },
                               ]}
                             >
-                              <Input maxLength={40} placeholder="openai" />
+                              <Input maxLength={40} placeholder="openai 或 custom_provider" />
                             </Form.Item>
                             <Form.Item
                               label="展示名称"

@@ -1,5 +1,5 @@
 declare namespace IApiAiCredentials {
-  type AiCredentialProvider = 'anthropic' | 'deepseek' | 'gemini' | 'openai';
+  type AiCredentialProvider = string;
   type AiCredentialStatus = 'active' | 'disabled' | 'expired' | 'invalid';
   type AiCredentialTtlOption = '2w' | '3w' | '4w' | '7d';
 

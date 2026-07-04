@@ -8,6 +8,7 @@ import {
   DEEPSEEK_CHAT_COMPLETIONS_URL,
   GEMINI_GENERATE_CONTENT_URL_PREFIX,
   OPENAI_CHAT_COMPLETIONS_URL,
+  SUPPORTED_BYOK_PROVIDERS,
   type ByokProvider,
 } from './constants';
 import { ByokPublicError } from './errors';
@@ -15,7 +16,17 @@ import type { ChatRequestInput } from './schemas';
 
 export type ChatCompletionResult = IByok.ChatCompletionResult;
 
+function isBuiltInProvider(
+  provider: ByokProvider,
+): provider is (typeof SUPPORTED_BYOK_PROVIDERS)[number] {
+  return (SUPPORTED_BYOK_PROVIDERS as readonly string[]).includes(provider);
+}
+
 function isModelAllowed(provider: ByokProvider, model: string): boolean {
+  if (!isBuiltInProvider(provider)) {
+    return false;
+  }
+
   return (BYOK_ALLOWED_MODELS_BY_PROVIDER[provider] as readonly string[]).includes(model);
 }
 
@@ -48,7 +59,7 @@ export function validateProviderApiKey(provider: ByokProvider, apiKey: string): 
     return apiKey.startsWith('sk-');
   }
 
-  return false;
+  return true;
 }
 
 async function getProviderErrorPayload(response: Response): Promise<IByok.ProviderErrorPayload | null> {
@@ -278,6 +289,10 @@ export async function callAiProvider(
   provider: ByokProvider,
   input: ChatRequestInput,
 ): Promise<ChatCompletionResult> {
+  if (!isBuiltInProvider(provider)) {
+    throw new ByokPublicError(BYOK_ERROR_CODE.UNSUPPORTED_PROVIDER, 400);
+  }
+
   if (!isModelAllowed(provider, input.model)) {
     throw new ByokPublicError(BYOK_ERROR_CODE.INVALID_REQUEST, 400);
   }

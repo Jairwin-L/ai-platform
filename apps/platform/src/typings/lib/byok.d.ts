@@ -1,5 +1,5 @@
 declare namespace IByok {
-  type Provider = 'anthropic' | 'deepseek' | 'gemini' | 'openai';
+  type Provider = string;
   type TtlOption = '2w' | '3w' | '4w' | '7d';
   type CredentialStatus = 'active' | 'disabled' | 'expired' | 'invalid';
   type ErrorCode =

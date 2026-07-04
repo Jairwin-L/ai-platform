@@ -14,6 +14,8 @@ export const SUPPORTED_BYOK_PROVIDERS = [
   BYOK_PROVIDER.DEEPSEEK,
 ] as const;
 
+export const BYOK_PROVIDER_VALUE_PATTERN = /^[a-z][a-z0-9_-]{0,39}$/u;
+
 export const BYOK_ENCRYPTION_ALGORITHM = 'aes-256-gcm';
 export const BYOK_PAYLOAD_VERSION = 1;
 export const BYOK_REDIS_KEY_PREFIX = 'ai:byok:v1';

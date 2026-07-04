@@ -2,11 +2,17 @@ import { z } from 'zod';
 import {
   BYOK_ALLOWED_CHAT_MODELS,
   BYOK_CHAT_LIMITS,
+  BYOK_PROVIDER_VALUE_PATTERN,
   BYOK_TTL_OPTION_SECONDS,
-  SUPPORTED_BYOK_PROVIDERS,
 } from './constants';
 
-export const providerSchema = z.enum(SUPPORTED_BYOK_PROVIDERS);
+export const providerSchema = z
+  .string()
+  .trim()
+  .regex(
+    BYOK_PROVIDER_VALUE_PATTERN,
+    'Provider 标识只能包含小写字母、数字、下划线和连字符，且必须以小写字母开头',
+  );
 export const credentialIdSchema = z.string().regex(/^cred_[a-f0-9]{32}$/u);
 export const ttlOptionSchema = z.enum(
   Object.keys(BYOK_TTL_OPTION_SECONDS) as ['7d', '2w', '3w', '4w'],
