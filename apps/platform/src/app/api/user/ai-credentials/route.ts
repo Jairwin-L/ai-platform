@@ -13,11 +13,15 @@ import {
 } from '@/lib/ai/byok/service';
 import { saveOrOverwriteApiCredentialSchema } from '@/lib/ai/byok/schemas';
 import { BYOK_ERROR_CODE, BYOK_SUCCESS_RESPONSE_OPTIONS } from '@/lib/ai/byok/constants';
-import { ByokPublicError } from '@/lib/ai/byok/errors';
-import { createByokErrorResponse, requireByokUser } from '@/lib/ai/byok/route-helpers';
+import { ByokPublicError, toByokPublicError } from '@/lib/ai/byok/errors';
+import {
+  createByokErrorOptions,
+  getByokErrorResponseType,
+  requireByokUser,
+} from '@/lib/ai/byok/route-helpers';
 import { getEnabledAiProviderOptions } from '@/lib/ai/byok/provider-options';
 import { getStoredAiProviderOptions } from '@/lib/ai/byok/provider-options-store';
-import { createSuccessResponse } from '@/lib/server';
+import { createErrorResponse, createSuccessResponse } from '@/lib/server';
 
 export const runtime = 'nodejs';
 
@@ -36,7 +40,15 @@ export async function GET(request: NextRequest) {
       BYOK_SUCCESS_RESPONSE_OPTIONS,
     );
   } catch (error) {
-    return createByokErrorResponse(error, requestId);
+    const publicError = toByokPublicError(error);
+
+    return createErrorResponse(
+      getByokErrorResponseType(publicError.status),
+      publicError.message,
+      null,
+      publicError.status,
+      createByokErrorOptions(requestId, publicError.code),
+    );
   }
 }
 
@@ -79,6 +91,14 @@ export async function POST(request: NextRequest) {
 
     return createSuccessResponse(result, '操作成功', 200, BYOK_SUCCESS_RESPONSE_OPTIONS);
   } catch (error) {
-    return createByokErrorResponse(error, requestId);
+    const publicError = toByokPublicError(error);
+
+    return createErrorResponse(
+      getByokErrorResponseType(publicError.status),
+      publicError.message,
+      null,
+      publicError.status,
+      createByokErrorOptions(requestId, publicError.code),
+    );
   }
 }

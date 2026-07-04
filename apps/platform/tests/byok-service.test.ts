@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vite-plus/test';
 import { BYOK_ERROR_CODE } from '@/lib/ai/byok/constants';
 import type { EncryptedApiKeyPayload } from '@/lib/ai/byok/crypto';
 import { ByokPublicError } from '@/lib/ai/byok/errors';
-import { ProviderAuthenticationError } from '@/lib/ai/byok/provider';
 import {
   createByokChatCompletion,
   listUserApiCredentials,
@@ -95,7 +94,7 @@ describe('BYOK service', () => {
           getStoredApiCredential: async () => ({ payload: PAYLOAD, remainingSeconds: 604800 }),
           decryptApiKey: async () => apiKey,
           callAiProvider: async () => {
-            throw new ProviderAuthenticationError();
+            throw new ByokPublicError(BYOK_ERROR_CODE.BYOK_KEY_INVALID, 401);
           },
           deleteStoredApiCredential,
         },

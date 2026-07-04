@@ -15,13 +15,6 @@ import type { ChatRequestInput } from './schemas';
 
 export type ChatCompletionResult = IByok.ChatCompletionResult;
 
-export class ProviderAuthenticationError extends Error {
-  constructor() {
-    super('Provider authentication failed');
-    this.name = 'ProviderAuthenticationError';
-  }
-}
-
 function isModelAllowed(provider: ByokProvider, model: string): boolean {
   return (BYOK_ALLOWED_MODELS_BY_PROVIDER[provider] as readonly string[]).includes(model);
 }
@@ -121,7 +114,7 @@ async function assertProviderResponseOk(response: Response): Promise<void> {
   const errorPayload = await getProviderErrorPayload(response);
 
   if (isProviderAuthenticationFailure(response, errorPayload)) {
-    throw new ProviderAuthenticationError();
+    throw new ByokPublicError(BYOK_ERROR_CODE.BYOK_KEY_INVALID, 401);
   }
 
   throw toProviderUnavailableError(response);
@@ -318,7 +311,7 @@ export async function callAiProvider(
 
     throw new ByokPublicError(BYOK_ERROR_CODE.UNSUPPORTED_PROVIDER, 400);
   } catch (error) {
-    if (error instanceof ProviderAuthenticationError || error instanceof ByokPublicError) {
+    if (error instanceof ByokPublicError) {
       throw error;
     }
 

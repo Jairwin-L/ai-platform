@@ -1,10 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 import { BYOK_ERROR_CODE } from '@/lib/ai/byok/constants';
-import {
-  ProviderAuthenticationError,
-  callAiProvider,
-  validateProviderApiKey,
-} from '@/lib/ai/byok/provider';
+import { callAiProvider, validateProviderApiKey } from '@/lib/ai/byok/provider';
 import type { ChatRequestInput } from '@/lib/ai/byok/schemas';
 
 const API_KEY = ['sk', 'test', 'secret'].join('-');
@@ -26,7 +22,7 @@ describe('BYOK provider', () => {
     vi.unstubAllGlobals();
   });
 
-  it('maps explicit provider authentication failures to ProviderAuthenticationError', async () => {
+  it('maps explicit provider authentication failures to invalid BYOK key errors', async () => {
     mockFetchResponse(
       Response.json(
         {
@@ -40,9 +36,10 @@ describe('BYOK provider', () => {
       ),
     );
 
-    await expect(callAiProvider(API_KEY, 'openai', CHAT_INPUT)).rejects.toBeInstanceOf(
-      ProviderAuthenticationError,
-    );
+    await expect(callAiProvider(API_KEY, 'openai', CHAT_INPUT)).rejects.toMatchObject({
+      code: BYOK_ERROR_CODE.BYOK_KEY_INVALID,
+      status: 401,
+    });
   });
 
   it('maps provider rate limit and server errors without treating them as invalid keys', async () => {

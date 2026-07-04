@@ -7,10 +7,14 @@ import {
 } from '@/lib/ai/security/request-security';
 import { credentialIdSchema } from '@/lib/ai/byok/schemas';
 import { deleteUserApiCredential } from '@/lib/ai/byok/service';
-import { createByokErrorResponse, requireByokUser } from '@/lib/ai/byok/route-helpers';
+import {
+  createByokErrorOptions,
+  getByokErrorResponseType,
+  requireByokUser,
+} from '@/lib/ai/byok/route-helpers';
 import { BYOK_ERROR_CODE, BYOK_SUCCESS_RESPONSE_OPTIONS } from '@/lib/ai/byok/constants';
-import { ByokPublicError } from '@/lib/ai/byok/errors';
-import { createSuccessResponse } from '@/lib/server';
+import { ByokPublicError, toByokPublicError } from '@/lib/ai/byok/errors';
+import { createErrorResponse, createSuccessResponse } from '@/lib/server';
 
 export const runtime = 'nodejs';
 
@@ -44,6 +48,14 @@ export async function DELETE(request: NextRequest, context: IRouteApi.AiCredenti
 
     return createSuccessResponse(result, '操作成功', 200, BYOK_SUCCESS_RESPONSE_OPTIONS);
   } catch (error) {
-    return createByokErrorResponse(error, requestId);
+    const publicError = toByokPublicError(error);
+
+    return createErrorResponse(
+      getByokErrorResponseType(publicError.status),
+      publicError.message,
+      null,
+      publicError.status,
+      createByokErrorOptions(requestId, publicError.code),
+    );
   }
 }

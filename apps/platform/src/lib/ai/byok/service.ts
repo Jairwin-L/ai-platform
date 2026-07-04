@@ -17,7 +17,6 @@ import {
 } from './key-store';
 import {
   callAiProvider,
-  ProviderAuthenticationError,
   validateProviderApiKey,
   type ChatCompletionResult,
 } from './provider';
@@ -233,7 +232,7 @@ export async function createByokChatCompletion(
 
     return result;
   } catch (error) {
-    if (error instanceof ProviderAuthenticationError) {
+    if (error instanceof ByokPublicError && error.code === BYOK_ERROR_CODE.BYOK_KEY_INVALID) {
       await deleteCredential(userId, input.credentialId);
       writeByokAuditEvent({
         eventType: BYOK_AUDIT_EVENT.KEY_INVALID_AUTO_REMOVED,
@@ -244,7 +243,6 @@ export async function createByokChatCompletion(
         result: 'failed',
         reasonCode: BYOK_ERROR_CODE.BYOK_KEY_INVALID,
       });
-      throw new ByokPublicError(BYOK_ERROR_CODE.BYOK_KEY_INVALID, 401);
     }
 
     throw error;
