@@ -62,6 +62,7 @@ declare namespace IApiAdmin {
   type SystemSettingsPayload = Omit<SystemSettings, 'updatedAt'>;
 
   interface AiProviderOption {
+    apiKeyUrl?: string;
     color: string;
     enabled: boolean;
     label: string;

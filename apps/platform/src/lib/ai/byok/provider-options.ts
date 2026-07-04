@@ -45,6 +45,42 @@ function getBooleanField(value: unknown, fieldName: string): boolean {
   return value;
 }
 
+function getOptionalUrlField(
+  value: unknown,
+  fieldName: string,
+  maxLength: number,
+): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  if (typeof value !== 'string') {
+    throw new Error(`${fieldName} 必须是字符串`);
+  }
+
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return undefined;
+  }
+
+  if (trimmedValue.length > maxLength) {
+    throw new Error(`${fieldName} 无效`);
+  }
+
+  try {
+    const url = new URL(trimmedValue);
+
+    if (url.protocol !== 'https:') {
+      throw new Error(`${fieldName} 无效`);
+    }
+
+    return url.toString();
+  } catch {
+    throw new Error(`${fieldName} 无效`);
+  }
+}
+
 function normalizeProviderOption(value: unknown): AiProviderOption {
   if (typeof value !== 'object' || value === null || !('value' in value)) {
     throw new Error('aiProviderOptions 包含无效项');
@@ -67,6 +103,7 @@ function normalizeProviderOption(value: unknown): AiProviderOption {
     value: provider,
     label: getStringField(option.label, 'provider label', 40),
     color,
+    apiKeyUrl: getOptionalUrlField(option.apiKeyUrl, 'apiKeyUrl', 2048),
     enabled: getBooleanField(option.enabled, 'provider enabled'),
   };
 }

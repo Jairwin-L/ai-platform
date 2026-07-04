@@ -99,6 +99,16 @@
   line-height: 1.6;
 }
 
+.api-key-help {
+  color: #667085;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.api-key-help a {
+  white-space: nowrap;
+}
+
 @media (width <= 640px) {
   .heading {
     display: block;

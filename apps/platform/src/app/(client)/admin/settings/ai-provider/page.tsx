@@ -30,7 +30,7 @@ const initialValues: IAppForms.ProviderOptionsValues = {
 };
 
 function createAiProviderOption(): AiProviderOption {
-  return { color: 'blue', enabled: true, label: '', value: '' };
+  return { apiKeyUrl: '', color: 'blue', enabled: true, label: '', value: '' };
 }
 
 function normalizeAiProviderOptions(options?: AiProviderOption[]): AiProviderOption[] {
@@ -39,6 +39,7 @@ function normalizeAiProviderOptions(options?: AiProviderOption[]): AiProviderOpt
   return (options ?? []).flatMap((option) => {
     const value = option.value.trim();
     const label = option.label.trim();
+    const apiKeyUrl = option.apiKeyUrl?.trim();
 
     if (!value || !label || selectedValues.has(value)) {
       return [];
@@ -51,6 +52,7 @@ function normalizeAiProviderOptions(options?: AiProviderOption[]): AiProviderOpt
         value,
         label,
         color: option.color,
+        ...(apiKeyUrl ? { apiKeyUrl } : {}),
         enabled: option.enabled,
       },
     ];
@@ -67,6 +69,16 @@ function hasDuplicateProviderValue(options: AiProviderOption[], value: string, i
   return options.some((option, optionIndex) => {
     return optionIndex !== index && option.value.trim() === trimmedValue;
   });
+}
+
+function isHttpsUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+
+    return url.protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
 export default function AiProviderSettingsPage() {
@@ -208,6 +220,29 @@ export default function AiProviderSettingsPage() {
                               rules={[{ required: true, message: '请选择标签颜色' }]}
                             >
                               <Select options={providerColorOptions} />
+                            </Form.Item>
+                            <Form.Item
+                              label="API Key 链接"
+                              name={[field.name, 'apiKeyUrl']}
+                              rules={[
+                                { max: 2048, message: 'API Key 链接不能超过 2048 个字符' },
+                                {
+                                  validator: (_, value?: string) => {
+                                    const trimmedValue = value?.trim();
+
+                                    if (!trimmedValue || isHttpsUrl(trimmedValue)) {
+                                      return Promise.resolve();
+                                    }
+
+                                    return Promise.reject(new Error('请输入有效的 https 链接'));
+                                  },
+                                },
+                              ]}
+                            >
+                              <Input
+                                maxLength={2048}
+                                placeholder="https://platform.example.com/api-keys"
+                              />
                             </Form.Item>
                           </div>
                         </div>

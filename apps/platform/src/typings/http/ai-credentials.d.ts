@@ -22,6 +22,7 @@ declare namespace IApiAiCredentials {
   }
 
   interface AiProviderOption {
+    apiKeyUrl?: string;
     color: string;
     label: string;
     value: AiCredentialProvider;

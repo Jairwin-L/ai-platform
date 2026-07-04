@@ -1,6 +1,12 @@
 'use client';
 
-import { DeleteOutlined, KeyOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import {
+  DeleteOutlined,
+  KeyOutlined,
+  LinkOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons';
 import {
   Button,
   Form,
@@ -95,6 +101,7 @@ function hasBlankCharacter(value: string): boolean {
 
 export default function AiSettingsPage() {
   const [form] = Form.useForm<IAppForms.CredentialFormValues>();
+  const selectedProvider = Form.useWatch('provider', form);
   const [credentials, setCredentials] = useState<AiCredential[]>([]);
   const [providerOptions, setProviderOptions] = useState<AiProviderOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -174,6 +181,11 @@ export default function AiSettingsPage() {
       setDeletingId(null);
     }
   }
+
+  const selectedProviderOption = getProviderOption(
+    providerOptions,
+    selectedProvider ?? providerOptions[0]?.value ?? initialValues.provider,
+  );
 
   const columns: TableColumnsType<AiCredential> = [
     {
@@ -344,6 +356,20 @@ export default function AiSettingsPage() {
           <Form.Item
             label="API Key"
             name="apiKey"
+            extra={
+              selectedProviderOption?.apiKeyUrl ? (
+                <span className={styles['api-key-help']}>
+                  不知道去哪找？请前往{' '}
+                  <a
+                    href={selectedProviderOption.apiKeyUrl}
+                    rel="noreferrer noopener"
+                    target="_blank"
+                  >
+                    <LinkOutlined /> {selectedProviderOption.label} API Key 页面
+                  </a>
+                </span>
+              ) : undefined
+            }
             rules={[
               { required: true, message: '请输入 API Key' },
               { min: 8, message: 'API Key 至少需要 8 个字符' },

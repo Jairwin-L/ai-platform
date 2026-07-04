@@ -1,12 +1,12 @@
 import { prisma } from '@/lib/prisma';
 import { normalizeAiProviderOptions, type AiProviderOption } from './provider-options';
 
-function isMissingProviderOptionsTable(error: unknown): boolean {
+function isMissingProviderOptionsStorage(error: unknown): boolean {
   if (typeof error !== 'object' || error === null) {
     return false;
   }
 
-  if ('code' in error && error.code === 'P2021') {
+  if ('code' in error && (error.code === 'P2021' || error.code === 'P2022')) {
     return true;
   }
 
@@ -14,15 +14,15 @@ function isMissingProviderOptionsTable(error: unknown): boolean {
     const meta = 'meta' in error ? error.meta : null;
     const serializedMeta = JSON.stringify(meta);
 
-    return serializedMeta.includes('42P01');
+    return serializedMeta.includes('42P01') || serializedMeta.includes('42703');
   }
 
   return false;
 }
 
 export function getProviderOptionsStorageErrorMessage(error: unknown, fallback: string): string {
-  if (isMissingProviderOptionsTable(error)) {
-    return 'AI Provider 存储尚未初始化，请先执行“vp run prisma:push”。';
+  if (isMissingProviderOptionsStorage(error)) {
+    return 'AI Provider 存储结构尚未初始化，请先执行“vp run prisma:push”。';
   }
 
   return fallback;
@@ -34,6 +34,7 @@ function toAiProviderOptions(rows: IByok.ProviderOptionRow[]): AiProviderOption[
       value: row.value,
       label: row.label,
       color: row.color,
+      apiKeyUrl: row.api_key_url ?? undefined,
       enabled: row.enabled,
     })),
   );
@@ -41,7 +42,7 @@ function toAiProviderOptions(rows: IByok.ProviderOptionRow[]): AiProviderOption[
 
 async function fetchAiProviderRows(): Promise<IByok.ProviderOptionRow[]> {
   return prisma.$queryRaw<IByok.ProviderOptionRow[]>`
-    SELECT value, label, color, enabled, sort_order
+    SELECT value, label, color, api_key_url, enabled, sort_order
     FROM ai_providers
     ORDER BY sort_order ASC, id ASC
   `;
@@ -80,17 +81,19 @@ export async function updateStoredAiProviderOptions(options: AiProviderOption[])
 
     const upsertResults = await Promise.allSettled(
       normalizedOptions.map((option, index) => transaction.$executeRaw`
-        INSERT INTO ai_providers (value, label, color, enabled, sort_order)
+        INSERT INTO ai_providers (value, label, color, api_key_url, enabled, sort_order)
         VALUES (
           ${option.value},
           ${option.label},
           ${option.color},
+          ${option.apiKeyUrl ?? null},
           ${option.enabled},
           ${index}
         )
         ON CONFLICT (value) DO UPDATE
         SET label = EXCLUDED.label,
             color = EXCLUDED.color,
+            api_key_url = EXCLUDED.api_key_url,
             enabled = EXCLUDED.enabled,
             sort_order = EXCLUDED.sort_order,
             updated_at = NOW()

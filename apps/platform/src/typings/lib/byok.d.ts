@@ -119,6 +119,7 @@ declare namespace IByok {
   }
 
   interface AiProviderOption {
+    apiKeyUrl?: string;
     color: string;
     enabled: boolean;
     label: string;
@@ -174,6 +175,7 @@ declare namespace IByok {
   type RouteErrorResponseBody = IServer.ApiErrorResponse;
 
   interface ProviderOptionRow {
+    api_key_url: string | null;
     color: string;
     enabled: boolean;
     label: string;
