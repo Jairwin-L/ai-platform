@@ -171,13 +171,7 @@ declare namespace IByok {
     typeof import('@/lib/ai/byok/schemas').chatRequestSchema
   >;
 
-  interface RouteErrorResponseBody {
-    error: {
-      code: ErrorCode;
-      message: string;
-      requestId: string;
-    };
-  }
+  type RouteErrorResponseBody = IServer.ApiErrorResponse;
 
   interface ProviderOptionRow {
     color: string;

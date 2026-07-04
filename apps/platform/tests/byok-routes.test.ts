@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { describe, expect, it, vi } from 'vite-plus/test';
+import { AUTH_ERROR, COMMON_ERROR } from '@/constants/error-codes';
 import { BYOK_ERROR_CODE } from '@/lib/ai/byok/constants';
 import { createByokJsonResponse } from '@/lib/ai/byok/route-helpers';
 import {
@@ -31,13 +32,19 @@ describe('BYOK route handlers', () => {
     const response = await listAiCredentials(
       createRequest('http://localhost:8060/api/user/ai-credentials'),
     );
-    const body = (await response.json()) as { error: { code: string } };
+    const body = (await response.json()) as IServer.ApiErrorResponse;
 
     expect(response.status).toBe(401);
-    expect(body.error.code).toBe(BYOK_ERROR_CODE.UNAUTHENTICATED);
+    expect(body).toMatchObject({
+      code: AUTH_ERROR.UNAUTHORIZED.code,
+      success: false,
+      errorCode: BYOK_ERROR_CODE.UNAUTHENTICATED,
+      data: null,
+    });
     expect(response.headers.get('Cache-Control')).toBe('no-store, max-age=0');
     expect(response.headers.get('Pragma')).toBe('no-cache');
     expect(response.headers.get('Referrer-Policy')).toBe('no-referrer');
+    expect(response.headers.get('x-request-id')).toMatch(/^req_/);
     expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
   });
 
@@ -105,16 +112,28 @@ describe('BYOK route handlers', () => {
         }),
       }),
     );
-    const body = (await response.json()) as { error: { code: string } };
+    const body = (await response.json()) as IServer.ApiErrorResponse;
 
     expect(response.status).toBe(413);
-    expect(body.error.code).toBe(BYOK_ERROR_CODE.INVALID_REQUEST);
+    expect(body).toMatchObject({
+      code: COMMON_ERROR.REQUEST_ERROR.code,
+      success: false,
+      errorCode: BYOK_ERROR_CODE.INVALID_REQUEST,
+      data: null,
+    });
     expect(response.headers.get('Cache-Control')).toBe('no-store, max-age=0');
   });
 
   it('creates BYOK JSON responses without wildcard CORS', async () => {
     const response = createByokJsonResponse({ credentials: [] });
+    const body = (await response.json()) as IServer.ApiResponse<{ credentials: unknown[] }>;
 
+    expect(body).toMatchObject({
+      code: 200,
+      success: true,
+      message: '操作成功',
+      data: { credentials: [] },
+    });
     expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
     expect(response.headers.get('Cache-Control')).toBe('no-store, max-age=0');
   });

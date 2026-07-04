@@ -7,7 +7,7 @@ import { useAuthSessionStore } from '@/stores/auth-session';
 import ClientSideOnly from '../client-side-only';
 import Loading from '../loading';
 
-const AUTHENTICATED_PATHS = ['/articles', '/upload'];
+const AUTHENTICATED_PATHS = ['/account/setting', '/articles', '/upload'];
 const ADMIN_PATH = '/admin';
 
 function requiresAuthentication(pathname: string): boolean {
