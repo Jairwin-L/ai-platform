@@ -1,10 +1,18 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import tinify from 'tinify';
-import { COMMON_ERROR, FILE_ERROR, createErrorResponse, withApiHandler } from '@/lib/server';
-import type { ApiHandler } from '@/lib/server/types';
+import {
+  COMMON_ERROR,
+  FILE_ERROR,
+  createErrorResponse,
+  withAuthenticatedApiHandler,
+} from '@/lib/server';
+import type { ApiContext, ApiHandler } from '@/lib/server/types';
+import { createRequestId, getRequestIp } from '@/lib/ai/security/request-security';
+import { getUserThirdPartyServiceApiKey } from '@/lib/third-party-service-credentials/service';
 
 export const runtime = 'nodejs';
+const TINYPNG_SERVICE_NAME = 'tinypng';
 
 const TINIFY_SUPPORTED_MIME_TYPES = new Set([
   'image/avif',
@@ -30,12 +38,8 @@ function getTinifyErrorStatus(error: unknown): number {
 async function compressWithTinify(
   input: Buffer,
   mime: string,
+  apiKey: string,
 ): Promise<{ data: Buffer; mime: string }> {
-  const apiKey = process.env.TINYPNG_API_KEY;
-  if (!apiKey || apiKey === 'change-me') {
-    throw new Error('TinyPNG API 密钥未配置');
-  }
-
   tinify.key = apiKey;
   const result = await tinify.fromBuffer(input as unknown as Uint8Array).toBuffer();
   const buffer = Buffer.isBuffer(result) ? result : Buffer.from(result);
@@ -81,7 +85,7 @@ async function compressWithTinify(
  *       500:
  *         description: 压缩失败
  */
-const tinifyHandler: ApiHandler = async (request: NextRequest) => {
+const tinifyHandler: ApiHandler = async (request: NextRequest, context: ApiContext) => {
   const formData = await request.formData();
   const file = formData.get('file') as File | null;
 
@@ -99,8 +103,16 @@ const tinifyHandler: ApiHandler = async (request: NextRequest) => {
   }
 
   try {
+    const apiKey = await getUserThirdPartyServiceApiKey(
+      context.user?.userId ?? '',
+      TINYPNG_SERVICE_NAME,
+      {
+        ip: getRequestIp(request),
+        requestId: createRequestId(),
+      },
+    );
     const source = Buffer.from(await file.arrayBuffer());
-    const { data, mime } = await compressWithTinify(source, file.type);
+    const { data, mime } = await compressWithTinify(source, file.type, apiKey);
 
     return new NextResponse(new Blob([new Uint8Array(data)], { type: mime }), {
       status: 200,
@@ -116,4 +128,4 @@ const tinifyHandler: ApiHandler = async (request: NextRequest) => {
   }
 };
 
-export const POST = withApiHandler(tinifyHandler);
+export const POST = withAuthenticatedApiHandler(tinifyHandler);

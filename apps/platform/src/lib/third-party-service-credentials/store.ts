@@ -159,6 +159,46 @@ export async function saveStoredCredential(
   return toCredentialStatus(payload, ttlSeconds);
 }
 
+export async function getStoredCredential(
+  userId: string,
+  credentialId: string,
+  client: CredentialRedisClient = defaultRedisClient,
+): Promise<{ payload: EncryptedCredentialPayload; remainingSeconds: number } | null> {
+  const redisKey = createCredentialRedisKey(userId, credentialId);
+  const ttl = await client.ttl(redisKey);
+
+  if (ttl === -2) {
+    return null;
+  }
+
+  if (ttl === -1) {
+    await ensureSettledTasks([
+      client.del(redisKey),
+      client.zRem(createCredentialIndexKey(userId), credentialId),
+    ]);
+    return null;
+  }
+
+  const raw = await client.get(redisKey);
+
+  if (!raw) {
+    await client.zRem(createCredentialIndexKey(userId), credentialId);
+    return null;
+  }
+
+  const payload = encryptedPayloadSchema.parse(JSON.parse(raw));
+
+  if (payload.credentialId !== credentialId) {
+    await ensureSettledTasks([
+      client.del(redisKey),
+      client.zRem(createCredentialIndexKey(userId), credentialId),
+    ]);
+    return null;
+  }
+
+  return { payload, remainingSeconds: ttl };
+}
+
 export async function listStoredCredentials(
   userId: string,
   client: CredentialRedisClient = defaultRedisClient,
@@ -187,14 +227,20 @@ export async function listStoredCredentials(
       }
 
       if (ttl === -1) {
-        await ensureSettledTasks([client.del(redisKey), client.zRem(indexKey, credentialId)]);
+        await ensureSettledTasks([
+          client.del(redisKey),
+          client.zRem(indexKey, credentialId),
+        ]);
         return null;
       }
 
       const payload = encryptedPayloadSchema.parse(JSON.parse(raw));
 
       if (payload.credentialId !== credentialId) {
-        await ensureSettledTasks([client.del(redisKey), client.zRem(indexKey, credentialId)]);
+        await ensureSettledTasks([
+          client.del(redisKey),
+          client.zRem(indexKey, credentialId),
+        ]);
         return null;
       }
 

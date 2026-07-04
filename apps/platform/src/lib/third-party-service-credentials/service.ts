@@ -1,15 +1,18 @@
 import { BYOK_ERROR_CODE } from '@/lib/ai/byok/constants';
 import { ByokPublicError } from '@/lib/ai/byok/errors';
 import { writeByokAuditEvent } from '@/lib/ai/security/audit';
-import { encryptCredential } from './crypto';
+import { decryptCredential, encryptCredential } from './crypto';
+import type { EncryptedCredentialPayload } from './crypto';
 import {
   buildCredentialExpiry,
   createCredentialId,
   deleteStoredCredential,
+  getStoredCredential,
   listStoredCredentials,
   saveStoredCredential,
   type StoredCredentialStatus,
 } from './store';
+import { CREDENTIAL_STATUS } from './constants';
 import type { SaveCredentialInput } from './schemas';
 
 export type CredentialRequestMeta = IThirdPartyServiceCredentials.RequestMeta;
@@ -66,6 +69,93 @@ export async function listUserThirdPartyServiceCredentials(
   const listCredentials = dependencies.listStoredCredentials ?? listStoredCredentials;
 
   return { credentials: await listCredentials(userId) };
+}
+
+async function getDecryptedCredential(
+  userId: string,
+  credentialId: string,
+  meta: CredentialRequestMeta,
+  dependencies: CredentialServiceDependencies,
+): Promise<{
+  apiKey: string;
+  payload: EncryptedCredentialPayload;
+  remainingSeconds: number;
+}> {
+  const getCredential = dependencies.getStoredCredential ?? getStoredCredential;
+  const decrypt = dependencies.decryptCredential ?? decryptCredential;
+  const stored = await getCredential(userId, credentialId);
+
+  if (!stored || stored.payload.status !== CREDENTIAL_STATUS.ACTIVE) {
+    throw new ByokPublicError(
+      BYOK_ERROR_CODE.BYOK_KEY_UNAVAILABLE,
+      404,
+      '未找到有效的第三方服务 API Key，请先保存凭据。',
+    );
+  }
+
+  try {
+    return {
+      apiKey: await decrypt(stored.payload, {
+        credentialId,
+        serviceName: stored.payload.serviceName,
+        userId,
+      }),
+      payload: stored.payload,
+      remainingSeconds: stored.remainingSeconds,
+    };
+  } catch {
+    writeByokAuditEvent({
+      eventType: 'THIRD_PARTY_SERVICE_CREDENTIAL_DECRYPT_FAILED',
+      actorId: userId,
+      provider: stored.payload.serviceName,
+      requestId: meta.requestId,
+      ip: meta.ip,
+      result: 'failed',
+      reasonCode: 'DECRYPT_FAILED',
+    });
+    throw new ByokPublicError(
+      BYOK_ERROR_CODE.BYOK_KEY_UNAVAILABLE,
+      404,
+      '未找到有效的第三方服务 API Key，请先保存凭据。',
+    );
+  }
+}
+
+export async function getUserThirdPartyServiceApiKey(
+  userId: string,
+  serviceName: string,
+  meta: CredentialRequestMeta = {},
+  dependencies: CredentialServiceDependencies = {},
+): Promise<string> {
+  const listCredentials = dependencies.listStoredCredentials ?? listStoredCredentials;
+  const credentials = await listCredentials(userId);
+  const credential = credentials.find(
+    (item) =>
+      item.serviceName === serviceName &&
+      item.status === CREDENTIAL_STATUS.ACTIVE &&
+      item.remainingSeconds > 0,
+  );
+
+  if (!credential) {
+    throw new ByokPublicError(
+      BYOK_ERROR_CODE.BYOK_KEY_UNAVAILABLE,
+      404,
+      `未找到有效的 ${serviceName} API Key，请先保存凭据。`,
+    );
+  }
+
+  const { apiKey, payload } = await getDecryptedCredential(
+    userId,
+    credential.credentialId,
+    meta,
+    dependencies,
+  );
+
+  if (payload.serviceName !== serviceName) {
+    throw new ByokPublicError(BYOK_ERROR_CODE.BYOK_KEY_UNAVAILABLE, 404);
+  }
+
+  return apiKey;
 }
 
 export async function deleteUserThirdPartyServiceCredential(

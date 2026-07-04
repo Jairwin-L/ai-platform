@@ -1,9 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { App, Button, Empty, Progress, Select, Upload } from 'antd';
+import { App, Alert, Button, Empty, Progress, Select, Upload } from 'antd';
 import Image from 'next/image';
 import type { UploadProps } from 'antd';
+import {
+  getThirdPartyServiceCredentials,
+  type ThirdPartyServiceCredential,
+} from '@/api/modules/third-party-service-credentials';
 import { getFileLink } from '@/utils/link';
 import { fileTypeValid } from '@/utils/file';
 import { compressImage } from '@/utils/compress-image';
@@ -13,6 +17,8 @@ import styles from './page.module.scss';
 
 const { Dragger } = Upload;
 const MAX_UPLOAD_FILE_COUNT = 5;
+const TINYPNG_SERVICE_NAME = 'tinypng';
+const THIRD_PARTY_SERVICE_CREDENTIALS_PATH = '/account/setting/third-party-service';
 
 function getTodayPath(): string {
   const now = new Date();
@@ -27,13 +33,37 @@ function getFileObject(file: IAppPages.UploadListFile): File | null {
   return file.originFileObj instanceof File ? file.originFileObj : null;
 }
 
+function hasActiveTinyPngCredential(credentials: ThirdPartyServiceCredential[]): boolean {
+  return credentials.some(
+    (credential) =>
+      credential.serviceName === TINYPNG_SERVICE_NAME &&
+      credential.status === 'active' &&
+      credential.remainingSeconds > 0,
+  );
+}
+
 export default function Page() {
   const { message } = App.useApp();
   const [fileList, setFileList] = useState<IAppPages.UploadListFile[]>([]);
   const [compressStrategy, setCompressStrategy] = useState<CompressStrategy>('sharp');
+  const [tinypngConfigured, setTinypngConfigured] = useState(false);
+  const [credentialLoading, setCredentialLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const previewUrls = useRef(new Map<string, string>());
 
+  const compressOptions = useMemo<
+    Array<{ disabled?: boolean; label: string; value: CompressStrategy }>
+  >(
+    () => [
+      { label: 'Sharp 本地压缩', value: 'sharp' },
+      {
+        disabled: !tinypngConfigured,
+        label: 'TinyPNG 压缩',
+        value: 'tinify',
+      },
+    ],
+    [tinypngConfigured],
+  );
   const totalSize = useMemo(
     () => fileList.reduce((size, file) => size + (file.size || 0), 0),
     [fileList],
@@ -274,6 +304,42 @@ export default function Page() {
     });
   }
 
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadCredentials(): Promise<void> {
+      setCredentialLoading(true);
+
+      try {
+        const credentials = await getThirdPartyServiceCredentials();
+
+        if (!ignore) {
+          setTinypngConfigured(hasActiveTinyPngCredential(credentials));
+        }
+      } catch {
+        if (!ignore) {
+          setTinypngConfigured(false);
+        }
+      } finally {
+        if (!ignore) {
+          setCredentialLoading(false);
+        }
+      }
+    }
+
+    loadCredentials().catch(() => undefined);
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!credentialLoading && !tinypngConfigured && compressStrategy === 'tinify') {
+      setCompressStrategy('sharp');
+    }
+  }, [compressStrategy, credentialLoading, tinypngConfigured]);
+
   useEffect(
     () => () => {
       previewUrls.current.forEach((url) => URL.revokeObjectURL(url));
@@ -297,13 +363,23 @@ export default function Page() {
           <Select<CompressStrategy>
             value={compressStrategy}
             disabled={uploading}
-            options={[
-              { label: 'Sharp 本地压缩', value: 'sharp' },
-              { label: 'TinyPNG 压缩', value: 'tinify' },
-            ]}
+            loading={credentialLoading}
+            options={compressOptions}
             onChange={setCompressStrategy}
           />
         </label>
+        {!credentialLoading && !tinypngConfigured ? (
+          <Alert
+            action={
+              <Button href={THIRD_PARTY_SERVICE_CREDENTIALS_PATH} size="small" type="link">
+                去配置
+              </Button>
+            }
+            message="TinyPNG 未配置，暂不可选择。请先前往第三方服务凭据页面新增 tinypng API Key。"
+            showIcon
+            type="warning"
+          />
+        ) : null}
       </div>
 
       <Dragger {...uploadProps} className={styles.dragger}>

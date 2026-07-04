@@ -61,8 +61,10 @@ declare namespace IThirdPartyServiceCredentials {
 
   interface ServiceDependencies {
     createCredentialId?: typeof import('@/lib/third-party-service-credentials/store').createCredentialId;
+    decryptCredential?: typeof import('@/lib/third-party-service-credentials/crypto').decryptCredential;
     deleteStoredCredential?: typeof import('@/lib/third-party-service-credentials/store').deleteStoredCredential;
     encryptCredential?: typeof import('@/lib/third-party-service-credentials/crypto').encryptCredential;
+    getStoredCredential?: typeof import('@/lib/third-party-service-credentials/store').getStoredCredential;
     listStoredCredentials?: typeof import('@/lib/third-party-service-credentials/store').listStoredCredentials;
     saveStoredCredential?: typeof import('@/lib/third-party-service-credentials/store').saveStoredCredential;
     validateApiKey?: (apiKey: string) => boolean;

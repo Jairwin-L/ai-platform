@@ -115,7 +115,6 @@ Cloudflare Workers 部署使用 GitHub Environments：`development` 与 `product
 - `R2_SECRET_ACCESS_KEY`
 - `R2_ENDPOINT_URL`
 - `R2_BUCKET_NAME`
-- `TINYPNG_API_KEY`
 
 不要提交真实 `.env*`、密钥、Token、私钥或生产连接串。
 

@@ -60,3 +60,31 @@ export async function encryptCredential(
     version: CREDENTIAL_PAYLOAD_VERSION,
   };
 }
+
+export async function decryptCredential(
+  payload: EncryptedCredentialPayload,
+  context: CredentialAadContext,
+  keyProvider: EncryptionKeyProvider = envEncryptionKeyProvider,
+): Promise<string> {
+  if (
+    payload.algorithm !== CREDENTIAL_ENCRYPTION_ALGORITHM ||
+    payload.version !== CREDENTIAL_PAYLOAD_VERSION
+  ) {
+    throw new Error('第三方服务凭据密文格式无效');
+  }
+
+  const key = await keyProvider.getKeyByVersion(payload.keyVersion);
+  const decipher = crypto.createDecipheriv(
+    CREDENTIAL_ENCRYPTION_ALGORITHM,
+    key,
+    Buffer.from(payload.iv, 'base64'),
+  );
+
+  decipher.setAAD(createAad(context));
+  decipher.setAuthTag(Buffer.from(payload.authTag, 'base64'));
+
+  return Buffer.concat([
+    decipher.update(Buffer.from(payload.ciphertext, 'base64')),
+    decipher.final(),
+  ]).toString('utf8');
+}
