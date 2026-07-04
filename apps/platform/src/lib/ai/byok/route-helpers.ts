@@ -10,34 +10,13 @@ import {
   COMMON_ERROR,
   HTTP_STATUS_TO_ERROR_CODE,
   type ApiErrorResponse,
-  type ApiResponse,
 } from '@/lib/server';
 import { getAuthPayloadBySessionToken, getSessionCookieName } from '@/lib/server/auth-session';
 import { writeByokAuditEvent } from '@/lib/ai/security/audit';
 import { getRequestIp } from '@/lib/ai/security/request-security';
 
-function getByokResponseCode(status: number): number {
+function getByokResponseCode(status: number): IServer.ErrorCode {
   return HTTP_STATUS_TO_ERROR_CODE[status] ?? COMMON_ERROR.REQUEST_ERROR.code;
-}
-
-export function createByokJsonResponse<T>(
-  data: T,
-  status = 200,
-  message = '操作成功',
-): NextResponse<ApiResponse<T>> {
-  return NextResponse.json(
-    {
-      code: status,
-      success: true,
-      message,
-      data,
-      timestamp: Date.now(),
-    },
-    {
-      status,
-      headers: BYOK_SAFE_RESPONSE_HEADERS,
-    },
-  );
 }
 
 function createByokErrorHeaders(requestId: string): HeadersInit {

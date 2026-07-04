@@ -1,9 +1,5 @@
 import type { NextRequest } from 'next/server';
-import {
-  createByokErrorResponse,
-  createByokJsonResponse,
-  requireByokUser,
-} from '@/lib/ai/byok/route-helpers';
+import { createByokErrorResponse, requireByokUser } from '@/lib/ai/byok/route-helpers';
 import { assertRateLimit } from '@/lib/ai/security/rate-limit';
 import {
   assertByokRequestSecurity,
@@ -17,9 +13,10 @@ import {
   saveUserThirdPartyServiceCredential,
 } from '@/lib/third-party-service-credentials/service';
 import { ByokPublicError } from '@/lib/ai/byok/errors';
-import { BYOK_ERROR_CODE } from '@/lib/ai/byok/constants';
+import { BYOK_ERROR_CODE, BYOK_SUCCESS_RESPONSE_OPTIONS } from '@/lib/ai/byok/constants';
 import { getEnabledThirdPartyServiceOptions } from '@/lib/third-party-service-options/options';
 import { getStoredThirdPartyServiceOptions } from '@/lib/third-party-service-options/store';
+import { createSuccessResponse } from '@/lib/server';
 
 export const runtime = 'nodejs';
 
@@ -31,7 +28,12 @@ export async function GET(request: NextRequest) {
     const userId = await requireByokUser(request, requestId);
     const result = await listUserThirdPartyServiceCredentials(userId);
 
-    return createByokJsonResponse(result.credentials);
+    return createSuccessResponse(
+      result.credentials,
+      '操作成功',
+      200,
+      BYOK_SUCCESS_RESPONSE_OPTIONS,
+    );
   } catch (error) {
     return createByokErrorResponse(error, requestId);
   }
@@ -66,7 +68,7 @@ export async function POST(request: NextRequest) {
 
     const result = await saveUserThirdPartyServiceCredential(userId, input, { requestId, ip });
 
-    return createByokJsonResponse(result);
+    return createSuccessResponse(result, '操作成功', 200, BYOK_SUCCESS_RESPONSE_OPTIONS);
   } catch (error) {
     return createByokErrorResponse(error, requestId);
   }

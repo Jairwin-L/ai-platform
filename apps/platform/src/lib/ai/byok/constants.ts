@@ -70,6 +70,10 @@ export const BYOK_SAFE_RESPONSE_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
 } as const;
 
+export const BYOK_SUCCESS_RESPONSE_OPTIONS = {
+  headers: BYOK_SAFE_RESPONSE_HEADERS,
+} as const;
+
 export const OPENAI_CHAT_COMPLETIONS_URL = 'https://api.openai.com/v1/chat/completions';
 export const OPENAI_ALLOWED_MODELS = ['gpt-4o-mini', 'gpt-4.1-mini'] as const;
 

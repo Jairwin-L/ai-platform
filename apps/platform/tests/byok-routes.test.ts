@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import { AUTH_ERROR, COMMON_ERROR } from '@/constants/error-codes';
-import { BYOK_ERROR_CODE } from '@/lib/ai/byok/constants';
-import { createByokJsonResponse } from '@/lib/ai/byok/route-helpers';
+import { BYOK_ERROR_CODE, BYOK_SUCCESS_RESPONSE_OPTIONS } from '@/lib/ai/byok/constants';
+import { createSuccessResponse } from '@/lib/server';
 import {
   GET as listAiCredentials,
   POST as saveAiCredential,
@@ -124,8 +124,13 @@ describe('BYOK route handlers', () => {
     expect(response.headers.get('Cache-Control')).toBe('no-store, max-age=0');
   });
 
-  it('creates BYOK JSON responses without wildcard CORS', async () => {
-    const response = createByokJsonResponse([] as unknown[]);
+  it('creates BYOK success responses without wildcard CORS', async () => {
+    const response = createSuccessResponse(
+      [] as unknown[],
+      '操作成功',
+      200,
+      BYOK_SUCCESS_RESPONSE_OPTIONS,
+    );
     const body = (await response.json()) as IServer.ApiResponse<unknown[]>;
 
     expect(body).toMatchObject({

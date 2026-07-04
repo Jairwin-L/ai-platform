@@ -27,7 +27,7 @@ export function createErrorResponse(
     code: errorType.code,
     success: false,
     message: message || errorType.message,
-    errorCode: errorType.code.toString(),
+    errorCode: errorType.code,
     errorDetail: process.env.NODE_ENV === 'development' ? errorDetail : undefined,
     data: null,
     timestamp: Date.now(),
@@ -42,7 +42,7 @@ export function createHttpErrorResponse(
   errorDetail?: unknown,
 ): NextResponse<ApiErrorResponse> {
   const code = HTTP_STATUS_TO_ERROR_CODE[status] ?? COMMON_ERROR.UNKNOWN.code;
-  const found = Object.values(ERROR_CODES).find((err) => err.code === code);
+  const found = ERROR_CODES[code];
   const errorType: ErrorType = found ?? COMMON_ERROR.UNKNOWN;
 
   return createErrorResponse(errorType, message, errorDetail, status);
@@ -59,8 +59,8 @@ export function createErrorResponseFromException(error: unknown): NextResponse<A
     return createHttpErrorResponse(503, err.message, error);
   }
 
-  if (typeof err.code === 'number') {
-    const found = Object.values(ERROR_CODES).find((e) => e.code === err.code);
+  if (typeof err.code === 'string') {
+    const found = ERROR_CODES[err.code];
 
     if (found) {
       return createErrorResponse(

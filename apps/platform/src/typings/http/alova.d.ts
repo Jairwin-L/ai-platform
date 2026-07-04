@@ -11,7 +11,7 @@ declare namespace IAlovaHttp {
   }
 
   interface ApiResponse<T = unknown> {
-    code?: number;
+    code?: IServer.ResponseCode;
     data?: T;
     errorCode?: string;
     success?: boolean;

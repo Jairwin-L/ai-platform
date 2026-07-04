@@ -8,15 +8,12 @@ import {
 } from '@/lib/ai/security/request-security';
 import { listUserApiCredentials, saveUserApiCredential } from '@/lib/ai/byok/service';
 import { saveApiCredentialSchema } from '@/lib/ai/byok/schemas';
-import { BYOK_ERROR_CODE } from '@/lib/ai/byok/constants';
+import { BYOK_ERROR_CODE, BYOK_SUCCESS_RESPONSE_OPTIONS } from '@/lib/ai/byok/constants';
 import { ByokPublicError } from '@/lib/ai/byok/errors';
-import {
-  createByokErrorResponse,
-  createByokJsonResponse,
-  requireByokUser,
-} from '@/lib/ai/byok/route-helpers';
+import { createByokErrorResponse, requireByokUser } from '@/lib/ai/byok/route-helpers';
 import { getEnabledAiProviderOptions } from '@/lib/ai/byok/provider-options';
 import { getStoredAiProviderOptions } from '@/lib/ai/byok/provider-options-store';
+import { createSuccessResponse } from '@/lib/server';
 
 export const runtime = 'nodejs';
 
@@ -28,7 +25,12 @@ export async function GET(request: NextRequest) {
     const userId = await requireByokUser(request, requestId);
     const result = await listUserApiCredentials(userId);
 
-    return createByokJsonResponse(result.credentials);
+    return createSuccessResponse(
+      result.credentials,
+      '操作成功',
+      200,
+      BYOK_SUCCESS_RESPONSE_OPTIONS,
+    );
   } catch (error) {
     return createByokErrorResponse(error, requestId);
   }
@@ -60,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     const result = await saveUserApiCredential(userId, input, { requestId, ip });
 
-    return createByokJsonResponse(result);
+    return createSuccessResponse(result, '操作成功', 200, BYOK_SUCCESS_RESPONSE_OPTIONS);
   } catch (error) {
     return createByokErrorResponse(error, requestId);
   }

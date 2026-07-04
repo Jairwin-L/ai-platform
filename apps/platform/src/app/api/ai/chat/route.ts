@@ -8,12 +8,9 @@ import {
 } from '@/lib/ai/security/request-security';
 import { chatRequestSchema } from '@/lib/ai/byok/schemas';
 import { createByokChatCompletion } from '@/lib/ai/byok/service';
-import {
-  createByokErrorResponse,
-  createByokJsonResponse,
-  requireByokUser,
-} from '@/lib/ai/byok/route-helpers';
-import { BYOK_CHAT_LIMITS } from '@/lib/ai/byok/constants';
+import { createByokErrorResponse, requireByokUser } from '@/lib/ai/byok/route-helpers';
+import { BYOK_CHAT_LIMITS, BYOK_SUCCESS_RESPONSE_OPTIONS } from '@/lib/ai/byok/constants';
+import { createSuccessResponse } from '@/lib/server';
 
 export const runtime = 'nodejs';
 
@@ -56,7 +53,7 @@ export async function POST(request: NextRequest) {
       () => createByokChatCompletion(userId, input, { requestId, ip }),
     );
 
-    return createByokJsonResponse(result);
+    return createSuccessResponse(result, '操作成功', 200, BYOK_SUCCESS_RESPONSE_OPTIONS);
   } catch (error) {
     return createByokErrorResponse(error, requestId);
   }

@@ -21,10 +21,10 @@ export const openApiDefinition = {
         type: 'object',
         required: ['code', 'success', 'message', 'errorCode', 'data', 'timestamp'],
         properties: {
-          code: { type: 'integer', example: 10004 },
+          code: { type: 'string', example: 'COMMON_VALIDATION_ERROR' },
           success: { type: 'boolean', example: false },
           message: { type: 'string', example: '数据校验失败' },
-          errorCode: { type: 'string', example: '10004' },
+          errorCode: { type: 'string', example: 'COMMON_VALIDATION_ERROR' },
           errorDetail: { nullable: true },
           data: { nullable: true, example: null },
           timestamp: { type: 'integer', format: 'int64', example: 1735689600000 },

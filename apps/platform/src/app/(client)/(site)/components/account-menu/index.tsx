@@ -86,8 +86,15 @@ export function AccountMenu() {
     { key: 'profile', label: '我的资料' },
     { key: 'ai-settings', label: 'AI 密钥' },
     { key: 'third-party-service', label: '第三方服务凭据' },
+    { type: 'divider' },
     ...(hasRole('admin') ? [{ key: 'admin', label: '管理系统' }] : []),
-    { key: 'sign-out', disabled: signingOut, label: signingOut ? '退出中...' : '退出登录' },
+    { type: 'divider' },
+    {
+      key: 'sign-out',
+      disabled: signingOut,
+      danger: true,
+      label: signingOut ? '退出中...' : '退出登录',
+    },
   ];
 
   if (!isReady) {

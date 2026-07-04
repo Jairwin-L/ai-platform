@@ -22,8 +22,8 @@
         "required": ["code", "success", "message", "errorCode", "data", "timestamp"],
         "properties": {
           "code": {
-            "type": "integer",
-            "example": 10004
+            "type": "string",
+            "example": "COMMON_VALIDATION_ERROR"
           },
           "success": {
             "type": "boolean",
@@ -35,7 +35,7 @@
           },
           "errorCode": {
             "type": "string",
-            "example": "10004"
+            "example": "COMMON_VALIDATION_ERROR"
           },
           "errorDetail": {
             "nullable": true

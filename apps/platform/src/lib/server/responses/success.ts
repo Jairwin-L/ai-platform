@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { ApiResponse, PaginatedResponse } from '../types';
 
+interface SuccessResponseOptions {
+  headers?: HeadersInit;
+}
+
 export const JSON_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
@@ -27,6 +31,7 @@ export function createSuccessResponse<T>(
   data: T,
   message = '操作成功',
   code = 200,
+  options: SuccessResponseOptions = {},
 ): NextResponse<ApiResponse<T>> {
   const body: ApiResponse<T> = {
     code,
@@ -36,7 +41,10 @@ export function createSuccessResponse<T>(
     timestamp: Date.now(),
   };
 
-  return NextResponse.json(serialize(body), { status: code, headers: JSON_HEADERS });
+  return NextResponse.json(serialize(body), {
+    status: code,
+    headers: options.headers ?? JSON_HEADERS,
+  });
 }
 
 export function createPaginatedResponse<T>(

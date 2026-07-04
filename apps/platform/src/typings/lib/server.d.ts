@@ -33,13 +33,16 @@ declare namespace IServer {
     context: ApiContext,
   ) => Promise<import('next/server').NextResponse>;
 
+  type ErrorCode = string;
+  type ResponseCode = ErrorCode | number;
+
   interface ErrorType {
-    code: number;
+    code: ErrorCode;
     message: string;
   }
 
   interface ApiResponse<T = unknown> {
-    code: number;
+    code: ResponseCode;
     success: boolean;
     message: string;
     data?: T | null;
@@ -57,6 +60,7 @@ declare namespace IServer {
     }> {}
 
   interface ApiErrorResponse extends ApiResponse<null> {
+    code: ErrorCode;
     errorCode: string;
     errorDetail?: unknown;
   }
