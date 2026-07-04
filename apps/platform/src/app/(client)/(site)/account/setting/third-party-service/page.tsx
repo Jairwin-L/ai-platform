@@ -140,11 +140,16 @@ export default function ThirdPartyServiceCredentialsPage() {
     loadData().catch(() => undefined);
   }, [loadData]);
 
+  const usedServiceNames = new Set(credentials.map((credential) => credential.serviceName));
+  const availableServiceOptions = serviceOptions.filter(
+    (option) => !usedServiceNames.has(option.value),
+  );
+
   function onCreateClick(): void {
     setOverwriteCredential(null);
     form.setFieldsValue({
       ...initialValues,
-      serviceName: serviceOptions[0]?.value ?? initialValues.serviceName,
+      serviceName: availableServiceOptions[0]?.value ?? initialValues.serviceName,
     });
     setModalOpen(true);
   }
@@ -220,7 +225,7 @@ export default function ThirdPartyServiceCredentialsPage() {
 
   const selectedServiceOption = getServiceOption(
     serviceOptions,
-    selectedService ?? serviceOptions[0]?.value ?? initialValues.serviceName,
+    selectedService ?? availableServiceOptions[0]?.value ?? initialValues.serviceName,
   );
   const isOverwriteMode = Boolean(overwriteCredential);
   const overwriteServiceOption = overwriteCredential
@@ -331,7 +336,7 @@ export default function ThirdPartyServiceCredentialsPage() {
             <p>保存和维护当前账号可用的第三方服务 API Key，列表仅展示脱敏信息。</p>
           </div>
           <Button
-            disabled={!serviceOptions.length}
+            disabled={!availableServiceOptions.length}
             icon={<PlusOutlined />}
             type="primary"
             onClick={onCreateClick}
@@ -383,7 +388,7 @@ export default function ThirdPartyServiceCredentialsPage() {
           form={form}
           initialValues={{
             ...initialValues,
-            serviceName: serviceOptions[0]?.value ?? initialValues.serviceName,
+            serviceName: availableServiceOptions[0]?.value ?? initialValues.serviceName,
           }}
           layout="vertical"
           preserve={false}
@@ -412,6 +417,7 @@ export default function ThirdPartyServiceCredentialsPage() {
             >
               <Select
                 options={serviceOptions.map((option) => ({
+                  disabled: usedServiceNames.has(option.value),
                   label: option.label,
                   value: option.value,
                 }))}

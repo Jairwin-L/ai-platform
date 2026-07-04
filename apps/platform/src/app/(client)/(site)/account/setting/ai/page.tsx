@@ -140,11 +140,16 @@ export default function AiSettingsPage() {
     loadData().catch(() => undefined);
   }, [loadData]);
 
+  const usedProviderValues = new Set(credentials.map((credential) => credential.provider));
+  const availableProviderOptions = providerOptions.filter(
+    (option) => !usedProviderValues.has(option.value),
+  );
+
   function onCreateClick(): void {
     setOverwriteCredential(null);
     form.setFieldsValue({
       ...initialValues,
-      provider: providerOptions[0]?.value ?? initialValues.provider,
+      provider: availableProviderOptions[0]?.value ?? initialValues.provider,
     });
     setModalOpen(true);
   }
@@ -219,7 +224,7 @@ export default function AiSettingsPage() {
 
   const selectedProviderOption = getProviderOption(
     providerOptions,
-    selectedProvider ?? providerOptions[0]?.value ?? initialValues.provider,
+    selectedProvider ?? availableProviderOptions[0]?.value ?? initialValues.provider,
   );
   const isOverwriteMode = Boolean(overwriteCredential);
   const overwriteProviderOption = overwriteCredential
@@ -329,7 +334,7 @@ export default function AiSettingsPage() {
             <p>保存和维护当前账号可用的 AI Provider 密钥，列表仅展示脱敏信息。</p>
           </div>
           <Button
-            disabled={!providerOptions.length}
+            disabled={!availableProviderOptions.length}
             icon={<PlusOutlined />}
             type="primary"
             onClick={onCreateClick}
@@ -381,7 +386,7 @@ export default function AiSettingsPage() {
           form={form}
           initialValues={{
             ...initialValues,
-            provider: providerOptions[0]?.value ?? initialValues.provider,
+            provider: availableProviderOptions[0]?.value ?? initialValues.provider,
           }}
           layout="vertical"
           preserve={false}
@@ -406,6 +411,7 @@ export default function AiSettingsPage() {
             <Form.Item label="Provider" name="provider" rules={[{ required: true }]}>
               <Select
                 options={providerOptions.map((option) => ({
+                  disabled: usedProviderValues.has(option.value),
                   label: option.label,
                   value: option.value,
                 }))}

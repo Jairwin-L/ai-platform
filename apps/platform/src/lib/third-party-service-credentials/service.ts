@@ -31,11 +31,22 @@ export async function saveUserThirdPartyServiceCredential(
 ): Promise<SavedCredentialResult> {
   const createId = dependencies.createCredentialId ?? createCredentialId;
   const encrypt = dependencies.encryptCredential ?? encryptCredential;
+  const listCredentials = dependencies.listStoredCredentials ?? listStoredCredentials;
   const save = dependencies.saveStoredCredential ?? saveStoredCredential;
   const validateKey = dependencies.validateApiKey ?? validateApiKey;
 
   if (!validateKey(input.apiKey)) {
     throw new ByokPublicError(BYOK_ERROR_CODE.INVALID_REQUEST, 400);
+  }
+
+  const existingCredentials = await listCredentials(userId);
+
+  if (existingCredentials.some((credential) => credential.serviceName === input.serviceName)) {
+    throw new ByokPublicError(
+      BYOK_ERROR_CODE.INVALID_REQUEST,
+      400,
+      '该第三方服务已保存凭据，请使用覆盖操作更新。',
+    );
   }
 
   const credentialId = createId();

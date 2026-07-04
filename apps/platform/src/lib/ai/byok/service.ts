@@ -40,11 +40,22 @@ export async function saveUserApiCredential(
 ): Promise<SavedCredentialResult> {
   const createId = dependencies.createCredentialId ?? createCredentialId;
   const encrypt = dependencies.encryptApiKey ?? encryptApiKey;
+  const listCredentials = dependencies.listStoredApiCredentials ?? listStoredApiCredentials;
   const save = dependencies.saveStoredApiCredential ?? saveStoredApiCredential;
   const validateKey = dependencies.validateProviderApiKey ?? validateProviderApiKey;
 
   if (!validateKey(input.provider, input.apiKey)) {
     throw new ByokPublicError(BYOK_ERROR_CODE.INVALID_REQUEST, 400);
+  }
+
+  const existingCredentials = await listCredentials(userId);
+
+  if (existingCredentials.some((credential) => credential.provider === input.provider)) {
+    throw new ByokPublicError(
+      BYOK_ERROR_CODE.INVALID_REQUEST,
+      400,
+      '该 Provider 已保存密钥，请使用覆盖操作更新。',
+    );
   }
 
   const credentialId = createId();
