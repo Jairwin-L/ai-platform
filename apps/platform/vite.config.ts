@@ -8,6 +8,7 @@ export default defineConfig({
   fmt: fmtConfig,
   resolve: {
     alias: {
+      '@/generated': fileURLToPath(new URL('./generated', import.meta.url)),
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
@@ -18,7 +19,7 @@ export default defineConfig({
   run: {
     tasks: {
       verify: {
-        command: ['vp check', 'vp test'],
+        command: ['vp run prisma:generate', 'vp check', 'vp test'],
         cache: false,
       },
     },
