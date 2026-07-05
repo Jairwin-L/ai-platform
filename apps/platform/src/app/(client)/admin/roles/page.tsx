@@ -12,7 +12,7 @@ import { Button, Input, Popconfirm, Space, Table, Tag, type TableColumnsType } f
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { deleteRole, getRoles, type AdminRole } from '@/api/modules/admin';
-import styles from '../resource-page.module.scss';
+import styles from './page.module.scss';
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat('zh-CN', {

@@ -8,8 +8,7 @@ import {
   updateAdminThirdPartyServiceOptions,
   type ThirdPartyServiceOption,
 } from '@/api/modules/admin';
-import styles from '../../resource-page.module.scss';
-import pageStyles from './page.module.scss';
+import styles from './page.module.scss';
 
 const serviceColorOptions = [
   'blue',
@@ -142,7 +141,7 @@ export default function ThirdPartyServiceSettingsPage() {
           </p>
         </div>
       </section>
-      <Card className={pageStyles.card} loading={loading} variant="borderless">
+      <Card className={styles.card} loading={loading} variant="borderless">
         <Form form={form} initialValues={initialValues} layout="vertical" onFinish={onFinish}>
           <Form.List name="thirdPartyServiceOptions">
             {(fields, { add, remove }) => {
@@ -152,21 +151,21 @@ export default function ThirdPartyServiceSettingsPage() {
 
               return (
                 <>
-                  <div className={pageStyles['service-toolbar']}>
+                  <div className={styles['service-toolbar']}>
                     <span>已配置 {fields.length} 个第三方服务</span>
                     <Button icon={<PlusOutlined />} type="dashed" onClick={onAddService}>
                       新增服务
                     </Button>
                   </div>
-                  <div className={pageStyles['service-list']}>
+                  <div className={styles['service-list']}>
                     {fields.map((field) => {
                       const currentOption = serviceOptions[field.name];
                       const currentValue = currentOption?.value;
 
                       return (
-                        <div className={pageStyles['service-item']} key={field.key}>
-                          <div className={pageStyles['service-header']}>
-                            <div className={pageStyles['service-actions']}>
+                        <div className={styles['service-item']} key={field.key}>
+                          <div className={styles['service-header']}>
+                            <div className={styles['service-actions']}>
                               <Form.Item
                                 name={[field.name, 'enabled']}
                                 valuePropName="checked"
@@ -183,7 +182,7 @@ export default function ThirdPartyServiceSettingsPage() {
                               />
                             </div>
                           </div>
-                          <div className={pageStyles['service-controls']}>
+                          <div className={styles['service-controls']}>
                             <Form.Item
                               label="服务标识"
                               name={[field.name, 'value']}
@@ -272,7 +271,7 @@ export default function ThirdPartyServiceSettingsPage() {
               );
             }}
           </Form.List>
-          <div className={pageStyles.footer}>
+          <div className={styles.footer}>
             <Button
               htmlType="button"
               onClick={async () => {

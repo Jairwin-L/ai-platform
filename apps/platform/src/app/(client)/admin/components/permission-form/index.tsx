@@ -13,7 +13,7 @@ import {
   type PermissionPayload,
   type PermissionType,
 } from '@/api/modules/admin';
-import styles from './admin-form-page.module.scss';
+import styles from './index.module.scss';
 
 const typeLabel: Record<PermissionType, string> = {
   system: '系统',
@@ -30,7 +30,7 @@ function flattenPermissions(permissions: AdminPermission[]): AdminPermission[] {
   ]);
 }
 
-export function PermissionFormPage({ permissionId, parentId }: IComponent.PermissionFormPageProps) {
+export function PermissionForm({ permissionId, parentId }: IComponent.PermissionFormProps) {
   const router = useRouter();
   const [form] = Form.useForm<IAppForms.PermissionFormValues>();
   const [permissions, setPermissions] = useState<AdminPermission[]>([]);

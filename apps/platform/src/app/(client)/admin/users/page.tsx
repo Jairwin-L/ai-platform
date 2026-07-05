@@ -27,7 +27,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { getRoles, type AdminRole } from '@/api/modules/admin';
 import { getUsers, updateUser, type UserListItem, type UserStatus } from '@/api/modules/users';
-import styles from '../resource-page.module.scss';
+import styles from './page.module.scss';
 
 const pageSize = 10;
 const statusOptions: Array<{ color: string; label: string; value: UserStatus }> = [

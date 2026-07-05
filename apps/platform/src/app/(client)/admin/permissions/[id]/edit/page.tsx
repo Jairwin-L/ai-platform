@@ -1,10 +1,10 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { PermissionFormPage } from '@/components/admin/permission-form-page';
+import { PermissionForm } from '@/app/(client)/admin/components/permission-form';
 
 export default function EditPermissionPage() {
   const params = useParams<{ id: string }>();
 
-  return <PermissionFormPage permissionId={params.id} />;
+  return <PermissionForm permissionId={params.id} />;
 }

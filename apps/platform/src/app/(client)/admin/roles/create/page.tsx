@@ -1,7 +1,7 @@
 'use client';
 
-import { RoleFormPage } from '@/components/admin/role-form-page';
+import { RoleForm } from '@/app/(client)/admin/components/role-form';
 
 export default function CreateRolePage() {
-  return <RoleFormPage />;
+  return <RoleForm />;
 }

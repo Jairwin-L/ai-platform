@@ -17,7 +17,7 @@ import {
   type AdminPermission,
   type PermissionType,
 } from '@/api/modules/admin';
-import styles from '../resource-page.module.scss';
+import styles from './page.module.scss';
 
 const typeColor: Record<PermissionType, string> = {
   system: 'purple',

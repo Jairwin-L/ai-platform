@@ -1,10 +1,10 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { PermissionFormPage } from '@/components/admin/permission-form-page';
+import { PermissionForm } from '@/app/(client)/admin/components/permission-form';
 
 export default function CreatePermissionPage() {
   const searchParams = useSearchParams();
 
-  return <PermissionFormPage parentId={searchParams.get('parentId') ?? undefined} />;
+  return <PermissionForm parentId={searchParams.get('parentId') ?? undefined} />;
 }

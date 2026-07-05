@@ -1,10 +1,10 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { RoleFormPage } from '@/components/admin/role-form-page';
+import { RoleForm } from '@/app/(client)/admin/components/role-form';
 
 export default function EditRolePage() {
   const params = useParams<{ id: string }>();
 
-  return <RoleFormPage roleId={params.id} />;
+  return <RoleForm roleId={params.id} />;
 }

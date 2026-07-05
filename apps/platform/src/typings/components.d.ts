@@ -10,12 +10,12 @@ declare namespace IComponent {
     children: React.ReactNode;
   }
 
-  interface PermissionFormPageProps {
+  interface PermissionFormProps {
     permissionId?: string;
     parentId?: string;
   }
 
-  interface RoleFormPageProps {
+  interface RoleFormProps {
     roleId?: string;
   }
 

@@ -84,26 +84,6 @@
   margin-bottom: 16px;
 }
 
-.card {
-  max-width: 860px;
-  border: 1px solid #e7ebf1;
-  border-radius: 14px;
-  box-shadow: 0 8px 24px rgb(16 24 40 / 4%);
-}
-
-.section {
-  max-width: 560px;
-  padding: 18px 4px 8px;
-}
-
-.footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding-top: 20px;
-  border-top: 1px solid #edf0f4;
-}
-
 @media (width <= 640px) {
   .heading {
     display: block;
@@ -125,13 +105,5 @@
 
   .search {
     width: 100%;
-  }
-
-  .footer {
-    justify-content: stretch;
-  }
-
-  .footer :global(.ant-btn) {
-    flex: 1;
   }
 }

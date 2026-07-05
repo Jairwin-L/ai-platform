@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button, Input, Popconfirm, Space, Table, Tag, Typography } from 'antd';
 import type { TableProps } from 'antd';
 import { type Article, deleteArticle, listArticles } from '@/api/modules/articles';
-import styles from './articles.module.scss';
+import styles from './index.module.scss';
 
 const { Title, Text } = Typography;
 

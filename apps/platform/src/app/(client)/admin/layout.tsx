@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { AdminShell } from '@/components/admin/admin-shell';
+import { AdminShell } from '@/app/(client)/admin/components/admin-shell';
 import { getAuthUserBySessionToken, getSessionCookieName } from '@/lib/server/auth-session';
 
 export default async function AdminLayout({ children }: IComponent.ChildrenProps) {

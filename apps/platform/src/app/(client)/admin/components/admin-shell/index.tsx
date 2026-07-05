@@ -12,7 +12,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { APP_BLACK_LOGO, APP_NAME } from '@/constants';
 import { usePermission } from '@/hooks/use-permission';
-import styles from './admin-shell.module.scss';
+import styles from './index.module.scss';
 import { APP_WHITE_LOGO } from '@/constants/app';
 
 const menuItems: IComponent.AdminMenuItem[] = [

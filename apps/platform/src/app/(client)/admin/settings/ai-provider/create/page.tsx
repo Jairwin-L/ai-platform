@@ -1,8 +1,8 @@
 'use client';
 
-import { AiProviderFormPage } from '@/components/admin/ai-provider-form-page';
+import { AiProviderForm } from '@/app/(client)/admin/components/ai-provider-form';
 import styles from './page.module.scss';
 
 export default function CreateAiProviderPage() {
-  return <AiProviderFormPage styles={styles} />;
+  return <AiProviderForm styles={styles} />;
 }

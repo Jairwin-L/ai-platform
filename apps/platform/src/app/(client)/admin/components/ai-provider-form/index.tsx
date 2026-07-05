@@ -46,7 +46,7 @@ const providerProtocolOptions: Array<{ label: string; value: IByok.AiProviderPro
 const providerValuePatternMessage =
   'Provider 标识只能包含小写字母、数字、下划线和连字符，且必须以小写字母开头';
 
-type AiProviderFormPageStyles = Record<string, string>;
+type AiProviderFormStyles = Record<string, string>;
 
 function isHttpsUrl(value: string): boolean {
   try {
@@ -73,12 +73,12 @@ function getProviderPayload(values: IAppForms.ProviderOptionValues): AiProviderO
   };
 }
 
-export function AiProviderFormPage({
+export function AiProviderForm({
   providerValue,
   styles,
 }: {
   providerValue?: string;
-  styles: AiProviderFormPageStyles;
+  styles: AiProviderFormStyles;
 }) {
   const router = useRouter();
   const [form] = Form.useForm<IAppForms.ProviderOptionValues>();

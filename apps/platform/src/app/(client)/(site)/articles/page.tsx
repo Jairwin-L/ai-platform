@@ -1,5 +1,5 @@
 import { articleQuerySchema } from '@/lib/article-schema';
-import ArticlesClient from './articles';
+import ArticlesClient from './components/articles';
 import { fetchArticleList } from './utils/article';
 
 function getSearchValue(value: string | string[] | undefined) {

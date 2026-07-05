@@ -9,8 +9,7 @@ import {
 import { Button, Card, Divider, Form, Input, Select, Switch, Tabs } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
 import { getSystemSettings, updateSystemSettings, type SystemSettings } from '@/api/modules/admin';
-import styles from '../resource-page.module.scss';
-import settingsStyles from './page.module.scss';
+import styles from './page.module.scss';
 
 const initialValues: IAppForms.SettingsValues = {
   displayName: 'Next.js Starter Kit',
@@ -79,7 +78,7 @@ export default function SystemSettingsPage() {
           <p>管理可公开维护的展示与访问策略，不包含任何密钥、环境变量或部署配置。</p>
         </div>
       </section>
-      <Card className={settingsStyles.card} loading={loading} variant="borderless">
+      <Card className={styles.card} loading={loading} variant="borderless">
         <Form form={form} initialValues={initialValues} layout="vertical" onFinish={onFinish}>
           <Tabs
             items={[
@@ -91,7 +90,7 @@ export default function SystemSettingsPage() {
                   </>
                 ),
                 children: (
-                  <div className={settingsStyles.section}>
+                  <div className={styles.section}>
                     <Form.Item
                       label="站点显示名称"
                       name="displayName"
@@ -125,7 +124,7 @@ export default function SystemSettingsPage() {
                   </>
                 ),
                 children: (
-                  <div className={settingsStyles.section}>
+                  <div className={styles.section}>
                     <Form.Item
                       label="允许新用户注册"
                       name="allowRegistration"
@@ -163,7 +162,7 @@ export default function SystemSettingsPage() {
               },
             ]}
           />
-          <div className={settingsStyles.footer}>
+          <div className={styles.footer}>
             <Button
               htmlType="button"
               onClick={async () => {

@@ -12,7 +12,7 @@ import {
   type AdminPermission,
   type RolePayload,
 } from '@/api/modules/admin';
-import styles from './admin-form-page.module.scss';
+import styles from './index.module.scss';
 
 const defaultRoleValues: IAppForms.RoleFormValues = {
   description: '',
@@ -29,7 +29,7 @@ function getPermissionTree(nodes: AdminPermission[]): IComponent.PermissionTreeN
   }));
 }
 
-export function RoleFormPage({ roleId }: IComponent.RoleFormPageProps) {
+export function RoleForm({ roleId }: IComponent.RoleFormProps) {
   const router = useRouter();
   const [form] = Form.useForm<IAppForms.RoleFormValues>();
   const [permissionTree, setPermissionTree] = useState<IComponent.PermissionTreeNode[]>([]);

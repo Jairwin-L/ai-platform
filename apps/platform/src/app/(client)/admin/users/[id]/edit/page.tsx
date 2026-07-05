@@ -12,7 +12,7 @@ import {
   type UserProfile,
   type UserStatus,
 } from '@/api/modules/users';
-import styles from '@/components/admin/admin-form-page.module.scss';
+import styles from './page.module.scss';
 
 const statusOptions: Array<{ label: string; value: UserStatus }> = [
   { label: '正常', value: 'active' },

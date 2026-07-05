@@ -12,7 +12,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { getUserProfileById, type UserProfile } from '@/api/modules/users';
-import styles from '../../resource-page.module.scss';
+import styles from './page.module.scss';
 
 const statusLabels: Record<string, { color: string; label: string }> = {
   active: { color: 'green', label: '正常' },
