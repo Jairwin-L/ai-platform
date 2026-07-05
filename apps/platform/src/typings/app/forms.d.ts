@@ -29,6 +29,8 @@ declare namespace IAppForms {
     aiProviderOptions: IApiAdmin.AiProviderOption[];
   }
 
+  type ProviderOptionValues = IApiAdmin.AiProviderOption;
+
   interface ThirdPartyServiceOptionsValues {
     thirdPartyServiceOptions: IApiAdmin.ThirdPartyServiceOption[];
   }

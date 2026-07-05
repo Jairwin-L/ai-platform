@@ -81,6 +81,27 @@ export async function getAdminAiProviderOptions(): Promise<AiProviderOption[]> {
   return alovaGet<AiProviderOption[]>('/admin/ai-providers');
 }
 
+export async function getAdminAiProviderOption(value: string): Promise<AiProviderOption> {
+  return alovaGet<AiProviderOption>(`/admin/ai-providers/${encodeURIComponent(value)}`);
+}
+
+export async function createAdminAiProviderOption(
+  payload: AiProviderOption,
+): Promise<AiProviderOption> {
+  return alovaPost<AiProviderOption>('/admin/ai-providers', payload);
+}
+
+export async function updateAdminAiProviderOption(
+  value: string,
+  payload: AiProviderOption,
+): Promise<AiProviderOption> {
+  return alovaPut<AiProviderOption>(`/admin/ai-providers/${encodeURIComponent(value)}`, payload);
+}
+
+export async function deleteAdminAiProviderOption(value: string): Promise<void> {
+  await alovaDelete<{ value: string }>(`/admin/ai-providers/${encodeURIComponent(value)}`);
+}
+
 export async function updateAdminAiProviderOptions(
   options: AiProviderOption[],
 ): Promise<AiProviderOption[]> {

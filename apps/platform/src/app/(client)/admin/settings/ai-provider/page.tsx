@@ -1,360 +1,248 @@
 'use client';
 
-import { DeleteOutlined, PlusOutlined, RobotOutlined, SaveOutlined } from '@ant-design/icons';
-import { Button, Card, Form, Input, Select, Switch } from 'antd';
-import { useCallback, useEffect, useState } from 'react';
 import {
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  RobotOutlined,
+  SearchOutlined,
+} from '@ant-design/icons';
+import { Button, Input, Popconfirm, Space, Switch, Table, Tag, type TableColumnsType } from 'antd';
+import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  deleteAdminAiProviderOption,
   getAdminAiProviderOptions,
-  updateAdminAiProviderOptions,
+  updateAdminAiProviderOption,
   type AiProviderOption,
 } from '@/api/modules/admin';
-import { BYOK_PROVIDER_VALUE_PATTERN } from '@/lib/ai/byok/constants';
-import styles from '../../resource-page.module.scss';
-import pageStyles from './page.module.scss';
+import styles from './page.module.scss';
 
-const providerColorOptions = [
-  'blue',
-  'cyan',
-  'geekblue',
-  'gold',
-  'green',
-  'lime',
-  'magenta',
-  'orange',
-  'purple',
-  'red',
-  'volcano',
-].map((color) => ({ label: color, value: color }));
-
-const initialValues: IAppForms.ProviderOptionsValues = {
-  aiProviderOptions: [],
-};
-
-const providerProtocolOptions: Array<{ label: string; value: IByok.AiProviderProtocol }> = [
-  { label: 'Chat Completions', value: 'chat-completions' },
-  { label: 'Messages', value: 'messages' },
-  { label: 'Generate Content', value: 'generate-content' },
-];
-
-function createAiProviderOption(): AiProviderOption {
-  return {
-    apiKeyUrl: '',
-    chatBaseUrl: '',
-    color: 'blue',
-    enabled: true,
-    label: '',
-    models: [],
-    protocol: 'chat-completions',
-    value: '',
+function getProtocolLabel(protocol: IByok.AiProviderProtocol): string {
+  const labelMap: Record<IByok.AiProviderProtocol, string> = {
+    'chat-completions': 'Chat Completions',
+    'generate-content': 'Generate Content',
+    messages: 'Messages',
   };
+
+  return labelMap[protocol];
 }
 
-function normalizeAiProviderOptions(options?: AiProviderOption[]): AiProviderOption[] {
-  const selectedValues = new Set<string>();
+function getFilteredProviderOptions(
+  providerOptions: AiProviderOption[],
+  searchTerm: string,
+): AiProviderOption[] {
+  const keyword = searchTerm.trim().toLowerCase();
 
-  return (options ?? []).flatMap((option) => {
-    const value = option.value.trim();
-    const label = option.label.trim();
-    const apiKeyUrl = option.apiKeyUrl?.trim();
-    const chatBaseUrl = option.chatBaseUrl?.trim();
-    const models = (option.models ?? []).map((model) => model.trim()).filter(Boolean);
+  if (!keyword) {
+    return providerOptions;
+  }
 
-    if (!value || !label || !chatBaseUrl || models.length === 0 || selectedValues.has(value)) {
-      return [];
-    }
-
-    selectedValues.add(value);
-
+  return providerOptions.filter((providerOption) => {
     return [
-      {
-        value,
-        label,
-        color: option.color,
-        ...(apiKeyUrl ? { apiKeyUrl } : {}),
-        protocol: option.protocol,
-        chatBaseUrl,
-        models: Array.from(new Set(models)),
-        enabled: option.enabled,
-      },
-    ];
+      providerOption.value,
+      providerOption.label,
+      providerOption.protocol,
+      providerOption.chatBaseUrl,
+      ...providerOption.models,
+    ].some((value) => value.toLowerCase().includes(keyword));
   });
-}
-
-function hasDuplicateProviderValue(options: AiProviderOption[], value: string, index: number) {
-  const trimmedValue = value.trim();
-
-  if (!trimmedValue) {
-    return false;
-  }
-
-  return options.some((option, optionIndex) => {
-    return optionIndex !== index && option.value.trim() === trimmedValue;
-  });
-}
-
-function isHttpsUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-
-    return url.protocol === 'https:';
-  } catch {
-    return false;
-  }
 }
 
 export default function AiProviderSettingsPage() {
-  const [form] = Form.useForm<IAppForms.ProviderOptionsValues>();
-  const aiProviderOptions = Form.useWatch('aiProviderOptions', form) ?? [];
-  const [saving, setSaving] = useState(false);
+  const [providerOptions, setProviderOptions] = useState<AiProviderOption[]>([]);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [updatingProvider, setUpdatingProvider] = useState<string | null>(null);
 
-  const loadSettings = useCallback(async () => {
+  const filteredProviderOptions = useMemo(
+    () => getFilteredProviderOptions(providerOptions, searchTerm),
+    [providerOptions, searchTerm],
+  );
+
+  const loadProviderOptions = useCallback(async () => {
     setLoading(true);
-
     try {
       const nextProviderOptions = await getAdminAiProviderOptions();
 
-      form.setFieldsValue({ aiProviderOptions: nextProviderOptions });
+      setProviderOptions(nextProviderOptions);
     } catch {
       // 请求错误由 alova 全局提示处理。
     } finally {
       setLoading(false);
     }
-  }, [form]);
+  }, []);
 
   useEffect(() => {
-    loadSettings();
-  }, [loadSettings]);
+    loadProviderOptions();
+  }, [loadProviderOptions]);
 
-  async function onFinish(values: IAppForms.ProviderOptionsValues): Promise<void> {
-    setSaving(true);
-
+  async function updateProviderEnabled(providerOption: AiProviderOption, enabled: boolean) {
+    setUpdatingProvider(providerOption.value);
     try {
-      const nextProviderOptions = await updateAdminAiProviderOptions(
-        normalizeAiProviderOptions(values.aiProviderOptions),
+      const nextProviderOption = await updateAdminAiProviderOption(providerOption.value, {
+        ...providerOption,
+        enabled,
+      });
+
+      setProviderOptions((currentOptions) =>
+        currentOptions.map((currentOption) =>
+          currentOption.value === providerOption.value ? nextProviderOption : currentOption,
+        ),
       );
-      form.setFieldsValue({ aiProviderOptions: nextProviderOptions });
     } catch {
       // 请求错误由 alova 全局提示处理。
     } finally {
-      setSaving(false);
+      setUpdatingProvider(null);
     }
   }
+
+  async function removeProviderOption(providerOption: AiProviderOption) {
+    try {
+      await deleteAdminAiProviderOption(providerOption.value);
+      setProviderOptions((currentOptions) =>
+        currentOptions.filter((currentOption) => currentOption.value !== providerOption.value),
+      );
+    } catch {
+      // 请求错误由 alova 全局提示处理。
+    }
+  }
+
+  const columns: TableColumnsType<AiProviderOption> = [
+    {
+      title: 'Provider',
+      dataIndex: 'label',
+      width: 220,
+      render: (label: string, providerOption) => (
+        <Space orientation="vertical" size={2}>
+          <strong>{label}</strong>
+          <span className={styles.code}>{providerOption.value}</span>
+        </Space>
+      ),
+    },
+    {
+      title: '状态',
+      dataIndex: 'enabled',
+      width: 120,
+      render: (enabled: boolean, providerOption) => (
+        <Switch
+          checked={enabled}
+          checkedChildren="启用"
+          loading={updatingProvider === providerOption.value}
+          unCheckedChildren="停用"
+          onChange={async (checked) => {
+            await updateProviderEnabled(providerOption, checked);
+          }}
+        />
+      ),
+    },
+    {
+      title: '协议',
+      dataIndex: 'protocol',
+      width: 180,
+      render: (protocol: IByok.AiProviderProtocol) => (
+        <span className={styles.muted}>{getProtocolLabel(protocol)}</span>
+      ),
+    },
+    {
+      title: '模型',
+      dataIndex: 'models',
+      width: 260,
+      render: (models: string[]) => (
+        <Space size={[4, 4]} wrap>
+          {models.slice(0, 4).map((model) => (
+            <Tag key={model}>{model}</Tag>
+          ))}
+          {models.length > 4 && <Tag>+{models.length - 4}</Tag>}
+        </Space>
+      ),
+    },
+    {
+      title: '调用地址',
+      dataIndex: 'chatBaseUrl',
+      ellipsis: true,
+      render: (chatBaseUrl: string) => <span className={styles.muted}>{chatBaseUrl}</span>,
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      width: 112,
+      fixed: 'right',
+      render: (_, providerOption) => (
+        <div className={styles.actions}>
+          <Link
+            aria-label={`编辑 ${providerOption.label}`}
+            href={`/admin/settings/ai-provider/${encodeURIComponent(providerOption.value)}/edit`}
+          >
+            <Button icon={<EditOutlined />} size="small" type="text" />
+          </Link>
+          <Popconfirm
+            cancelText="取消"
+            description="删除后用户新增密钥时将无法选择该 Provider。"
+            okText="删除"
+            title={`删除“${providerOption.label}”吗？`}
+            onConfirm={async () => {
+              await removeProviderOption(providerOption);
+            }}
+          >
+            <Button
+              aria-label={`删除 ${providerOption.label}`}
+              danger
+              icon={<DeleteOutlined />}
+              size="small"
+              type="text"
+            />
+          </Popconfirm>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <main className={styles.page}>
       <section className={styles.heading}>
-        <div>
-          <h1>
-            <RobotOutlined /> AI Provider
-          </h1>
-          <p>配置用户 AI 密钥页面可选择的 Provider。删除或禁用后不会出现在新增密钥下拉选项中。</p>
-        </div>
+        <h1>
+          <RobotOutlined /> AI Provider
+        </h1>
+        <Link href="/admin/settings/ai-provider/create">
+          <Button icon={<PlusOutlined />} type="primary">
+            新增 Provider
+          </Button>
+        </Link>
       </section>
-      <Card className={pageStyles.card} loading={loading} variant="borderless">
-        <Form form={form} initialValues={initialValues} layout="vertical" onFinish={onFinish}>
-          <Form.List name="aiProviderOptions">
-            {(fields, { add, remove }) => {
-              function onAddProvider(): void {
-                add(createAiProviderOption());
-              }
-
-              return (
-                <>
-                  <div className={pageStyles['provider-toolbar']}>
-                    <span>已配置 {fields.length} 个 Provider</span>
-                    <Button icon={<PlusOutlined />} type="dashed" onClick={onAddProvider}>
-                      新增 Provider
-                    </Button>
-                  </div>
-                  <div className={pageStyles['provider-list']}>
-                    {fields.map((field) => {
-                      const currentOption = aiProviderOptions[field.name];
-                      const currentValue = currentOption?.value;
-
-                      return (
-                        <div className={pageStyles['provider-item']} key={field.key}>
-                          <div className={pageStyles['provider-header']}>
-                            <div className={pageStyles['provider-actions']}>
-                              <Form.Item
-                                name={[field.name, 'enabled']}
-                                valuePropName="checked"
-                                noStyle
-                              >
-                                <Switch checkedChildren="启用" unCheckedChildren="停用" />
-                              </Form.Item>
-                              <Button
-                                aria-label={`删除 ${currentValue || 'provider'}`}
-                                danger
-                                icon={<DeleteOutlined />}
-                                type="text"
-                                onClick={() => remove(field.name)}
-                              />
-                            </div>
-                          </div>
-                          <div className={pageStyles['provider-controls']}>
-                            <Form.Item
-                              label="Provider 标识"
-                              name={[field.name, 'value']}
-                              rules={[
-                                {
-                                  required: true,
-                                  whitespace: true,
-                                  message: '请输入 Provider 标识',
-                                },
-                                {
-                                  validator: (_, value?: string) => {
-                                    if (
-                                      !value ||
-                                      !hasDuplicateProviderValue(
-                                        aiProviderOptions,
-                                        value,
-                                        field.name,
-                                      )
-                                    ) {
-                                      return Promise.resolve();
-                                    }
-
-                                    return Promise.reject(new Error('Provider 标识不能重复'));
-                                  },
-                                },
-                                {
-                                  validator: (_, value?: string) => {
-                                    const trimmedValue = value?.trim();
-
-                                    if (
-                                      !trimmedValue ||
-                                      BYOK_PROVIDER_VALUE_PATTERN.test(trimmedValue)
-                                    ) {
-                                      return Promise.resolve();
-                                    }
-
-                                    return Promise.reject(
-                                      new Error(
-                                        'Provider 标识只能包含小写字母、数字、下划线和连字符，且必须以小写字母开头',
-                                      ),
-                                    );
-                                  },
-                                },
-                              ]}
-                            >
-                              <Input maxLength={40} placeholder="provider_key" />
-                            </Form.Item>
-                            <Form.Item
-                              label="展示名称"
-                              name={[field.name, 'label']}
-                              rules={[
-                                {
-                                  required: true,
-                                  whitespace: true,
-                                  message: '请输入展示名称',
-                                },
-                              ]}
-                            >
-                              <Input maxLength={40} placeholder="展示名称" />
-                            </Form.Item>
-                            <Form.Item
-                              label="标签颜色"
-                              name={[field.name, 'color']}
-                              rules={[{ required: true, message: '请选择标签颜色' }]}
-                            >
-                              <Select options={providerColorOptions} />
-                            </Form.Item>
-                            <Form.Item
-                              label="API Key 链接"
-                              name={[field.name, 'apiKeyUrl']}
-                              rules={[
-                                { max: 2048, message: 'API Key 链接不能超过 2048 个字符' },
-                                {
-                                  validator: (_, value?: string) => {
-                                    const trimmedValue = value?.trim();
-
-                                    if (!trimmedValue || isHttpsUrl(trimmedValue)) {
-                                      return Promise.resolve();
-                                    }
-
-                                    return Promise.reject(new Error('请输入有效的 https 链接'));
-                                  },
-                                },
-                              ]}
-                            >
-                              <Input
-                                maxLength={2048}
-                                placeholder="https://platform.example.com/api-keys"
-                              />
-                            </Form.Item>
-                            <Form.Item
-                              label="协议"
-                              name={[field.name, 'protocol']}
-                              rules={[{ required: true, message: '请选择协议' }]}
-                            >
-                              <Select options={providerProtocolOptions} />
-                            </Form.Item>
-                            <Form.Item
-                              label="Chat Base URL"
-                              name={[field.name, 'chatBaseUrl']}
-                              rules={[
-                                { required: true, whitespace: true, message: '请输入调用地址' },
-                                { max: 2048, message: '调用地址不能超过 2048 个字符' },
-                                {
-                                  validator: (_, value?: string) => {
-                                    const trimmedValue = value?.trim();
-
-                                    if (trimmedValue && isHttpsUrl(trimmedValue)) {
-                                      return Promise.resolve();
-                                    }
-
-                                    return Promise.reject(new Error('请输入有效的 https 调用地址'));
-                                  },
-                                },
-                              ]}
-                            >
-                              <Input
-                                maxLength={2048}
-                                placeholder="https://api.example.com/v1/chat/completions"
-                              />
-                            </Form.Item>
-                            <Form.Item
-                              label="模型"
-                              name={[field.name, 'models']}
-                              rules={[{ required: true, message: '请至少配置一个模型' }]}
-                            >
-                              <Select
-                                mode="tags"
-                                open={false}
-                                placeholder="输入模型名称后回车"
-                                tokenSeparators={[',', '\n']}
-                              />
-                            </Form.Item>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              );
+      <p>配置用户 AI 密钥页面可选择的 Provider。</p>
+      <section className={styles.panel}>
+        <div className={styles.filters}>
+          <Input.Search
+            allowClear
+            className={styles.search}
+            enterButton={<SearchOutlined />}
+            placeholder="按标识、名称、协议、模型或调用地址搜索"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            onSearch={(value) => setSearchTerm(value.trim())}
+          />
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={async () => {
+              await loadProviderOptions();
             }}
-          </Form.List>
-          <div className={pageStyles.footer}>
-            <Button
-              htmlType="button"
-              onClick={async () => {
-                await loadSettings();
-              }}
-            >
-              恢复已保存值
-            </Button>
-            <Button
-              icon={<SaveOutlined />}
-              loading={saving}
-              type="primary"
-              onClick={() => form.submit()}
-            >
-              保存设置
-            </Button>
-          </div>
-        </Form>
-      </Card>
+          >
+            刷新
+          </Button>
+        </div>
+        <Table
+          className={styles.table}
+          columns={columns}
+          dataSource={filteredProviderOptions}
+          loading={loading}
+          pagination={false}
+          rowKey="value"
+          scroll={{ x: 1100 }}
+        />
+      </section>
     </main>
   );
 }
