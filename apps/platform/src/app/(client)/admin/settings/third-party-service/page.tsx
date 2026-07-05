@@ -1,138 +1,180 @@
 'use client';
 
-import { ApiOutlined, DeleteOutlined, PlusOutlined, SaveOutlined } from '@ant-design/icons';
-import { Button, Card, Form, Input, Select, Switch } from 'antd';
-import { useCallback, useEffect, useState } from 'react';
 import {
+  ApiOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  SearchOutlined,
+} from '@ant-design/icons';
+import { Button, Input, Popconfirm, Space, Switch, Table, Tag, type TableColumnsType } from 'antd';
+import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  deleteAdminThirdPartyServiceOption,
   getAdminThirdPartyServiceOptions,
-  updateAdminThirdPartyServiceOptions,
+  updateAdminThirdPartyServiceOption,
   type ThirdPartyServiceOption,
 } from '@/api/modules/admin';
 import styles from './page.module.scss';
 
-const serviceColorOptions = [
-  'default',
-  'processing',
-  'success',
-  'warning',
-  'error',
-  'blue',
-  'cyan',
-  'geekblue',
-  'gold',
-  'green',
-  'lime',
-  'magenta',
-  'orange',
-  'purple',
-  'red',
-  'volcano',
-].map((color) => ({ label: color, value: color }));
-
-const initialValues: IAppForms.ThirdPartyServiceOptionsValues = {
-  thirdPartyServiceOptions: [],
-};
-
-function createThirdPartyServiceOption(): ThirdPartyServiceOption {
-  return { apiKeyUrl: '', color: 'processing', enabled: true, label: '', value: '' };
-}
-
-function normalizeThirdPartyServiceOptions(
-  options?: ThirdPartyServiceOption[],
+function getFilteredServiceOptions(
+  serviceOptions: ThirdPartyServiceOption[],
+  searchTerm: string,
 ): ThirdPartyServiceOption[] {
-  const selectedValues = new Set<string>();
+  const keyword = searchTerm.trim().toLowerCase();
 
-  return (options ?? []).flatMap((option) => {
-    const value = option.value.trim();
-    const label = option.label.trim();
-    const apiKeyUrl = option.apiKeyUrl?.trim();
-
-    if (!value || !label || selectedValues.has(value)) {
-      return [];
-    }
-
-    selectedValues.add(value);
-
-    return [
-      {
-        value,
-        label,
-        color: option.color,
-        ...(apiKeyUrl ? { apiKeyUrl } : {}),
-        enabled: option.enabled,
-      },
-    ];
-  });
-}
-
-function hasDuplicateServiceValue(
-  options: ThirdPartyServiceOption[],
-  value: string,
-  index: number,
-) {
-  const trimmedValue = value.trim();
-
-  if (!trimmedValue) {
-    return false;
+  if (!keyword) {
+    return serviceOptions;
   }
 
-  return options.some((option, optionIndex) => {
-    return optionIndex !== index && option.value.trim() === trimmedValue;
+  return serviceOptions.filter((serviceOption) => {
+    return [serviceOption.value, serviceOption.label, serviceOption.apiKeyUrl ?? ''].some((value) =>
+      value.toLowerCase().includes(keyword),
+    );
   });
-}
-
-function isServiceValue(value: string): boolean {
-  return /^[a-z0-9][a-z0-9-]{0,39}$/u.test(value);
-}
-
-function isHttpsUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-
-    return url.protocol === 'https:';
-  } catch {
-    return false;
-  }
 }
 
 export default function ThirdPartyServiceSettingsPage() {
-  const [form] = Form.useForm<IAppForms.ThirdPartyServiceOptionsValues>();
-  const serviceOptions = Form.useWatch('thirdPartyServiceOptions', form) ?? [];
-  const [saving, setSaving] = useState(false);
+  const [serviceOptions, setServiceOptions] = useState<ThirdPartyServiceOption[]>([]);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [updatingService, setUpdatingService] = useState<string | null>(null);
 
-  const loadSettings = useCallback(async () => {
+  const filteredServiceOptions = useMemo(
+    () => getFilteredServiceOptions(serviceOptions, searchTerm),
+    [serviceOptions, searchTerm],
+  );
+
+  const loadServiceOptions = useCallback(async () => {
     setLoading(true);
-
     try {
       const nextServiceOptions = await getAdminThirdPartyServiceOptions();
 
-      form.setFieldsValue({ thirdPartyServiceOptions: nextServiceOptions });
+      setServiceOptions(nextServiceOptions);
     } catch {
       // 请求错误由 alova 全局提示处理。
     } finally {
       setLoading(false);
     }
-  }, [form]);
+  }, []);
 
   useEffect(() => {
-    loadSettings();
-  }, [loadSettings]);
+    loadServiceOptions();
+  }, [loadServiceOptions]);
 
-  async function onFinish(values: IAppForms.ThirdPartyServiceOptionsValues): Promise<void> {
-    setSaving(true);
-
+  async function updateServiceEnabled(
+    serviceOption: ThirdPartyServiceOption,
+    enabled: boolean,
+  ): Promise<void> {
+    setUpdatingService(serviceOption.value);
     try {
-      const nextServiceOptions = await updateAdminThirdPartyServiceOptions(
-        normalizeThirdPartyServiceOptions(values.thirdPartyServiceOptions),
+      const nextServiceOption = await updateAdminThirdPartyServiceOption(serviceOption.value, {
+        ...serviceOption,
+        enabled,
+      });
+
+      setServiceOptions((currentOptions) =>
+        currentOptions.map((currentOption) =>
+          currentOption.value === serviceOption.value ? nextServiceOption : currentOption,
+        ),
       );
-      form.setFieldsValue({ thirdPartyServiceOptions: nextServiceOptions });
     } catch {
       // 请求错误由 alova 全局提示处理。
     } finally {
-      setSaving(false);
+      setUpdatingService(null);
     }
   }
+
+  async function removeServiceOption(serviceOption: ThirdPartyServiceOption): Promise<void> {
+    try {
+      await deleteAdminThirdPartyServiceOption(serviceOption.value);
+      setServiceOptions((currentOptions) =>
+        currentOptions.filter((currentOption) => currentOption.value !== serviceOption.value),
+      );
+    } catch {
+      // 请求错误由 alova 全局提示处理。
+    }
+  }
+
+  const columns: TableColumnsType<ThirdPartyServiceOption> = [
+    {
+      title: '服务',
+      dataIndex: 'label',
+      width: 240,
+      render: (label: string, serviceOption) => (
+        <Space orientation="vertical" size={2}>
+          <strong>{label}</strong>
+          <span className={styles.code}>{serviceOption.value}</span>
+        </Space>
+      ),
+    },
+    {
+      title: '状态',
+      dataIndex: 'enabled',
+      width: 120,
+      render: (enabled: boolean, serviceOption) => (
+        <Switch
+          checked={enabled}
+          checkedChildren="启用"
+          loading={updatingService === serviceOption.value}
+          unCheckedChildren="停用"
+          onChange={async (checked) => {
+            await updateServiceEnabled(serviceOption, checked);
+          }}
+        />
+      ),
+    },
+    {
+      title: '标签颜色',
+      dataIndex: 'color',
+      width: 140,
+      render: (color: string) => <Tag color={color}>{color}</Tag>,
+    },
+    {
+      title: 'API Key 链接',
+      dataIndex: 'apiKeyUrl',
+      ellipsis: true,
+      render: (apiKeyUrl?: string) => <span className={styles.muted}>{apiKeyUrl || '未配置'}</span>,
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      width: 112,
+      fixed: 'right',
+      render: (_, serviceOption) => (
+        <div className={styles.actions}>
+          <Link
+            aria-label={`编辑 ${serviceOption.label}`}
+            href={`/admin/settings/third-party-service/${encodeURIComponent(
+              serviceOption.value,
+            )}/edit`}
+          >
+            <Button icon={<EditOutlined />} size="small" type="text" />
+          </Link>
+          <Popconfirm
+            cancelText="取消"
+            description="删除后用户新增凭据时将无法选择该服务。"
+            okText="删除"
+            title={`删除“${serviceOption.label}”吗？`}
+            onConfirm={async () => {
+              await removeServiceOption(serviceOption);
+            }}
+          >
+            <Button
+              aria-label={`删除 ${serviceOption.label}`}
+              danger
+              icon={<DeleteOutlined />}
+              size="small"
+              type="text"
+            />
+          </Popconfirm>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <main className={styles.page}>
@@ -141,161 +183,44 @@ export default function ThirdPartyServiceSettingsPage() {
           <h1>
             <ApiOutlined /> 第三方服务
           </h1>
-          <p>
-            配置用户第三方服务 API 凭据页面可选择的服务。删除或禁用后不会出现在新增凭据下拉选项中。
-          </p>
+          <p>配置用户第三方服务 API 凭据页面可选择的服务。</p>
         </div>
+        <Link href="/admin/settings/third-party-service/create">
+          <Button icon={<PlusOutlined />} type="primary">
+            新增服务
+          </Button>
+        </Link>
       </section>
-      <Card className={styles.card} loading={loading} variant="borderless">
-        <Form form={form} initialValues={initialValues} layout="vertical" onFinish={onFinish}>
-          <Form.List name="thirdPartyServiceOptions">
-            {(fields, { add, remove }) => {
-              function onAddService(): void {
-                add(createThirdPartyServiceOption());
-              }
-
-              return (
-                <>
-                  <div className={styles['service-toolbar']}>
-                    <span>已配置 {fields.length} 个第三方服务</span>
-                    <Button icon={<PlusOutlined />} type="dashed" onClick={onAddService}>
-                      新增服务
-                    </Button>
-                  </div>
-                  <div className={styles['service-list']}>
-                    {fields.map((field) => {
-                      const currentOption = serviceOptions[field.name];
-                      const currentValue = currentOption?.value;
-
-                      return (
-                        <div className={styles['service-item']} key={field.key}>
-                          <div className={styles['service-header']}>
-                            <div className={styles['service-actions']}>
-                              <Form.Item
-                                name={[field.name, 'enabled']}
-                                valuePropName="checked"
-                                noStyle
-                              >
-                                <Switch checkedChildren="启用" unCheckedChildren="停用" />
-                              </Form.Item>
-                              <Button
-                                aria-label={`删除 ${currentValue || 'service'}`}
-                                danger
-                                icon={<DeleteOutlined />}
-                                type="text"
-                                onClick={() => remove(field.name)}
-                              />
-                            </div>
-                          </div>
-                          <div className={styles['service-controls']}>
-                            <Form.Item
-                              label="服务标识"
-                              name={[field.name, 'value']}
-                              rules={[
-                                {
-                                  required: true,
-                                  whitespace: true,
-                                  message: '请输入服务标识',
-                                },
-                                {
-                                  validator: (_, value?: string) => {
-                                    if (!value || isServiceValue(value.trim())) {
-                                      return Promise.resolve();
-                                    }
-
-                                    return Promise.reject(
-                                      new Error('仅支持小写字母、数字和连字符'),
-                                    );
-                                  },
-                                },
-                                {
-                                  validator: (_, value?: string) => {
-                                    if (
-                                      !value ||
-                                      !hasDuplicateServiceValue(serviceOptions, value, field.name)
-                                    ) {
-                                      return Promise.resolve();
-                                    }
-
-                                    return Promise.reject(new Error('服务标识不能重复'));
-                                  },
-                                },
-                              ]}
-                            >
-                              <Input maxLength={40} placeholder="tinypng" />
-                            </Form.Item>
-                            <Form.Item
-                              label="展示名称"
-                              name={[field.name, 'label']}
-                              rules={[
-                                {
-                                  required: true,
-                                  whitespace: true,
-                                  message: '请输入展示名称',
-                                },
-                              ]}
-                            >
-                              <Input maxLength={40} placeholder="展示名称" />
-                            </Form.Item>
-                            <Form.Item
-                              label="标签颜色"
-                              name={[field.name, 'color']}
-                              rules={[{ required: true, message: '请选择标签颜色' }]}
-                            >
-                              <Select options={serviceColorOptions} />
-                            </Form.Item>
-                            <Form.Item
-                              label="API Key 链接"
-                              name={[field.name, 'apiKeyUrl']}
-                              rules={[
-                                { max: 2048, message: 'API Key 链接不能超过 2048 个字符' },
-                                {
-                                  validator: (_, value?: string) => {
-                                    const trimmedValue = value?.trim();
-
-                                    if (!trimmedValue || isHttpsUrl(trimmedValue)) {
-                                      return Promise.resolve();
-                                    }
-
-                                    return Promise.reject(new Error('请输入有效的 https 链接'));
-                                  },
-                                },
-                              ]}
-                            >
-                              <Input
-                                maxLength={2048}
-                                placeholder="https://service.example.com/api-keys"
-                              />
-                            </Form.Item>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              );
+      <section className={styles.panel}>
+        <div className={styles.filters}>
+          <Input.Search
+            allowClear
+            className={styles.search}
+            enterButton={<SearchOutlined />}
+            placeholder="按标识、名称或 API Key 链接搜索"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            onSearch={(value) => setSearchTerm(value.trim())}
+          />
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={async () => {
+              await loadServiceOptions();
             }}
-          </Form.List>
-          <div className={styles.footer}>
-            <Button
-              htmlType="button"
-              onClick={async () => {
-                await loadSettings();
-              }}
-            >
-              恢复已保存值
-            </Button>
-            <Button
-              icon={<SaveOutlined />}
-              loading={saving}
-              type="primary"
-              onClick={() => form.submit()}
-            >
-              保存设置
-            </Button>
-          </div>
-        </Form>
-      </Card>
+          >
+            刷新
+          </Button>
+        </div>
+        <Table
+          className={styles.table}
+          columns={columns}
+          dataSource={filteredServiceOptions}
+          loading={loading}
+          pagination={false}
+          rowKey="value"
+          scroll={{ x: 900 }}
+        />
+      </section>
     </main>
   );
 }

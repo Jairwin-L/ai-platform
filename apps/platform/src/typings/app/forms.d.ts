@@ -35,6 +35,8 @@ declare namespace IAppForms {
     thirdPartyServiceOptions: IApiAdmin.ThirdPartyServiceOption[];
   }
 
+  type ThirdPartyServiceOptionValues = IApiAdmin.ThirdPartyServiceOption;
+
   interface UserFormValues {
     bio?: string;
     full_name?: string;

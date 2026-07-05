@@ -1,0 +1,50 @@
+.page {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.heading {
+  margin-bottom: 24px;
+}
+
+.heading h1 {
+  margin: 12px 0 6px;
+  color: #182230;
+  font-size: 28px;
+  line-height: 1.25;
+}
+
+.heading p {
+  color: #667085;
+  font-size: 14px;
+}
+
+.panel {
+  padding: 28px;
+  border: 1px solid #e7ebf1;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(16 24 40 / 4%);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 22px;
+  border-top: 1px solid #edf0f4;
+}
+
+.hidden {
+  display: none;
+}
+
+@media (width <= 640px) {
+  .panel {
+    padding: 20px;
+  }
+
+  .actions :global(.ant-btn) {
+    flex: 1;
+  }
+}

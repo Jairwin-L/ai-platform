@@ -52,8 +52,121 @@ async function fetchThirdPartyServiceRows(): Promise<
   `;
 }
 
+async function fetchThirdPartyServiceRow(
+  value: string,
+): Promise<IThirdPartyServiceOptions.ServiceOptionRow | null> {
+  const rows = await prisma.$queryRaw<IThirdPartyServiceOptions.ServiceOptionRow[]>`
+    SELECT value, label, color, api_key_url, enabled, sort_order
+    FROM third_party_services
+    WHERE value = ${value}
+    LIMIT 1
+  `;
+
+  return rows[0] ?? null;
+}
+
 export async function getStoredThirdPartyServiceOptions(): Promise<ThirdPartyServiceOption[]> {
   return toThirdPartyServiceOptions(await fetchThirdPartyServiceRows());
+}
+
+export async function getStoredThirdPartyServiceOption(
+  value: string,
+): Promise<ThirdPartyServiceOption | null> {
+  const row = await fetchThirdPartyServiceRow(value);
+
+  return row ? toThirdPartyServiceOptions([row])[0] : null;
+}
+
+export async function createStoredThirdPartyServiceOption(
+  option: ThirdPartyServiceOption,
+): Promise<void> {
+  const [normalizedOption] = normalizeThirdPartyServiceOptions([option]);
+
+  await prisma.$transaction(async (transaction) => {
+    const existingRows = await transaction.$queryRaw<Array<{ value: string }>>`
+      SELECT value
+      FROM third_party_services
+      WHERE value = ${normalizedOption.value}
+      LIMIT 1
+    `;
+
+    if (existingRows.length > 0) {
+      throw new Error('THIRD_PARTY_SERVICE_DUPLICATE');
+    }
+
+    const sortRows = await transaction.$queryRaw<Array<{ sort_order: number }>>`
+      SELECT COALESCE(MAX(sort_order), -1) + 1 AS sort_order
+      FROM third_party_services
+    `;
+    const sortOrder = sortRows[0]?.sort_order ?? 0;
+
+    await transaction.$executeRaw`
+      INSERT INTO third_party_services (value, label, color, api_key_url, enabled, sort_order)
+      VALUES (
+        ${normalizedOption.value},
+        ${normalizedOption.label},
+        ${normalizedOption.color},
+        ${normalizedOption.apiKeyUrl ?? null},
+        ${normalizedOption.enabled},
+        ${sortOrder}
+      )
+    `;
+  });
+}
+
+export async function updateStoredThirdPartyServiceOption(
+  currentValue: string,
+  option: ThirdPartyServiceOption,
+): Promise<void> {
+  const [normalizedOption] = normalizeThirdPartyServiceOptions([option]);
+
+  await prisma.$transaction(async (transaction) => {
+    const existingRows = await transaction.$queryRaw<Array<{ value: string }>>`
+      SELECT value
+      FROM third_party_services
+      WHERE value = ${currentValue}
+      LIMIT 1
+    `;
+
+    if (existingRows.length === 0) {
+      throw new Error('THIRD_PARTY_SERVICE_NOT_FOUND');
+    }
+
+    if (normalizedOption.value !== currentValue) {
+      const duplicateRows = await transaction.$queryRaw<Array<{ value: string }>>`
+        SELECT value
+        FROM third_party_services
+        WHERE value = ${normalizedOption.value}
+        LIMIT 1
+      `;
+
+      if (duplicateRows.length > 0) {
+        throw new Error('THIRD_PARTY_SERVICE_DUPLICATE');
+      }
+    }
+
+    await transaction.$executeRaw`
+      UPDATE third_party_services
+      SET value = ${normalizedOption.value},
+          label = ${normalizedOption.label},
+          color = ${normalizedOption.color},
+          api_key_url = ${normalizedOption.apiKeyUrl ?? null},
+          enabled = ${normalizedOption.enabled},
+          updated_at = NOW()
+      WHERE value = ${currentValue}
+    `;
+  });
+}
+
+export async function deleteStoredThirdPartyServiceOption(value: string): Promise<void> {
+  const deletedCount = await prisma.$executeRaw`
+    DELETE FROM third_party_services
+    WHERE value = ${value}
+  `;
+
+  if (deletedCount === 0) {
+    throw new Error('THIRD_PARTY_SERVICE_NOT_FOUND');
+  }
 }
 
 export async function updateStoredThirdPartyServiceOptions(

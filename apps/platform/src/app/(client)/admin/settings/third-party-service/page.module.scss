@@ -72,77 +72,6 @@
   font-size: 12px;
 }
 
-.form-help {
-  margin-top: -12px;
-  margin-bottom: 18px;
-  color: #667085;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.alert {
-  margin-bottom: 16px;
-}
-
-.card {
-  max-width: 860px;
-  border: 1px solid #e7ebf1;
-  border-radius: 14px;
-  box-shadow: 0 8px 24px rgb(16 24 40 / 4%);
-}
-
-.service-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-  color: #667085;
-  font-size: 13px;
-}
-
-.service-list {
-  display: grid;
-  gap: 14px;
-}
-
-.service-item {
-  border: 1px solid #edf0f4;
-  border-radius: 10px;
-  padding: 14px;
-  background: #fcfcfd;
-}
-
-.service-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 14px;
-}
-
-.service-actions {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 8px;
-}
-
-.service-controls {
-  display: grid;
-  grid-template-columns: minmax(0, 180px) minmax(0, 1fr) 160px minmax(0, 1.4fr);
-  gap: 12px;
-}
-
-.footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #edf0f4;
-}
-
 @media (width <= 640px) {
   .heading {
     display: block;
@@ -164,32 +93,5 @@
 
   .search {
     width: 100%;
-  }
-
-  .footer {
-    justify-content: stretch;
-  }
-
-  .footer :global(.ant-btn) {
-    flex: 1;
-  }
-
-  .service-toolbar,
-  .service-header,
-  .service-controls {
-    display: block;
-  }
-
-  .service-toolbar :global(.ant-btn) {
-    width: 100%;
-    margin-top: 12px;
-  }
-
-  .service-header :global(.ant-switch) {
-    margin-top: 12px;
-  }
-
-  .service-actions {
-    justify-content: space-between;
   }
 }

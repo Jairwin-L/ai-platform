@@ -112,6 +112,34 @@ export async function getAdminThirdPartyServiceOptions(): Promise<ThirdPartyServ
   return alovaGet<ThirdPartyServiceOption[]>('/admin/third-party-services');
 }
 
+export async function getAdminThirdPartyServiceOption(
+  value: string,
+): Promise<ThirdPartyServiceOption> {
+  return alovaGet<ThirdPartyServiceOption>(
+    `/admin/third-party-services/${encodeURIComponent(value)}`,
+  );
+}
+
+export async function createAdminThirdPartyServiceOption(
+  payload: ThirdPartyServiceOption,
+): Promise<ThirdPartyServiceOption> {
+  return alovaPost<ThirdPartyServiceOption>('/admin/third-party-services', payload);
+}
+
+export async function updateAdminThirdPartyServiceOption(
+  value: string,
+  payload: ThirdPartyServiceOption,
+): Promise<ThirdPartyServiceOption> {
+  return alovaPut<ThirdPartyServiceOption>(
+    `/admin/third-party-services/${encodeURIComponent(value)}`,
+    payload,
+  );
+}
+
+export async function deleteAdminThirdPartyServiceOption(value: string): Promise<void> {
+  await alovaDelete<{ value: string }>(`/admin/third-party-services/${encodeURIComponent(value)}`);
+}
+
 export async function updateAdminThirdPartyServiceOptions(
   options: ThirdPartyServiceOption[],
 ): Promise<ThirdPartyServiceOption[]> {
