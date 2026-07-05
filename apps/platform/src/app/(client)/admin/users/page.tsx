@@ -31,10 +31,10 @@ import styles from './page.module.scss';
 
 const pageSize = 10;
 const statusOptions: Array<{ color: string; label: string; value: UserStatus }> = [
-  { color: 'green', label: '正常', value: 'active' },
-  { color: 'gold', label: '待激活', value: 'pending' },
-  { color: 'orange', label: '受限', value: 'restricted' },
-  { color: 'red', label: '已封禁', value: 'banned' },
+  { color: 'success', label: '正常', value: 'active' },
+  { color: 'warning', label: '待激活', value: 'pending' },
+  { color: 'warning', label: '受限', value: 'restricted' },
+  { color: 'error', label: '已封禁', value: 'banned' },
   { color: 'default', label: '已停用', value: 'inactive' },
 ];
 
@@ -132,7 +132,7 @@ export default function UsersPage() {
         <Space size={6}>
           <MailOutlined />
           <span>{email || '—'}</span>
-          {user.email_verified && <Tag color="blue">已验证</Tag>}
+          {user.email_verified && <Tag color="processing">已验证</Tag>}
         </Space>
       ),
     },

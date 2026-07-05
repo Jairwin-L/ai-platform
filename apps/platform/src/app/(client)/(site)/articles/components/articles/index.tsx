@@ -141,7 +141,7 @@ export default function ArticlesClient({
       key: 'published',
       width: 100,
       render: (published: boolean) => (
-        <Tag color={published ? 'green' : 'default'}>{published ? '已发布' : '草稿'}</Tag>
+        <Tag color={published ? 'success' : 'default'}>{published ? '已发布' : '草稿'}</Tag>
       ),
     },
     {

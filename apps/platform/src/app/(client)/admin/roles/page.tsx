@@ -67,7 +67,7 @@ export default function RolesPage() {
       render: (name: string, role) => (
         <Space orientation="vertical" size={2}>
           <strong>{name}</strong>
-          {role.is_system && <Tag color="blue">系统角色</Tag>}
+          {role.is_system && <Tag color="processing">系统角色</Tag>}
         </Space>
       ),
     },

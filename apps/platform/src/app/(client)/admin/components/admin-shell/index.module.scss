@@ -30,7 +30,7 @@
 
 .logo-text {
   margin-left: 10px;
-  color: #fff;
+  color: $site-color-canvas;
   font-size: 16px;
   white-space: nowrap;
 }
@@ -50,12 +50,9 @@
   top: 0;
   z-index: 1;
   padding: 20px;
-  background: #fff;
-  border-block-end: 1px solid rgb(5 5 5 / 6%);
-  box-shadow:
-    0 -6px 16px -8px rgb(0 0 0 / 8%),
-    0 -9px 28px 0 rgb(0 0 0 / 5%),
-    0 -12px 48px 16px rgb(0 0 0 / 3%);
+  border-block-end: 1px solid $site-color-border;
+  background: $site-color-canvas;
+  box-shadow: $site-shadow-soft;
 }
 
 .header-ri {
@@ -67,7 +64,7 @@
   display: flex;
   align-items: center;
   margin-left: 30px;
-  color: #000;
+  color: $site-color-ink;
   font-size: 15px;
   cursor: pointer;
 }

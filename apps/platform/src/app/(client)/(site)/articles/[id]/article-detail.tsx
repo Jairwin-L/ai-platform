@@ -15,7 +15,7 @@ export default function ArticleDetail({ article }: { article: Article }) {
         <div className={styles.header}>
           <div className={styles['title-group']}>
             <Space size="small" wrap>
-              <Tag color={article.published ? 'green' : 'default'}>
+              <Tag color={article.published ? 'success' : 'default'}>
                 {article.published ? '已发布' : '草稿'}
               </Tag>
               <Text type="secondary">{article.slug}</Text>

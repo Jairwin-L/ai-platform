@@ -1,5 +1,37 @@
 @import 'src/styles/antd-override.scss';
 
+:root {
+  --site-color-canvas: #{$site-color-canvas};
+  --site-color-surface: #{$site-color-surface};
+  --site-color-surface-subtle: #{$site-color-surface-subtle};
+  --site-color-surface-hover: #{$site-color-surface-hover};
+  --site-color-surface-active: #{$site-color-surface-active};
+  --site-color-ink: #{$site-color-ink};
+  --site-color-text: #{$site-color-text};
+  --site-color-muted: #{$site-color-muted};
+  --site-color-subtle: #{$site-color-subtle};
+  --site-color-border: #{$site-color-border};
+  --site-color-border-strong: #{$site-color-border-strong};
+  --site-color-primary: #{$site-color-primary};
+  --site-color-primary-hover: #{$site-color-primary-hover};
+  --site-color-inverse: #{$site-color-inverse};
+  --site-color-inverse-muted: #{$site-color-inverse-muted};
+  --site-color-inverse-subtle: #{$site-color-inverse-subtle};
+  --site-color-inverse-disabled: #{$site-color-inverse-disabled};
+  --site-color-blue: #{$site-color-blue};
+  --site-color-blue-bg: #{$site-color-blue-bg};
+  --site-color-green: #{$site-color-green};
+  --site-color-green-bg: #{$site-color-green-bg};
+  --site-color-yellow: #{$site-color-yellow};
+  --site-color-yellow-bg: #{$site-color-yellow-bg};
+  --site-color-red: #{$site-color-red};
+  --site-color-red-bg: #{$site-color-red-bg};
+  --site-color-focus: #{$site-color-focus};
+  --site-shadow-soft: #{$site-shadow-soft};
+  --site-shadow-elevated: #{$site-shadow-elevated};
+  --site-shadow-handle: #{$site-shadow-handle};
+}
+
 *,
 *::before,
 *::after {
@@ -11,7 +43,8 @@
 html,
 body {
   font-family: thicccboi, 'Helvetica', 'Arial', sans-serif;
-  color: $color-white;
+  background: $site-color-canvas;
+  color: $site-color-text;
   -webkit-text-size-adjust: 100% !important;
   text-size-adjust: 100% !important;
   &::-webkit-scrollbar {

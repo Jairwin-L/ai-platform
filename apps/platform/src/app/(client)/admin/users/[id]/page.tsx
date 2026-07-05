@@ -15,10 +15,10 @@ import { getUserProfileById, type UserProfile } from '@/api/modules/users';
 import styles from './page.module.scss';
 
 const statusLabels: Record<string, { color: string; label: string }> = {
-  active: { color: 'green', label: '正常' },
-  pending: { color: 'gold', label: '待激活' },
-  restricted: { color: 'orange', label: '受限' },
-  banned: { color: 'red', label: '已封禁' },
+  active: { color: 'success', label: '正常' },
+  pending: { color: 'warning', label: '待激活' },
+  restricted: { color: 'warning', label: '受限' },
+  banned: { color: 'error', label: '已封禁' },
   inactive: { color: 'default', label: '已停用' },
 };
 

@@ -16,6 +16,7 @@ export default async function SiteLayout({ children }: Readonly<IComponent.Child
         <nav className={styles.nav} aria-label="站点导航">
           <Link className={styles.brand} href="/">
             <img alt={APP_NAME} className={styles.logo} src={APP_BLACK_LOGO} />
+            <span>{APP_NAME}</span>
           </Link>
           <div className={styles.links}>
             {user ? (
@@ -24,6 +25,8 @@ export default async function SiteLayout({ children }: Readonly<IComponent.Child
                 <Link href="/upload">上传</Link>
               </>
             ) : null}
+          </div>
+          <div className={styles['site-actions']}>
             <AccountMenu />
           </div>
         </nav>

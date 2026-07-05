@@ -20,11 +20,11 @@ import {
 import styles from './page.module.scss';
 
 const typeColor: Record<PermissionType, string> = {
-  system: 'purple',
-  page: 'blue',
-  module: 'cyan',
-  operation: 'green',
-  data: 'orange',
+  system: 'default',
+  page: 'processing',
+  module: 'processing',
+  operation: 'success',
+  data: 'warning',
 };
 
 const typeLabel: Record<PermissionType, string> = {

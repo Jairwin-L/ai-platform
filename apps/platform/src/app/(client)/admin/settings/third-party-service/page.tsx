@@ -11,6 +11,11 @@ import {
 import styles from './page.module.scss';
 
 const serviceColorOptions = [
+  'default',
+  'processing',
+  'success',
+  'warning',
+  'error',
   'blue',
   'cyan',
   'geekblue',
@@ -29,7 +34,7 @@ const initialValues: IAppForms.ThirdPartyServiceOptionsValues = {
 };
 
 function createThirdPartyServiceOption(): ThirdPartyServiceOption {
-  return { apiKeyUrl: '', color: 'blue', enabled: true, label: '', value: '' };
+  return { apiKeyUrl: '', color: 'processing', enabled: true, label: '', value: '' };
 }
 
 function normalizeThirdPartyServiceOptions(

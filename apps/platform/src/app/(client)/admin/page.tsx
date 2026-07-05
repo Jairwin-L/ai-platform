@@ -45,7 +45,7 @@ export default function AdminPage() {
     <main className={styles.page}>
       <section className={styles.intro}>
         <div>
-          <Tag color="blue">ADMIN</Tag>
+          <Tag color="processing">ADMIN</Tag>
           <h1>访问控制</h1>
           <p>集中维护项目中的角色和权限。所有数据均来自当前项目的现有接口。</p>
         </div>

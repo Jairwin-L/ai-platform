@@ -4,9 +4,10 @@
   place-items: center;
   padding: 40px 16px;
   background:
-    radial-gradient(circle at top left, rgba(22, 119, 255, 0.14), transparent 32%),
-    linear-gradient(135deg, #f7fafc 0%, #eef4f8 48%, #f9fbff 100%);
-  color: #172033;
+    linear-gradient($site-color-border 1px, transparent 1px),
+    linear-gradient(90deg, $site-color-border 1px, transparent 1px), $site-color-canvas;
+  background-size: 72px 72px;
+  color: $site-color-text;
 }
 
 .auth-shell {
@@ -29,10 +30,10 @@
 
 .panel {
   padding: 28px;
-  border: 1px solid rgba(23, 32, 51, 0.08);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 18px 48px rgba(23, 32, 51, 0.12);
+  border: 1px solid $site-color-border;
+  border-radius: $site-radius-md;
+  background: $site-color-canvas;
+  box-shadow: $site-shadow-elevated;
 }
 
 .form {
@@ -55,12 +56,12 @@
 
 .switch-link {
   margin-top: 18px;
-  color: #5d6a7e;
+  color: $site-color-muted;
   text-align: center;
 }
 
 .switch-link a {
-  color: #1677ff;
+  color: $site-color-ink;
   font-weight: 600;
 }
 

@@ -15,7 +15,7 @@ import { BYOK_PROVIDER_VALUE_PATTERN } from '@/lib/ai/byok/constants';
 const defaultProviderValues: IAppForms.ProviderOptionValues = {
   apiKeyUrl: '',
   chatBaseUrl: '',
-  color: 'blue',
+  color: 'processing',
   enabled: true,
   label: '',
   models: [],
@@ -24,6 +24,11 @@ const defaultProviderValues: IAppForms.ProviderOptionValues = {
 };
 
 const providerColorOptions = [
+  'default',
+  'processing',
+  'success',
+  'warning',
+  'error',
   'blue',
   'cyan',
   'geekblue',

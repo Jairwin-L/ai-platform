@@ -52,10 +52,10 @@ const ttlOptions: Array<{ label: string; value: AiCredentialTtlOption }> = [
 ];
 
 const statusOptions: Array<{ color: string; label: string; value: AiCredentialStatus }> = [
-  { color: 'green', label: '可用', value: 'active' },
-  { color: 'orange', label: '已禁用', value: 'disabled' },
-  { color: 'red', label: '已过期', value: 'expired' },
-  { color: 'red', label: '无效', value: 'invalid' },
+  { color: 'success', label: '可用', value: 'active' },
+  { color: 'warning', label: '已禁用', value: 'disabled' },
+  { color: 'error', label: '已过期', value: 'expired' },
+  { color: 'error', label: '无效', value: 'invalid' },
 ];
 
 function getProviderOption(providerOptions: AiProviderOption[], provider: AiCredentialProvider) {

@@ -1,15 +1,19 @@
 .shell {
   display: grid;
+  width: min(100%, 1200px);
   gap: 1.5rem;
+  margin: 0 auto;
   min-height: calc(100vh - 3.75rem);
-  color: #0f172a;
+  padding: 1rem;
+  color: $site-color-text;
 }
 
 .aside {
   align-self: start;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
+  border: 1px solid $site-color-border;
+  border-radius: $site-radius-md;
   padding: 0.75rem;
+  background: $site-color-canvas;
 }
 
 .nav {
@@ -33,10 +37,10 @@
   align-items: center;
   gap: 0.5rem;
   border: 0;
-  border-radius: 0.5rem;
+  border-radius: $site-radius-sm;
   padding: 0.75rem;
   background: transparent;
-  color: #334155;
+  color: $site-color-text;
   cursor: pointer;
   font: inherit;
   font-size: 0.875rem;
@@ -49,8 +53,8 @@
 }
 
 .button:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: $site-color-surface-hover;
+  color: $site-color-ink;
 }
 
 .button:disabled {
@@ -59,8 +63,14 @@
 }
 
 .button[data-active='true'] {
-  background: #ecfdf5;
-  color: #047857;
+  background: $site-color-ink;
+  color: $site-color-inverse;
+}
+
+.button[data-active='true']:hover,
+.button[data-active='true']:focus-visible {
+  background: $site-color-primary-hover;
+  color: $site-color-inverse;
 }
 
 .icon {
@@ -84,7 +94,7 @@
 .public-content {
   min-height: 100vh;
   padding: 2rem 1rem;
-  background: #f8fafc;
+  background: $site-color-surface;
 }
 
 .public-content > * {
@@ -96,7 +106,7 @@
   .shell {
     grid-template-columns: 16rem minmax(0, 1fr);
     gap: 2rem;
-    padding: 1.5rem 0 3rem;
+    padding: 1.5rem 1rem 3rem;
   }
 
   .nav {
@@ -117,5 +127,7 @@
 @include responsive('xl') {
   .shell {
     grid-template-columns: 19.25rem minmax(0, 1fr);
+    padding-right: 0;
+    padding-left: 0;
   }
 }
