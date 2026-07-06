@@ -13,3 +13,8 @@ enum PermissionType {
   operation
   data
 }
+
+enum RoleStatus {
+  ENABLED
+  DISABLED
+}

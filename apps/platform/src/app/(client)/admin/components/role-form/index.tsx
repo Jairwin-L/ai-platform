@@ -15,10 +15,12 @@ import {
 import styles from './index.module.scss';
 
 const defaultRoleValues: IAppForms.RoleFormValues = {
+  code: '',
   description: '',
   is_system: false,
   name: '',
   permissions: [],
+  status: 'ENABLED',
 };
 
 function getPermissionTree(nodes: AdminPermission[]): IComponent.PermissionTreeNode[] {
@@ -27,6 +29,14 @@ function getPermissionTree(nodes: AdminPermission[]): IComponent.PermissionTreeN
     value: permission.id,
     children: permission.children ? getPermissionTree(permission.children) : undefined,
   }));
+}
+
+function normalizeRoleCode(value: unknown): string {
+  return typeof value === 'string' ? value.trim().toUpperCase() : '';
+}
+
+function normalizeRoleName(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 export function RoleForm({ roleId }: IComponent.RoleFormProps) {
@@ -57,10 +67,12 @@ export function RoleForm({ roleId }: IComponent.RoleFormProps) {
       if (roleResult.status === 'fulfilled') {
         const role = roleResult.value;
         form.setFieldsValue({
+          code: role.code,
           name: role.name,
           description: role.description ?? '',
           is_system: role.is_system,
           permissions: role.permissions ?? [],
+          status: role.status,
         });
       }
 
@@ -78,10 +90,12 @@ export function RoleForm({ roleId }: IComponent.RoleFormProps) {
 
   async function onFinish(values: IAppForms.RoleFormValues) {
     const payload: RolePayload = {
-      name: values.name.trim(),
+      code: normalizeRoleCode(values.code),
+      name: normalizeRoleName(values.name),
       description: values.description?.trim() || undefined,
       is_system: values.is_system ?? false,
       permissions: values.permissions ?? [],
+      status: values.status ?? 'ENABLED',
     };
 
     setSaving(true);
@@ -125,11 +139,20 @@ export function RoleForm({ roleId }: IComponent.RoleFormProps) {
           onFinish={onFinish}
         >
           <Form.Item
+            label="角色编码"
+            name="code"
+            normalize={normalizeRoleCode}
+            rules={[{ required: true, whitespace: true, message: '请输入角色编码' }]}
+          >
+            <Input maxLength={80} placeholder="例如：OPERATOR" />
+          </Form.Item>
+          <Form.Item
             label="角色名称"
             name="name"
+            normalize={normalizeRoleName}
             rules={[{ required: true, whitespace: true, message: '请输入角色名称' }]}
           >
-            <Input maxLength={80} placeholder="例如：内容审核员" />
+            <Input maxLength={80} placeholder="例如：操作员" />
           </Form.Item>
           <Form.Item label="角色说明" name="description">
             <Input.TextArea

@@ -1,4 +1,6 @@
 import type { NextRequest } from 'next/server';
+import { RoleCode, SYSTEM_ROLE_CODES } from '@/constants';
+import { RoleStatus } from '@/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
 import {
   DATA_ERROR,
@@ -49,6 +51,22 @@ function normalizePermissionIds(value: unknown): number[] {
   return Array.from(
     new Set(value.map((item) => Number(item)).filter((item) => Number.isInteger(item) && item > 0)),
   );
+}
+
+type RoleStatusValue = (typeof RoleStatus)[keyof typeof RoleStatus];
+
+const roleStatuses = new Set<string>(Object.values(RoleStatus));
+
+function normalizeRoleCode(value: string | undefined): string | undefined {
+  return value === undefined ? undefined : value.trim().toUpperCase();
+}
+
+function normalizeRoleName(value: string | undefined): string | undefined {
+  return value === undefined ? undefined : value.trim();
+}
+
+function getRoleStatus(value: string | undefined): RoleStatusValue | undefined {
+  return value !== undefined && roleStatuses.has(value) ? (value as RoleStatusValue) : undefined;
 }
 
 async function getPermissionTree(permissionIds: number[]) {
@@ -143,10 +161,12 @@ const updateRoleHandler: ApiHandler = async (request: NextRequest, context: ApiC
   }
 
   let body: {
+    code?: string;
     name?: string;
     description?: string | null;
     is_system?: boolean;
     permissions?: unknown;
+    status?: string;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -155,10 +175,43 @@ const updateRoleHandler: ApiHandler = async (request: NextRequest, context: ApiC
   }
 
   const { permissions, ...roleData } = body;
+  const code = normalizeRoleCode(roleData.code);
+  const name = normalizeRoleName(roleData.name);
+  const status = getRoleStatus(roleData.status);
   const permissionIds = normalizePermissionIds(permissions);
+
+  if (code === '') {
+    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, '角色编码不能为空', null, 400);
+  }
+
+  if (code !== undefined && !SYSTEM_ROLE_CODES.includes(code as RoleCode)) {
+    return createErrorResponse(
+      DATA_ERROR.VALIDATION_FAILED,
+      '角色编码不在系统定义范围内',
+      null,
+      422,
+    );
+  }
+
+  if (name === '') {
+    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, '角色名称不能为空', null, 400);
+  }
+
+  if (roleData.status !== undefined && !status) {
+    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, '角色状态无效', null, 422);
+  }
 
   try {
     const result = await prisma.$transaction(async (tx) => {
+      const existingRole = await tx.roles.findUnique({ where: { id } });
+      if (!existingRole) {
+        throw new TypeError('角色不存在');
+      }
+
+      if (existingRole.code === RoleCode.SUPER_ADMIN || code === RoleCode.SUPER_ADMIN) {
+        throw new RangeError('SUPER_ADMIN 不允许通过普通 API 修改');
+      }
+
       if (permissions) {
         await tx.rolePermissions.deleteMany({ where: { role_id: id } });
 
@@ -175,9 +228,11 @@ const updateRoleHandler: ApiHandler = async (request: NextRequest, context: ApiC
       return tx.roles.update({
         where: { id },
         data: {
-          name: roleData.name,
+          code,
+          name,
           description: roleData.description,
           is_system: roleData.is_system,
+          status,
           updated_at: new Date(),
         },
       });
@@ -192,7 +247,15 @@ const updateRoleHandler: ApiHandler = async (request: NextRequest, context: ApiC
     );
   } catch (error) {
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
-      return createErrorResponse(DATA_ERROR.DUPLICATE_ENTRY, '角色名称必须唯一', error, 409);
+      return createErrorResponse(DATA_ERROR.DUPLICATE_ENTRY, '角色编码必须唯一', error, 409);
+    }
+
+    if (error instanceof RangeError) {
+      return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, error.message, null, 403);
+    }
+
+    if (error instanceof TypeError) {
+      return createErrorResponse(DATA_ERROR.NOT_FOUND, error.message, null, 404);
     }
 
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2025') {
@@ -211,6 +274,15 @@ const deleteRoleHandler: ApiHandler = async (_request: NextRequest, context: Api
   }
 
   try {
+    const role = await prisma.roles.findUnique({ where: { id } });
+    if (!role) {
+      return createErrorResponse(DATA_ERROR.NOT_FOUND, '角色不存在', null, 404);
+    }
+
+    if (role.is_system) {
+      return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, '系统内置角色不可删除', null, 403);
+    }
+
     await prisma.rolePermissions.deleteMany({ where: { role_id: id } });
     await prisma.roles.delete({ where: { id } });
 

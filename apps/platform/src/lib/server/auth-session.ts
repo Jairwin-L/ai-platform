@@ -134,6 +134,7 @@ export async function getAuthUserBySessionToken(token?: string | null): Promise<
     return null;
   }
 
+  const now = new Date();
   const session = await prisma.userSessions.findFirst({
     where: {
       token_hash: createTokenHash(token),
@@ -144,6 +145,14 @@ export async function getAuthUserBySessionToken(token?: string | null): Promise<
       user: {
         include: {
           user_roles: {
+            where: {
+              revoked_at: null,
+              AND: [
+                { OR: [{ valid_from: null }, { valid_from: { lte: now } }] },
+                { OR: [{ valid_until: null }, { valid_until: { gt: now } }] },
+              ],
+              role: { status: 'ENABLED' },
+            },
             include: {
               role: {
                 include: {
@@ -169,7 +178,7 @@ export async function getAuthUserBySessionToken(token?: string | null): Promise<
   const permissions = new Set<string>();
 
   for (const userRole of session.user.user_roles) {
-    roles.add(userRole.role.name);
+    roles.add(userRole.role.code);
 
     for (const rolePermission of userRole.role.role_permissions) {
       permissions.add(rolePermission.permission.code);

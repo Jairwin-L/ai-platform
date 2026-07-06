@@ -268,7 +268,7 @@ export default function UsersPage() {
           />
           <Select
             allowClear
-            options={roles.map((role) => ({ label: role.name, value: role.name }))}
+            options={roles.map((role) => ({ label: role.name, value: role.code }))}
             placeholder="全部角色"
             value={filterRole}
             onChange={(value) => {

@@ -1,3 +1,4 @@
+import { ADMIN_ROLE_CODES } from '@/constants';
 import { prisma } from '@/lib/prisma';
 
 export async function isAdmin(userId?: string): Promise<boolean> {
@@ -5,12 +6,20 @@ export async function isAdmin(userId?: string): Promise<boolean> {
     return false;
   }
 
+  const now = new Date();
+
   try {
     const adminRole = await prisma.userRoles.findFirst({
       where: {
         user_id: userId,
+        revoked_at: null,
+        AND: [
+          { OR: [{ valid_from: null }, { valid_from: { lte: now } }] },
+          { OR: [{ valid_until: null }, { valid_until: { gt: now } }] },
+        ],
         role: {
-          name: 'admin',
+          code: { in: [...ADMIN_ROLE_CODES] },
+          status: 'ENABLED',
         },
       },
     });
@@ -31,8 +40,17 @@ export async function hasPermission(
   }
 
   try {
+    const now = new Date();
     const userRoles = await prisma.userRoles.findMany({
-      where: { user_id: userId },
+      where: {
+        user_id: userId,
+        revoked_at: null,
+        AND: [
+          { OR: [{ valid_from: null }, { valid_from: { lte: now } }] },
+          { OR: [{ valid_until: null }, { valid_until: { gt: now } }] },
+        ],
+        role: { status: 'ENABLED' },
+      },
       include: {
         role: {
           include: {
@@ -67,8 +85,17 @@ export async function getUserPermissions(userId?: string): Promise<string[]> {
   }
 
   try {
+    const now = new Date();
     const userRoles = await prisma.userRoles.findMany({
-      where: { user_id: userId },
+      where: {
+        user_id: userId,
+        revoked_at: null,
+        AND: [
+          { OR: [{ valid_from: null }, { valid_from: { lte: now } }] },
+          { OR: [{ valid_until: null }, { valid_until: { gt: now } }] },
+        ],
+        role: { status: 'ENABLED' },
+      },
       include: {
         role: {
           include: {

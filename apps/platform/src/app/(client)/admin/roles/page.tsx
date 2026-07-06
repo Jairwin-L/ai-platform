@@ -61,13 +61,15 @@ export default function RolesPage() {
 
   const columns: TableColumnsType<AdminRole> = [
     {
-      title: '角色名称',
+      title: '角色',
       dataIndex: 'name',
       width: 220,
       render: (name: string, role) => (
         <Space orientation="vertical" size={2}>
           <strong>{name}</strong>
+          <Tag>{role.code}</Tag>
           {role.is_system && <Tag color="processing">系统角色</Tag>}
+          {role.status === 'DISABLED' && <Tag color="warning">已禁用</Tag>}
         </Space>
       ),
     },

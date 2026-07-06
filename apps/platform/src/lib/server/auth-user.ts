@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { RoleCode } from '@/constants';
 import { prisma } from '@/lib/prisma';
 import { createPasswordHash } from './auth-session';
 
@@ -9,9 +10,15 @@ export async function createEmailUser(input: CreateEmailUserInput) {
 
   return prisma.$transaction(async (tx) => {
     const userRole = await tx.roles.upsert({
-      where: { name: 'user' },
+      where: { code: RoleCode.READ_ONLY },
       update: { updated_at: new Date() },
-      create: { name: 'user', description: 'Default user role', is_system: true },
+      create: {
+        code: RoleCode.READ_ONLY,
+        name: '只读用户',
+        description: '普通只读角色',
+        is_system: true,
+        status: 'ENABLED',
+      },
     });
 
     const user = await tx.users.create({

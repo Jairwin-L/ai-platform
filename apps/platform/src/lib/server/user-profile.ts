@@ -11,6 +11,7 @@ export async function getUserProfile(
   userId: string,
   currentUserId?: string,
 ): Promise<UserProfile | null> {
+  const now = new Date();
   const user = await prisma.users.findFirst({
     where: {
       id: userId,
@@ -18,12 +19,22 @@ export async function getUserProfile(
     },
     include: {
       user_roles: {
+        where: {
+          revoked_at: null,
+          AND: [
+            { OR: [{ valid_from: null }, { valid_from: { lte: now } }] },
+            { OR: [{ valid_until: null }, { valid_until: { gt: now } }] },
+          ],
+          role: { status: 'ENABLED' },
+        },
         select: {
           role: {
             select: {
+              code: true,
               id: true,
               name: true,
               description: true,
+              status: true,
             },
           },
         },

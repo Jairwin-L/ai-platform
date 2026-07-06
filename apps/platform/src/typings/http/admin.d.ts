@@ -1,5 +1,6 @@
 declare namespace IApiAdmin {
   interface AdminRole {
+    code: string;
     created_at: string;
     description: string | null;
     id: string;
@@ -7,6 +8,7 @@ declare namespace IApiAdmin {
     name: string;
     permission_count: number;
     permissions?: string[];
+    status: 'ENABLED' | 'DISABLED';
     updated_at: string;
     user_count: number;
   }
@@ -34,10 +36,12 @@ declare namespace IApiAdmin {
   }
 
   interface RolePayload {
+    code: string;
     description?: string;
     is_system?: boolean;
     name: string;
     permissions?: string[];
+    status?: AdminRole['status'];
   }
 
   interface PermissionPayload {

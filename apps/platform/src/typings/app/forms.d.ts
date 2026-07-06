@@ -74,9 +74,11 @@ declare namespace IAppForms {
   }
 
   interface RoleFormValues {
+    code: string;
     description?: string;
     is_system?: boolean;
     name: string;
     permissions?: string[];
+    status?: IApiAdmin.AdminRole['status'];
   }
 }

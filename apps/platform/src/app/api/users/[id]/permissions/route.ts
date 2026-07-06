@@ -35,8 +35,17 @@ const getUserPermissionsHandler: ApiHandler = async (
   }
 
   try {
+    const now = new Date();
     const userRoles = await prisma.userRoles.findMany({
-      where: { user_id: userId },
+      where: {
+        user_id: userId,
+        revoked_at: null,
+        AND: [
+          { OR: [{ valid_from: null }, { valid_from: { lte: now } }] },
+          { OR: [{ valid_until: null }, { valid_until: { gt: now } }] },
+        ],
+        role: { status: 'ENABLED' },
+      },
       include: {
         role: {
           include: {

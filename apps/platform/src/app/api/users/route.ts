@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/server';
+import { ADMIN_ROLE_CODES } from '@/constants';
 import { UserStatusType, type Prisma } from '@/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
 import {
@@ -33,6 +34,7 @@ const getUsersHandler: ApiHandler = async (request: NextRequest) => {
   const role = searchParams.get('role')?.trim() || '';
   const status = searchParams.get('status')?.trim() || '';
   const skip = (page - 1) * pageSize;
+  const now = new Date();
   const where: Prisma.UsersWhereInput = { is_deleted: false };
 
   if (searchTerm) {
@@ -49,7 +51,16 @@ const getUsersHandler: ApiHandler = async (request: NextRequest) => {
   }
 
   if (role) {
-    where.user_roles = { some: { role: { name: role } } };
+    where.user_roles = {
+      some: {
+        revoked_at: null,
+        AND: [
+          { OR: [{ valid_from: null }, { valid_from: { lte: now } }] },
+          { OR: [{ valid_until: null }, { valid_until: { gt: now } }] },
+        ],
+        role: { code: role, status: 'ENABLED' },
+      },
+    };
   }
 
   try {
@@ -61,12 +72,22 @@ const getUsersHandler: ApiHandler = async (request: NextRequest) => {
       orderBy: { created_at: 'desc' },
       include: {
         user_roles: {
+          where: {
+            revoked_at: null,
+            AND: [
+              { OR: [{ valid_from: null }, { valid_from: { lte: now } }] },
+              { OR: [{ valid_until: null }, { valid_until: { gt: now } }] },
+            ],
+            role: { status: 'ENABLED' },
+          },
           select: {
             role: {
               select: {
+                code: true,
                 id: true,
                 name: true,
                 description: true,
+                status: true,
               },
             },
           },
@@ -94,4 +115,4 @@ const getUsersHandler: ApiHandler = async (request: NextRequest) => {
   }
 };
 
-export const GET = withRoleApiHandler(['admin'], getUsersHandler);
+export const GET = withRoleApiHandler([...ADMIN_ROLE_CODES], getUsersHandler);

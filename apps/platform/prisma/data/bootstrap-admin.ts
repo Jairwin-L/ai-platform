@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '../../generated/prisma/client';
+import { RoleCode } from './system-roles';
 
 const bootstrapAdminEmail = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim();
 const strictMode = process.env.BOOTSTRAP_ADMIN_STRICT === 'true';
@@ -66,18 +67,33 @@ async function main(): Promise<void> {
   }
 
   const [user] = users;
-  const adminRole = await prisma.roles.findUnique({ where: { name: 'admin' } });
+  const adminRole = await prisma.roles.findUnique({ where: { code: RoleCode.SUPER_ADMIN } });
   if (!adminRole) {
-    throw new Error('Admin role not found. Run "vp run prisma:seed" before bootstrapping admin.');
+    throw new Error(
+      'SUPER_ADMIN role not found. Run "vp run prisma:seed" before bootstrapping admin.',
+    );
   }
 
-  await prisma.userRoles.upsert({
-    where: { user_id_role_id: { user_id: user.id, role_id: adminRole.id } },
-    update: {},
-    create: { user_id: user.id, role_id: adminRole.id },
+  const now = new Date();
+  const existingRole = await prisma.userRoles.findFirst({
+    where: {
+      user_id: user.id,
+      role_id: adminRole.id,
+      revoked_at: null,
+      AND: [
+        { OR: [{ valid_from: null }, { valid_from: { lte: now } }] },
+        { OR: [{ valid_until: null }, { valid_until: { gt: now } }] },
+      ],
+    },
   });
 
-  console.log('Bootstrap admin role assigned.');
+  if (!existingRole) {
+    await prisma.userRoles.create({
+      data: { user_id: user.id, role_id: adminRole.id },
+    });
+  }
+
+  console.log('Bootstrap SUPER_ADMIN role assigned.');
 }
 
 main()

@@ -12,6 +12,7 @@ import {
   type UserProfile,
   type UserStatus,
 } from '@/api/modules/users';
+import { RoleCode } from '@/constants';
 import styles from './page.module.scss';
 
 const statusOptions: Array<{ label: string; value: UserStatus }> = [
@@ -142,7 +143,9 @@ export default function EditUserPage() {
             <Select
               maxTagCount="responsive"
               mode="multiple"
-              options={roles.map((role) => ({ label: role.name, value: Number(role.id) }))}
+              options={roles
+                .filter((role) => role.code !== RoleCode.SUPER_ADMIN && role.status === 'ENABLED')
+                .map((role) => ({ label: role.name, value: Number(role.id) }))}
               placeholder="选择用户角色"
             />
           </Form.Item>

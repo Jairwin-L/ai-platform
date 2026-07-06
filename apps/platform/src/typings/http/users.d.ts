@@ -1,8 +1,10 @@
 declare namespace IApiUsers {
   interface UserProfileRole {
+    code: string;
     id: number;
     name: string;
     description: string | null;
+    status: 'ENABLED' | 'DISABLED';
   }
 
   interface UserProfile {

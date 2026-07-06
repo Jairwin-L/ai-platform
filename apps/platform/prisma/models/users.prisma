@@ -15,8 +15,12 @@ model Users {
   created_at     DateTime       @default(now()) @db.Timestamptz(6)
   updated_at     DateTime       @default(now()) @db.Timestamptz(6)
 
-  user_roles UserRoles[]
-  sessions   UserSessions[]
+  user_roles               UserRoles[]
+  sessions                 UserSessions[]
+  roles_created            Roles[]     @relation("RoleCreatedBy")
+  roles_updated            Roles[]     @relation("RoleUpdatedBy")
+  role_assignments_made    UserRoles[] @relation("UserRoleAssignedBy")
+  role_assignments_revoked UserRoles[] @relation("UserRoleRevokedBy")
 
   @@map("users")
 }
@@ -36,13 +40,27 @@ model UserSessions {
 }
 
 model UserRoles {
-  id         Int      @id @default(autoincrement())
-  user_id    String
-  role_id    Int
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  role       Roles    @relation(fields: [role_id], references: [id])
-  user       Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  id               Int       @id @default(autoincrement())
+  user_id          String
+  role_id          Int
+  valid_from       DateTime? @db.Timestamptz(6)
+  valid_until      DateTime? @db.Timestamptz(6)
+  assigned_by      String?
+  assigned_at      DateTime  @default(now()) @db.Timestamptz(6)
+  revoked_by       String?
+  revoked_at       DateTime? @db.Timestamptz(6)
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+  assigned_by_user Users?    @relation("UserRoleAssignedBy", fields: [assigned_by], references: [id], onDelete: SetNull)
+  revoked_by_user  Users?    @relation("UserRoleRevokedBy", fields: [revoked_by], references: [id], onDelete: SetNull)
+  role             Roles     @relation(fields: [role_id], references: [id])
+  user             Users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@unique([user_id, role_id])
+  @@index([assigned_by])
+  @@index([revoked_by])
+  @@index([revoked_at])
+  @@index([role_id])
+  @@index([user_id])
+  @@index([valid_from, valid_until])
   @@map("user_roles")
 }

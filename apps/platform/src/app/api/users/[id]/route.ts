@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/server';
+import { ADMIN_ROLE_CODES, RoleCode } from '@/constants';
 import { UserStatusType, type Prisma } from '@/generated/prisma/client';
 import {
   AUTH_ERROR,
@@ -111,7 +112,11 @@ const updateUserHandler = async (request: NextRequest, context: ApiContext) => {
       return createErrorResponse(AUTH_ERROR.UNAUTHORIZED, '请先登录', null, 401);
     }
 
-    const isAdmin = currentUser.roles?.includes('admin') ?? false;
+    const isSuperAdmin = currentUser.roles?.includes(RoleCode.SUPER_ADMIN) ?? false;
+    const isAdmin =
+      currentUser.roles?.some((role) =>
+        ADMIN_ROLE_CODES.includes(role as (typeof ADMIN_ROLE_CODES)[number]),
+      ) ?? false;
     if (!isAdmin && currentUser.userId !== userId) {
       return createErrorResponse(AUTH_ERROR.FORBIDDEN, '无权修改其他用户资料', null, 403);
     }
@@ -123,6 +128,17 @@ const updateUserHandler = async (request: NextRequest, context: ApiContext) => {
         null,
         422,
       );
+    }
+
+    const targetSuperAdminRole = await prisma.userRoles.findFirst({
+      where: {
+        user_id: userId,
+        revoked_at: null,
+        role: { code: RoleCode.SUPER_ADMIN, status: 'ENABLED' },
+      },
+    });
+    if (targetSuperAdminRole && !isSuperAdmin) {
+      return createErrorResponse(AUTH_ERROR.FORBIDDEN, '不可操作 SUPER_ADMIN 用户', null, 403);
     }
 
     const { status } = body;
@@ -154,16 +170,42 @@ const updateUserHandler = async (request: NextRequest, context: ApiContext) => {
     }
 
     await prisma.$transaction(async (transaction) => {
+      const now = new Date();
       if (roleIds !== undefined) {
-        const roleCount = await transaction.roles.count({ where: { id: { in: roleIds } } });
-        if (roleCount !== roleIds.length) {
+        if (targetSuperAdminRole) {
+          throw new RangeError('SUPER_ADMIN 的角色绑定关系不可通过普通 API 修改');
+        }
+
+        const selectedRoles = await transaction.roles.findMany({
+          where: { id: { in: roleIds } },
+          select: { code: true, id: true, status: true },
+        });
+
+        if (selectedRoles.length !== roleIds.length) {
           throw new TypeError('一个或多个角色不存在');
         }
 
-        await transaction.userRoles.deleteMany({ where: { user_id: userId } });
+        if (selectedRoles.some((role) => role.code === RoleCode.SUPER_ADMIN)) {
+          throw new RangeError('SUPER_ADMIN 的角色绑定关系不可通过普通 API 修改');
+        }
+
+        if (selectedRoles.some((role) => role.status !== 'ENABLED')) {
+          throw new TypeError('一个或多个角色已禁用');
+        }
+
+        await transaction.userRoles.updateMany({
+          where: { user_id: userId, revoked_at: null },
+          data: { revoked_at: now, revoked_by: currentUser.userId, updated_at: now },
+        });
         if (roleIds.length > 0) {
           await transaction.userRoles.createMany({
-            data: roleIds.map((roleId) => ({ user_id: userId, role_id: roleId })),
+            data: roleIds.map((roleId) => ({
+              user_id: userId,
+              role_id: roleId,
+              assigned_by: currentUser.userId,
+              assigned_at: now,
+              updated_at: now,
+            })),
           });
         }
       }
@@ -174,6 +216,10 @@ const updateUserHandler = async (request: NextRequest, context: ApiContext) => {
     const user = await getUserProfile(userId, currentUser.userId);
     return createSuccessResponse(user, '用户更新成功');
   } catch (error) {
+    if (error instanceof RangeError) {
+      return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, error.message, null, 403);
+    }
+
     if (error instanceof TypeError) {
       return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, error.message, null, 422);
     }

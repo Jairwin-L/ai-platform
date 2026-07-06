@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
-import type { Prisma } from '@/generated/prisma/client';
+import { RoleCode, SYSTEM_ROLE_CODES } from '@/constants';
+import { RoleStatus, type Prisma } from '@/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
 import {
   DATA_ERROR,
@@ -26,6 +27,22 @@ function normalizePermissionIds(value: unknown): number[] {
   );
 }
 
+type RoleStatusValue = (typeof RoleStatus)[keyof typeof RoleStatus];
+
+const roleStatuses = new Set<string>(Object.values(RoleStatus));
+
+function normalizeRoleCode(value: string | undefined): string {
+  return value?.trim().toUpperCase() ?? '';
+}
+
+function normalizeRoleName(value: string | undefined): string {
+  return value?.trim() ?? '';
+}
+
+function getRoleStatus(value: string | undefined): RoleStatusValue | undefined {
+  return value !== undefined && roleStatuses.has(value) ? (value as RoleStatusValue) : undefined;
+}
+
 /**
  * @openapi
  * /api/roles:
@@ -48,6 +65,7 @@ const getRolesHandler: ApiHandler = async (request: NextRequest) => {
 
   if (searchTerm) {
     where.OR = [
+      { code: { contains: searchTerm, mode: 'insensitive' } },
       { name: { contains: searchTerm, mode: 'insensitive' } },
       { description: { contains: searchTerm, mode: 'insensitive' } },
     ];
@@ -68,9 +86,11 @@ const getRolesHandler: ApiHandler = async (request: NextRequest) => {
     });
     const data = roles.map((role) => ({
       id: role.id.toString(),
+      code: role.code,
       name: role.name,
       description: role.description,
       is_system: role.is_system,
+      status: role.status,
       created_at: role.created_at,
       updated_at: role.updated_at,
       user_count: role._count.user_roles,
@@ -85,10 +105,12 @@ const getRolesHandler: ApiHandler = async (request: NextRequest) => {
 
 const createRoleHandler: ApiHandler = async (request: NextRequest) => {
   let body: {
+    code?: string;
     name?: string;
     description?: string;
     is_system?: boolean;
     permissions?: unknown;
+    status?: string;
   };
 
   try {
@@ -98,15 +120,50 @@ const createRoleHandler: ApiHandler = async (request: NextRequest) => {
   }
 
   const { permissions, ...roleData } = body;
+  const code = normalizeRoleCode(roleData.code);
+  const name = normalizeRoleName(roleData.name);
+  const status = getRoleStatus(roleData.status);
   const permissionIds = normalizePermissionIds(permissions);
+
+  if (!code) {
+    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, '角色编码不能为空', null, 400);
+  }
+
+  if (!SYSTEM_ROLE_CODES.includes(code as RoleCode)) {
+    return createErrorResponse(
+      DATA_ERROR.VALIDATION_FAILED,
+      '角色编码不在系统定义范围内',
+      null,
+      422,
+    );
+  }
+
+  if (!name) {
+    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, '角色名称不能为空', null, 400);
+  }
+
+  if (code === RoleCode.SUPER_ADMIN) {
+    return createErrorResponse(
+      DATA_ERROR.VALIDATION_FAILED,
+      'SUPER_ADMIN 只能通过 seed 初始化',
+      null,
+      403,
+    );
+  }
+
+  if (roleData.status !== undefined && !status) {
+    return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, '角色状态无效', null, 422);
+  }
 
   try {
     const result = await prisma.$transaction(async (tx) => {
       const newRole = await tx.roles.create({
         data: {
-          name: roleData.name!,
+          code,
+          name,
           description: roleData.description,
           is_system: roleData.is_system ?? false,
+          status: status ?? RoleStatus.ENABLED,
         },
       });
 
@@ -132,7 +189,7 @@ const createRoleHandler: ApiHandler = async (request: NextRequest) => {
     );
   } catch (error) {
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
-      return createErrorResponse(DATA_ERROR.DUPLICATE_ENTRY, '角色名称必须唯一', error, 409);
+      return createErrorResponse(DATA_ERROR.DUPLICATE_ENTRY, '角色编码必须唯一', error, 409);
     }
 
     return createErrorResponse(DATA_ERROR.CREATE_FAILED, '角色创建失败', error, 500);

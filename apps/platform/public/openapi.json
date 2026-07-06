@@ -780,6 +780,54 @@
         }
       }
     },
+    "/api/permissions/{id}": {
+      "get": {
+        "tags": ["Permissions"],
+        "summary": "Get permission details"
+      },
+      "put": {
+        "tags": ["Permissions"],
+        "summary": "Update permission"
+      },
+      "delete": {
+        "tags": ["Permissions"],
+        "summary": "Delete permission"
+      }
+    },
+    "/api/permissions": {
+      "get": {
+        "tags": ["Permissions"],
+        "summary": "Get permissions list"
+      },
+      "post": {
+        "tags": ["Permissions"],
+        "summary": "Create new permission"
+      }
+    },
+    "/api/roles/{id}": {
+      "get": {
+        "tags": ["Roles"],
+        "summary": "Get role details"
+      },
+      "put": {
+        "tags": ["Roles"],
+        "summary": "Update role"
+      },
+      "delete": {
+        "tags": ["Roles"],
+        "summary": "Delete role"
+      }
+    },
+    "/api/roles": {
+      "get": {
+        "tags": ["Roles"],
+        "summary": "Get roles list"
+      },
+      "post": {
+        "tags": ["Roles"],
+        "summary": "Create new role"
+      }
+    },
     "/api/upload/presigned": {
       "post": {
         "tags": ["Upload"],
@@ -827,10 +875,25 @@
           "400": {
             "description": "参数错误或文件类型不受支持"
           },
+          "401": {
+            "description": "未登录或登录已失效"
+          },
           "500": {
             "description": "预签名上传地址生成失败"
           }
         }
+      }
+    },
+    "/api/users/{id}/permissions": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get user permissions"
+      }
+    },
+    "/api/users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get user list"
       }
     }
   }
