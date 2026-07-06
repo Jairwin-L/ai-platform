@@ -6,6 +6,7 @@ import { Pool } from 'pg';
 
 const databaseUrl = process.env.DATABASE_URL;
 const migrationsPath = join(process.cwd(), 'prisma', 'migrations');
+const baselineMigrationName = '00000000000000_init';
 const roleCodeMigrationName = '20260706000000_role_code_storage';
 
 if (!databaseUrl) {
@@ -98,19 +99,21 @@ async function main(): Promise<void> {
     const businessTableCount = await getBusinessTableCount(pool);
 
     if (businessTableCount === 0) {
-      console.log('No business tables found. Initializing database with Prisma db push.');
-      runCommand('vp', ['run', 'prisma:push:deploy']);
-      markMigrationsApplied(migrationNames);
+      console.log('No business tables found. Applying Prisma migrations.');
+      runCommand('vp', ['run', 'prisma:deploy']);
       return;
     }
 
     const migrationsTableExists = await hasPrismaMigrationsTable(pool);
     const rolesCodeColumnExists = await hasRolesCodeColumn(pool);
 
-    if (!migrationsTableExists && rolesCodeColumnExists) {
-      console.log('Database schema is current but migrations are not baselined.');
-      markMigrationsApplied(migrationNames);
-      return;
+    if (!migrationNames.includes(baselineMigrationName)) {
+      throw new Error(`Missing required baseline migration: ${baselineMigrationName}.`);
+    }
+
+    if (!migrationsTableExists) {
+      console.log('Existing database is not baselined. Marking baseline migration as applied.');
+      markMigrationsApplied([baselineMigrationName]);
     }
 
     if (migrationsTableExists && rolesCodeColumnExists) {
