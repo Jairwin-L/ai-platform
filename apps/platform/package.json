@@ -31,6 +31,7 @@
     "prepare": "vp config",
     "prisma:generate": "prisma generate",
     "prisma:deploy": "prisma migrate deploy",
+    "prisma:sync:deploy": "tsx prisma/data/sync-deploy.ts",
     "prisma:push:deploy": "prisma db push",
     "prisma:push": "dotenv -e .env -- prisma db push",
     "prisma:seed:deploy": "tsx prisma/data/main.ts",

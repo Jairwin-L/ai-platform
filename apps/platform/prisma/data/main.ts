@@ -40,7 +40,7 @@ async function assertRequiredTablesExist(): Promise<void> {
     throw new Error(
       [
         `Missing database table(s): ${missingTables.join(', ')}`,
-        'Run "vp run prisma:push" before "vp run prisma:seed", or run "vp run prisma:setup".',
+        'Run "vp run prisma:setup" before "vp run prisma:seed".',
       ].join('\n'),
     );
   }

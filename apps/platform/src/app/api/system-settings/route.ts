@@ -164,7 +164,7 @@ function isMissingSystemSettingsTable(error: unknown): boolean {
 
 function getStorageErrorMessage(error: unknown, fallback: string): string {
   if (isMissingSystemSettingsTable(error)) {
-    return '系统设置存储尚未初始化，请先执行“vp run prisma:push”。';
+    return '系统设置存储尚未初始化，请先执行“vp run prisma:setup”。';
   }
 
   return fallback;

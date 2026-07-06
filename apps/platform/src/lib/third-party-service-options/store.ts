@@ -22,7 +22,7 @@ function isMissingServiceOptionsStorage(error: unknown): boolean {
 
 export function getServiceOptionsStorageErrorMessage(error: unknown, fallback: string): string {
   if (isMissingServiceOptionsStorage(error)) {
-    return '第三方服务存储结构尚未初始化，请先执行“vp run prisma:push”。';
+    return '第三方服务存储结构尚未初始化，请先执行“vp run prisma:setup”。';
   }
 
   return fallback;

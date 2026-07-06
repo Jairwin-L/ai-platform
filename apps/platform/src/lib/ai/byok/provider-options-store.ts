@@ -26,7 +26,7 @@ function isMissingProviderOptionsStorage(error: unknown): boolean {
 
 export function getProviderOptionsStorageErrorMessage(error: unknown, fallback: string): string {
   if (isMissingProviderOptionsStorage(error)) {
-    return 'AI Provider 存储结构尚未初始化，请先执行“vp run prisma:push”。';
+    return 'AI Provider 存储结构尚未初始化，请先执行“vp run prisma:setup”。';
   }
 
   return fallback;

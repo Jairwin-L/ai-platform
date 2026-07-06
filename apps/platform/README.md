@@ -160,7 +160,9 @@ vp run lint             # lint 与 stylelint
 vp run lint:fix         # 格式化并自动修复
 vp run openapi:generate # 生成 public/openapi.json
 vp run prisma:generate  # 生成 Prisma Client
-vp run prisma:push      # 根据 schema 推送数据库结构
+vp run prisma:deploy    # 执行已提交的 Prisma migrations
+vp run prisma:sync:deploy # 部署环境按数据库状态同步结构
+vp run prisma:push      # 根据 schema 推送数据库结构，仅适合空库或临时开发
 vp run prisma:seed:deploy # 部署环境写入基础角色/权限数据
 vp run prisma:seed      # 写入基础角色/权限数据
 vp run prisma:setup     # 推送数据库结构并执行 seed
