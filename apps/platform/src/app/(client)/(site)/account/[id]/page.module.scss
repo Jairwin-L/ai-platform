@@ -7,7 +7,6 @@
 
 .container {
   display: flex;
-  width: min(100%, 46rem);
   flex-direction: column;
   gap: 1.25rem;
   margin: 0 auto;
@@ -74,6 +73,14 @@
 
 .subtitle {
   margin: 0.375rem 0 0;
+  overflow-wrap: anywhere;
+  color: $site-color-muted;
+}
+
+.email {
+  display: inline-flex;
+  max-width: 100%;
+  margin-top: 0.375rem;
   overflow-wrap: anywhere;
   color: $site-color-muted;
 }

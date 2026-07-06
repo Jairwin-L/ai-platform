@@ -101,8 +101,8 @@ export function AdminShell({ children }: IComponent.AdminShellProps) {
   }
 
   function onHeaderMenuClick({ key }: { key: string }): void {
-    if (key === 'PLATFORM') {
-      router.push('/');
+    if (key === 'ACCOUNT') {
+      router.push(`/account/${user?.id}`);
     }
   }
 
@@ -152,7 +152,7 @@ export function AdminShell({ children }: IComponent.AdminShellProps) {
             <Dropdown
               menu={{
                 items: [
-                  { key: 'PLATFORM', icon: <AppstoreOutlined />, label: '平台' },
+                  { key: 'ACCOUNT', icon: <AppstoreOutlined />, label: '我的账户' },
                   { type: 'divider' },
                   { key: 'SIGN_OUT', icon: <LogoutOutlined />, label: '退出登录', disabled: true },
                 ],

@@ -16,7 +16,7 @@ function buildAccountNavItems(userId?: string): IAppPages.AccountNavItem[] {
       icon: <UserOutlined />,
       isActive: (pathname) =>
         pathname.startsWith('/account/') && !pathname.startsWith('/account/setting'),
-      label: '个人资料',
+      label: '我的账户',
     },
     {
       disabled: !userId,

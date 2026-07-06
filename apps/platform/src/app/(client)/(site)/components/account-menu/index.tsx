@@ -55,18 +55,18 @@ export function AccountMenu() {
   }
 
   function onMenuClick({ key }: { key: string }): void {
-    if (key === 'profile') {
+    if (key === 'ACCOUNT') {
       onProfileClick();
       return;
     }
 
-    if (key === 'ai-settings') {
+    if (key === 'AI_SETTING') {
       router.push('/account/setting/ai');
       return;
     }
 
-    if (key === 'third-party-service') {
-      router.push('/account/setting/third-party-service');
+    if (key === 'THIRD_PARTY_SERVICE') {
+      router.push('/account/setting/THIRD_PARTY_SERVICE');
       return;
     }
 
@@ -75,7 +75,7 @@ export function AccountMenu() {
       return;
     }
 
-    if (key === 'sign-out') {
+    if (key === 'SIGN_OUT') {
       signOutCurrentUser();
     }
   }
@@ -83,14 +83,14 @@ export function AccountMenu() {
   const displayName = getDisplayName(user);
   const shouldShowAvatarImage = Boolean(user?.picture && !avatarFailed);
   const menuItems: MenuProps['items'] = [
-    { key: 'profile', label: '我的资料' },
-    { key: 'ai-settings', label: 'AI 密钥' },
-    { key: 'third-party-service', label: '第三方服务凭据' },
+    { key: 'ACCOUNT', label: '我的账户' },
+    { key: 'AI_SETTING', label: 'AI 密钥' },
+    { key: 'THIRD_PARTY_SERVICE', label: '第三方服务凭据' },
     { type: 'divider' },
     ...(hasRole('admin') ? [{ key: 'admin', label: '管理系统' }] : []),
     { type: 'divider' },
     {
-      key: 'sign-out',
+      key: 'SIGN_OUT',
       disabled: signingOut,
       danger: true,
       label: signingOut ? '退出中...' : '退出登录',

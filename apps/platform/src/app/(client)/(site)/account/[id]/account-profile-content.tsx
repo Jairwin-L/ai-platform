@@ -1,25 +1,18 @@
 'use client';
 
 import { useEffect } from 'react';
+import { Typography } from 'antd';
 import { useAuthSessionStore } from '@/stores/auth-session';
 import type { UserProfile } from '@/api/modules/users';
 import { AccountProfileForm } from './account-profile-form';
 import styles from './page.module.scss';
 
 function getDisplayName(profile: UserProfile): string {
-  return profile.nick_name || profile.full_name || profile.user_name || profile.email || profile.id;
+  return profile.nick_name || '未设置昵称';
 }
 
-function getProfileSubtitle(profile: UserProfile): string | null {
-  if (profile.user_name) {
-    return `@${profile.user_name}`;
-  }
-
-  if (profile.is_me) {
-    return profile.email || profile.id;
-  }
-
-  return null;
+function getAvatarName(profile: UserProfile): string {
+  return profile.nick_name || profile.email || profile.full_name || profile.user_name || profile.id;
 }
 
 function getInitials(name: string): string {
@@ -39,7 +32,8 @@ export function AccountProfileContent({ profile }: IAppPages.AccountProfileConte
   const displayedProfile =
     profile.is_me && currentUserProfile?.id === profile.id ? currentUserProfile : profile;
   const displayName = getDisplayName(displayedProfile);
-  const profileSubtitle = getProfileSubtitle(displayedProfile);
+  const avatarName = getAvatarName(displayedProfile);
+  const profileEmail = displayedProfile.email || '未设置邮箱';
 
   return (
     <main className={styles.page}>
@@ -52,7 +46,7 @@ export function AccountProfileContent({ profile }: IAppPages.AccountProfileConte
                 style={{ backgroundImage: `url(${displayedProfile.picture})` }}
               />
             ) : (
-              getInitials(displayName)
+              getInitials(avatarName)
             )}
           </div>
           <div className={styles.identity}>
@@ -60,7 +54,16 @@ export function AccountProfileContent({ profile }: IAppPages.AccountProfileConte
               <h1 className={styles.title}>{displayName}</h1>
               {profile.is_me ? <span className={styles.badge}>我自己</span> : null}
             </div>
-            {profileSubtitle ? <p className={styles.subtitle}>{profileSubtitle}</p> : null}
+            <Typography.Text
+              className={styles.email}
+              copyable={
+                displayedProfile.email
+                  ? { text: displayedProfile.email, tooltips: ['复制邮箱', '已复制'] }
+                  : false
+              }
+            >
+              {profileEmail}
+            </Typography.Text>
             <p className={styles.bio}>{displayedProfile.bio || '这个用户还没有填写个人简介。'}</p>
           </div>
         </header>
