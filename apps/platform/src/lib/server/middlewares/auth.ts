@@ -1,5 +1,6 @@
 import type { NextRequest, NextResponse } from 'next/server';
 import { AUTH_ERROR } from '@/constants/error-codes';
+import { getMissingPermissionMessage } from '@/constants/permissions';
 import { getAuthUserBySessionToken, getSessionCookieName } from '../auth-session';
 import { createErrorResponse } from '../responses/error';
 import type { ApiContext, ApiMiddleware } from '../types';
@@ -48,7 +49,7 @@ export function requirePermission(...required: string[]): ApiMiddleware {
     if (!ok) {
       return createErrorResponse(
         AUTH_ERROR.FORBIDDEN,
-        `缺少权限：${required.join(', ')}`,
+        getMissingPermissionMessage(required),
         null,
         403,
       );

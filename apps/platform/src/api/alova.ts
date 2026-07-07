@@ -7,8 +7,12 @@ import { createAlova } from 'alova';
 import type { Method, RequestBody } from 'alova';
 import fetch from 'alova/fetch';
 import ReactHook from 'alova/react';
+import { AUTH_ERROR } from '@/constants/error-codes';
+import { getMissingPermissionMessage } from '@/constants/permissions';
 
 let alovaMessageApi: IAlovaHttp.MessageApi | null = null;
+const PERMISSION_CODE_PATTERN = /^[A-Z][A-Z0-9_]*(?::[A-Z0-9_]+)+$/u;
+const PERMISSION_CODE_IN_MESSAGE_PATTERN = /[A-Z][A-Z0-9_]*(?::[A-Z0-9_]+)+/u;
 
 /**
  * @func setAlovaMessageApi
@@ -67,6 +71,72 @@ function isFailedApiResponse(data: unknown): boolean {
 }
 
 /**
+ * @func getResponseErrorCode
+ * @desc 获取接口响应中的错误码。
+ * @param {unknown} data 响应数据。
+ * @returns {string | undefined} 错误码。
+ */
+function getResponseErrorCode(data: unknown): string | undefined {
+  if (isApiResponse(data)) {
+    if (typeof data.errorCode === 'string' && data.errorCode) {
+      return data.errorCode;
+    }
+
+    return typeof data.code === 'string' ? data.code : undefined;
+  }
+
+  if (typeof data !== 'object' || data === null || !('errorCode' in data)) {
+    return undefined;
+  }
+
+  const { errorCode } = data;
+
+  return typeof errorCode === 'string' && errorCode ? errorCode : undefined;
+}
+
+/**
+ * @func getForbiddenResponseMessage
+ * @desc 获取权限错误的安全提示文本，避免暴露内部权限编码。
+ * @param {string} message 原始错误提示文本。
+ * @returns {string} 安全提示文本。
+ */
+function getForbiddenResponseMessage(message: string): string {
+  const missingPermissionMatch = /^缺少权限[:：]\s*(.+)$/u.exec(message);
+
+  if (missingPermissionMatch) {
+    const segments = missingPermissionMatch[1]
+      .split(/[,\s，、]+/u)
+      .map((code) => code.trim())
+      .filter(Boolean);
+
+    const codes = segments.filter((segment) => PERMISSION_CODE_PATTERN.test(segment));
+
+    return codes.length > 0 ? getMissingPermissionMessage(codes) : message;
+  }
+
+  if (PERMISSION_CODE_IN_MESSAGE_PATTERN.test(message)) {
+    return AUTH_ERROR.FORBIDDEN.message;
+  }
+
+  return message;
+}
+
+/**
+ * @func getSafeResponseMessage
+ * @desc 根据错误码归一化面向用户展示的响应提示。
+ * @param {unknown} data 响应数据。
+ * @param {string} message 原始提示文本。
+ * @returns {string} 面向用户展示的提示文本。
+ */
+function getSafeResponseMessage(data: unknown, message: string): string {
+  if (getResponseErrorCode(data) !== AUTH_ERROR.FORBIDDEN.code) {
+    return message;
+  }
+
+  return getForbiddenResponseMessage(message);
+}
+
+/**
  * @func parseResponseBody
  * @desc 安全解析响应体数据。
  * @param {Response} response fetch 响应对象。
@@ -98,23 +168,21 @@ async function parseResponseBody(response: Response): Promise<unknown> {
  * @returns {string} 响应提示文本。
  */
 function getResponseMessage(data: unknown, fallback: string): string {
+  let message = fallback;
+
   if (isApiResponse(data) && data.message) {
-    return data.message;
-  }
-
-  if (isErrorResponse(data) && data.error?.message) {
-    return data.error.message;
-  }
-
-  if (typeof data === 'object' && data !== null && 'message' in data) {
+    message = data.message;
+  } else if (isErrorResponse(data) && data.error?.message) {
+    message = data.error.message;
+  } else if (typeof data === 'object' && data !== null && 'message' in data) {
     const { message: responseMessage } = data;
 
     if (typeof responseMessage === 'string' && responseMessage) {
-      return responseMessage;
+      message = responseMessage;
     }
   }
 
-  return fallback;
+  return getSafeResponseMessage(data, message);
 }
 
 /**
