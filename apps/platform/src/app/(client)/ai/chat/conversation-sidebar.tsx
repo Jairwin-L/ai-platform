@@ -1,9 +1,10 @@
 'use client';
 
-import { PlusOutlined, SettingOutlined } from '@ant-design/icons';
+import { PlusOutlined } from '@ant-design/icons';
 import { Button, Empty, Input, Skeleton } from 'antd';
 import Link from 'next/link';
 import type { AiChatConversation } from '@/api/modules/ai-chat';
+import { APP_BLACK_LOGO, APP_NAME } from '@/constants';
 import styles from './page.module.scss';
 
 interface ConversationSidebarProps {
@@ -11,11 +12,9 @@ interface ConversationSidebarProps {
   conversations: AiChatConversation[];
   keyword: string;
   loading: boolean;
-  sidebarCollapsed: boolean;
   onCreateConversation: () => void;
   onKeywordChange: (value: string) => void;
   onLoadConversation: (conversationId: string) => void;
-  onToggleSidebar: () => void;
 }
 
 function formatTime(value: string): string {
@@ -59,26 +58,35 @@ export function ConversationSidebar({
   conversations,
   keyword,
   loading,
-  sidebarCollapsed,
   onCreateConversation,
   onKeywordChange,
   onLoadConversation,
-  onToggleSidebar,
 }: ConversationSidebarProps) {
   const groupedConversations = groupConversations(conversations);
 
   return (
     <aside className={styles.sidebar}>
       <div className={styles['sidebar-header']}>
-        <Button block icon={<PlusOutlined />} type="primary" onClick={onCreateConversation}>
-          新建聊天
-        </Button>
-        <Input.Search
-          allowClear
-          placeholder="搜索会话"
-          value={keyword}
-          onChange={(event) => onKeywordChange(event.target.value)}
-        />
+        <Link className={styles['sidebar-brand']} href="/">
+          <img alt={APP_NAME} className={styles['sidebar-logo']} src={APP_BLACK_LOGO} />
+          <span>{APP_NAME}</span>
+        </Link>
+        <div className={styles['sidebar-controls']}>
+          <Input.Search
+            allowClear
+            className={styles['conversation-search']}
+            placeholder="搜索会话"
+            value={keyword}
+            onChange={(event) => onKeywordChange(event.target.value)}
+          />
+          <Button
+            aria-label="新建聊天"
+            icon={<PlusOutlined />}
+            title="新建聊天"
+            type="primary"
+            onClick={onCreateConversation}
+          />
+        </div>
       </div>
       <div className={styles['conversation-list']}>
         {loading ? <Skeleton active paragraph={{ rows: 8 }} /> : null}
@@ -101,16 +109,6 @@ export function ConversationSidebar({
             ))}
           </section>
         ))}
-      </div>
-      <div className={styles['sidebar-footer']}>
-        <Link href="/account/setting/ai">
-          <Button block icon={<SettingOutlined />}>
-            AI 设置
-          </Button>
-        </Link>
-        <Button block onClick={onToggleSidebar}>
-          {sidebarCollapsed ? '展开侧栏' : '收起侧栏'}
-        </Button>
       </div>
     </aside>
   );

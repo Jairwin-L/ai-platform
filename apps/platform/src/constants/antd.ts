@@ -6,9 +6,8 @@ export const SELECT_OPTION = {
     option?.children?.toLowerCase()?.indexOf(input?.toLowerCase()) >= 0,
 };
 export const MODAL_OPTION = {
-  maskClosable: false,
+  mask: { closable: false },
   keyboard: false,
   centered: true,
   destroyOnHidden: true,
-  forceRender: true,
 };

@@ -3,13 +3,12 @@
 import {
   DeleteOutlined,
   EditOutlined,
-  MenuOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
   MoreOutlined,
-  RedoOutlined,
 } from '@ant-design/icons';
-import { App, Button, Drawer, Dropdown, Input, Modal, Select, Skeleton, Tooltip } from 'antd';
+import { App, Button, Dropdown, Input, Modal, Select, Skeleton } from 'antd';
 import { Prompts, Sender, Welcome } from '@ant-design/x';
-import { XMarkdown } from '@ant-design/x-markdown';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   deleteAiConversation,
@@ -23,9 +22,11 @@ import {
   type AiChatMessage,
   type AiChatModelConfig,
 } from '@/api/modules/ai-chat';
+import { AccountMenu } from '@/app/(client)/(site)/components/account-menu';
+import { ChatMessage } from './chat-message';
 import { ConversationSidebar } from './conversation-sidebar';
-import styles from './page.module.scss';
 import { MODAL_OPTION } from '@/constants/antd';
+import styles from './page.module.scss';
 
 const prompts = ['帮我总结一段文本', '解释一段代码', '生成一个接口设计方案', '优化一段 SQL'];
 const promptItems = prompts.map((prompt) => ({ key: prompt, label: prompt }));
@@ -36,18 +37,6 @@ function parseJson<T>(value: string): T | null {
   } catch {
     return null;
   }
-}
-
-function getMessageStatusText(status: AiChatMessage['status']): string {
-  if (status === 'STOPPED') {
-    return '已停止生成';
-  }
-
-  if (status === 'ERROR') {
-    return '生成失败';
-  }
-
-  return '';
 }
 
 export default function Page() {
@@ -65,7 +54,6 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [streaming, setStreaming] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState('');
@@ -133,7 +121,6 @@ export default function Page() {
       setMessages([]);
     } finally {
       setMessagesLoading(false);
-      setDrawerOpen(false);
     }
   }
 
@@ -316,7 +303,22 @@ export default function Page() {
 
     await loadBaseData();
   }
-
+  function onMoreHeaderOperate({ key }: { key: string }): void {
+    if (key === 'RENAME') {
+      setRenameValue(activeConversation?.title ?? '新建对话');
+      setRenameOpen(true);
+    }
+    if (key === 'DELETE' && activeConversationId) {
+      Modal.confirm({
+        title: '删除当前会话吗？',
+        okText: '删除',
+        centered: true,
+        okButtonProps: { danger: true },
+        cancelText: '取消',
+        onOk: () => removeConversation(activeConversationId),
+      });
+    }
+  }
   function handleScroll(): void {
     const container = scrollRef.current;
 
@@ -332,47 +334,43 @@ export default function Page() {
       conversations={conversations}
       keyword={keyword}
       loading={loading}
-      sidebarCollapsed={sidebarCollapsed}
       onCreateConversation={() => {
         setActiveConversationId(null);
         setMessages([]);
       }}
       onKeywordChange={setKeyword}
       onLoadConversation={loadMessages}
-      onToggleSidebar={toggleSidebar}
     />
   );
 
   return (
     <>
       <main className={styles.page}>
-        {!sidebarCollapsed ? (
-          sidebar
-        ) : (
-          <Button
-            className={styles['expand-button']}
-            icon={<MenuOutlined />}
-            onClick={toggleSidebar}
-          />
-        )}
+        {!sidebarCollapsed ? sidebar : null}
         <section className={styles.chat}>
           <header className={styles.toolbar}>
-            <Button
-              className={styles['mobile-menu']}
-              icon={<MenuOutlined />}
-              type="text"
-              onClick={() => setDrawerOpen(true)}
-            />
-            <button
-              className={styles.title}
-              type="button"
-              onClick={() => {
-                setRenameValue(activeConversation?.title ?? '新建对话');
-                setRenameOpen(true);
-              }}
-            >
-              {activeConversation?.title ?? '新建对话'}
-            </button>
+            <div className={styles['toolbar-left-container']}>
+              <Button
+                aria-label={sidebarCollapsed ? '展开侧栏' : '收起侧栏'}
+                className={styles['sidebar-toggle']}
+                icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                title={sidebarCollapsed ? '展开侧栏' : '收起侧栏'}
+                onClick={toggleSidebar}
+              />
+              <h1 className={styles.title}>{activeConversation?.title ?? '新建对话'}</h1>
+              <Dropdown
+                trigger={['click']}
+                menu={{
+                  items: [
+                    { key: 'RENAME', icon: <EditOutlined />, label: '重命名' },
+                    { key: 'DELETE', danger: true, icon: <DeleteOutlined />, label: '删除会话' },
+                  ],
+                  onClick: onMoreHeaderOperate,
+                }}
+              >
+                <Button className={styles['more-button']} icon={<MoreOutlined />} type="text" />
+              </Dropdown>
+            </div>
             <div className={styles['toolbar-actions']}>
               <Select
                 className={styles['model-select']}
@@ -382,31 +380,7 @@ export default function Page() {
                 value={activeModelId}
                 onChange={changeModel}
               />
-              <Dropdown
-                menu={{
-                  items: [
-                    { key: 'rename', icon: <EditOutlined />, label: '重命名' },
-                    { key: 'delete', danger: true, icon: <DeleteOutlined />, label: '删除会话' },
-                  ],
-                  onClick: ({ key }) => {
-                    if (key === 'rename') {
-                      setRenameValue(activeConversation?.title ?? '新建对话');
-                      setRenameOpen(true);
-                    }
-                    if (key === 'delete' && activeConversationId) {
-                      Modal.confirm({
-                        title: '删除当前会话吗？',
-                        okText: '删除',
-                        okButtonProps: { danger: true },
-                        cancelText: '取消',
-                        onOk: () => removeConversation(activeConversationId),
-                      });
-                    }
-                  },
-                }}
-              >
-                <Button icon={<MoreOutlined />} type="text" />
-              </Dropdown>
+              <AccountMenu />
             </div>
           </header>
           <div ref={scrollRef} className={styles.messages} onScroll={handleScroll}>
@@ -434,46 +408,13 @@ export default function Page() {
               </div>
             ) : null}
             {messages.map((item, index) => (
-              <article
+              <ChatMessage
                 key={item.id}
-                className={`${styles.message} ${styles[item.role.toLowerCase()]}`}
-              >
-                <div className={styles['message-content']}>
-                  {item.role === 'ASSISTANT' ? (
-                    <XMarkdown content={item.content || '正在思考...'} />
-                  ) : (
-                    <p>{item.content}</p>
-                  )}
-                </div>
-                <div className={styles['message-actions']}>
-                  <span>{getMessageStatusText(item.status)}</span>
-                  <Tooltip title="复制">
-                    <Button
-                      size="small"
-                      type="text"
-                      onClick={() => navigator.clipboard.writeText(item.content)}
-                    >
-                      复制
-                    </Button>
-                  </Tooltip>
-                  {item.role === 'ASSISTANT' ? (
-                    <Button
-                      icon={<RedoOutlined />}
-                      size="small"
-                      type="text"
-                      onClick={() => {
-                        const source = [...messages]
-                          .slice(0, index)
-                          .reverse()
-                          .find((messageItem) => messageItem.role === 'USER');
-                        if (source) sendMessage(source.content);
-                      }}
-                    >
-                      重新生成
-                    </Button>
-                  ) : null}
-                </div>
-              </article>
+                index={index}
+                message={item}
+                messages={messages}
+                onRegenerate={sendMessage}
+              />
             ))}
           </div>
           <footer className={styles.sender}>
@@ -510,9 +451,6 @@ export default function Page() {
       >
         <Input value={renameValue} onChange={(event) => setRenameValue(event.target.value)} />
       </Modal>
-      <Drawer open={drawerOpen} placement="left" size={300} onClose={() => setDrawerOpen(false)}>
-        {sidebar}
-      </Drawer>
     </>
   );
 }
