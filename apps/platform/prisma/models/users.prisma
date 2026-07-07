@@ -21,6 +21,9 @@ model Users {
   roles_updated            Roles[]     @relation("RoleUpdatedBy")
   role_assignments_made    UserRoles[] @relation("UserRoleAssignedBy")
   role_assignments_revoked UserRoles[] @relation("UserRoleRevokedBy")
+  ai_provider_configs      AiProviderConfig[]
+  chat_conversations       ChatConversation[]
+  ai_usage                 AiUsage[]
 
   @@map("users")
 }

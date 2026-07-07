@@ -1,0 +1,103 @@
+model AiProviderConfig {
+  id               String         @id @default(cuid())
+  userId           String         @map("user_id")
+  user             Users          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name             String
+  provider         AiProviderKind
+  baseUrl          String?        @map("base_url")
+  apiKeyCiphertext String         @map("api_key_ciphertext") @db.Text
+  apiKeyIv         String         @map("api_key_iv")
+  apiKeyTag        String         @map("api_key_tag")
+  keyVersion       Int            @default(1) @map("key_version")
+  keyLast4         String         @map("key_last4")
+  isEnabled        Boolean        @default(true) @map("is_enabled")
+  lastVerifiedAt   DateTime?      @map("last_verified_at") @db.Timestamptz(6)
+  lastVerifyError  String?        @map("last_verify_error")
+  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  models           AiModelConfig[]
+
+  @@unique([userId, name])
+  @@index([userId, isEnabled])
+  @@map("ai_provider_configs")
+}
+
+model AiModelConfig {
+  id                 String           @id @default(cuid())
+  providerConfigId   String           @map("provider_config_id")
+  providerConfig     AiProviderConfig @relation(fields: [providerConfigId], references: [id], onDelete: Cascade)
+  name               String
+  modelId            String           @map("model_id")
+  systemPrompt       String?          @map("system_prompt") @db.Text
+  generationDefaults Json?            @map("generation_defaults")
+  maxOutputTokens    Int?             @map("max_output_tokens")
+  isEnabled          Boolean          @default(true) @map("is_enabled")
+  isDefault          Boolean          @default(false) @map("is_default")
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([providerConfigId, modelId])
+  @@index([providerConfigId, isEnabled])
+  @@index([isDefault])
+  @@map("ai_model_configs")
+}
+
+model ChatConversation {
+  id            String        @id @default(cuid())
+  userId        String        @map("user_id")
+  user          Users         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  modelConfigId String?       @map("model_config_id")
+  systemPrompt  String?       @map("system_prompt") @db.Text
+  modelSnapshot Json?         @map("model_snapshot")
+  lastMessageAt DateTime      @default(now()) @map("last_message_at") @db.Timestamptz(6)
+  deletedAt     DateTime?     @map("deleted_at") @db.Timestamptz(6)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  messages      ChatMessage[]
+
+  @@index([userId, deletedAt, lastMessageAt])
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id             String            @id @default(cuid())
+  conversationId String            @map("conversation_id")
+  conversation   ChatConversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sequence       Int
+  role           ChatRole
+  content        String            @db.Text
+  status         ChatMessageStatus @default(COMPLETED)
+  modelSnapshot  Json?             @map("model_snapshot")
+  usage          Json?
+  metadata       Json?
+  errorCode      String?           @map("error_code")
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([conversationId, sequence])
+  @@index([conversationId, createdAt])
+  @@index([conversationId, status])
+  @@map("chat_messages")
+}
+
+model AiUsage {
+  id               String   @id @default(cuid())
+  userId           String   @map("user_id")
+  user             Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationId   String?  @map("conversation_id")
+  messageId        String?  @map("message_id")
+  modelConfigId    String   @map("model_config_id")
+  provider         String
+  modelId          String   @map("model_id")
+  promptTokens     Int?     @map("prompt_tokens")
+  completionTokens Int?     @map("completion_tokens")
+  totalTokens      Int?     @map("total_tokens")
+  latencyMs        Int?     @map("latency_ms")
+  status           String
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId, createdAt])
+  @@index([conversationId])
+  @@map("ai_usage")
+}

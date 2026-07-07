@@ -18,3 +18,23 @@ enum RoleStatus {
   ENABLED
   DISABLED
 }
+
+enum AiProviderKind {
+  OPENAI_COMPATIBLE
+  ANTHROPIC
+  GEMINI
+}
+
+enum ChatRole {
+  SYSTEM
+  USER
+  ASSISTANT
+  TOOL
+}
+
+enum ChatMessageStatus {
+  STREAMING
+  COMPLETED
+  STOPPED
+  ERROR
+}

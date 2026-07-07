@@ -51,6 +51,16 @@ function getErrorText(value: unknown): string {
   return typeof value === 'string' ? value.toLowerCase() : '';
 }
 
+function getProviderErrorMessage(payload: IByok.ProviderErrorPayload | null): string | undefined {
+  const message = typeof payload?.error?.message === 'string' ? payload.error.message.trim() : '';
+
+  if (!message) {
+    return undefined;
+  }
+
+  return message.length > 240 ? `${message.slice(0, 240)}...` : message;
+}
+
 function isProviderAuthenticationFailure(
   response: Response,
   payload: IByok.ProviderErrorPayload | null,
@@ -77,7 +87,22 @@ function isProviderAuthenticationFailure(
   );
 }
 
-function toProviderUnavailableError(response: Response): ByokPublicError {
+function toProviderUnavailableError(
+  response: Response,
+  payload: IByok.ProviderErrorPayload | null,
+): ByokPublicError {
+  const providerMessage = getProviderErrorMessage(payload);
+
+  if (providerMessage) {
+    return new ByokPublicError(
+      response.status === 429
+        ? BYOK_ERROR_CODE.RATE_LIMITED
+        : BYOK_ERROR_CODE.AI_PROVIDER_UNAVAILABLE,
+      response.status === 429 ? 429 : 503,
+      `AI Provider 请求失败：${providerMessage}`,
+    );
+  }
+
   return new ByokPublicError(
     response.status === 429
       ? BYOK_ERROR_CODE.RATE_LIMITED
@@ -97,7 +122,7 @@ async function assertProviderResponseOk(response: Response): Promise<void> {
     throw new ByokPublicError(BYOK_ERROR_CODE.BYOK_KEY_INVALID, 401);
   }
 
-  throw toProviderUnavailableError(response);
+  throw toProviderUnavailableError(response, errorPayload);
 }
 
 function getChatCompletionsContent(data: unknown): string | null {
@@ -286,6 +311,10 @@ export async function callAiProvider(
       throw error;
     }
 
-    throw new ByokPublicError(BYOK_ERROR_CODE.AI_PROVIDER_UNAVAILABLE, 503);
+    throw new ByokPublicError(
+      BYOK_ERROR_CODE.AI_PROVIDER_UNAVAILABLE,
+      503,
+      'AI Provider 请求失败：网络连接失败或请求超时。',
+    );
   }
 }

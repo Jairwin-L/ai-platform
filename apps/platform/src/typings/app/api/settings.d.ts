@@ -47,4 +47,8 @@ declare namespace IRouteApi {
   interface ThirdPartyServiceCredentialRouteContext {
     params: Promise<{ credentialId: string }>;
   }
+
+  interface IdRouteContext {
+    params: Promise<{ id: string }>;
+  }
 }
