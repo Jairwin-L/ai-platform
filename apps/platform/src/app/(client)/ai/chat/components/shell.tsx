@@ -7,8 +7,8 @@ import {
   MenuUnfoldOutlined,
   MoreOutlined,
 } from '@ant-design/icons';
-import { App, Button, Dropdown, Input, Modal, Select, Skeleton } from 'antd';
-import { Prompts, Sender, Welcome } from '@ant-design/x';
+import { App, Button, Dropdown, Modal, Select, Skeleton } from 'antd';
+import { Sender } from '@ant-design/x';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -26,15 +26,11 @@ import {
 import { AccountMenu } from '@/app/(client)/(site)/components/account-menu';
 import { ChatMessage } from './message';
 import { ConversationSidebar } from './sidebar';
-import { MODAL_OPTION } from '@/constants/antd';
+import { RenameConversationModal } from './rename-conversation-modal';
+import { WelcomePanel } from './welcome-panel';
 import { useDebounced } from '@/hooks/use-debounced';
 import { useAuthSessionStore } from '@/stores/auth-session';
-import {
-  CHAT_PROMPT_ITEMS,
-  getChatConversationPath,
-  getRouteConversationId,
-  parseJson,
-} from '../helpers';
+import { getChatConversationPath, getRouteConversationId, parseJson } from '../helpers';
 import styles from '../page.module.scss';
 
 export function ChatShell() {
@@ -80,30 +76,31 @@ export function ChatShell() {
     });
   }, []);
 
-  const loadBaseData = useCallback(async () => {
+  const fetchConversations = useCallback(async () => {
     setLoading(true);
-    const [conversationResult, modelResult] = await Promise.allSettled([
-      getAiConversations({ keyword, pageSize: 80 }),
-      getAiModelConfigs(),
-    ]);
 
-    if (conversationResult.status === 'fulfilled') {
-      setConversations(conversationResult.value.list);
+    try {
+      const result = await getAiConversations({ keyword, pageSize: 80 });
+
+      setConversations(result.list);
+    } finally {
+      setLoading(false);
     }
-
-    if (modelResult.status === 'fulfilled') {
-      setModels(modelResult.value);
-      setActiveModelId(
-        (current) => current ?? modelResult.value.find((item) => item.isDefault)?.id,
-      );
-    }
-
-    setLoading(false);
   }, [keyword]);
 
+  const fetchModelConfigs = useCallback(async () => {
+    const result = await getAiModelConfigs();
+    setModels(result);
+    setActiveModelId((current) => current ?? result.find((item) => item.isDefault)?.id);
+  }, []);
+
   useEffect(() => {
-    loadBaseData().catch(() => undefined);
-  }, [loadBaseData]);
+    fetchConversations().catch(() => undefined);
+  }, [fetchConversations]);
+
+  useEffect(() => {
+    fetchModelConfigs().catch(() => undefined);
+  }, [fetchModelConfigs]);
 
   useEffect(() => {
     const stored = localStorage.getItem('ai-chat-sidebar-collapsed');
@@ -272,7 +269,7 @@ export function ChatShell() {
       }
 
       updateAssistantMessage(assistantMessageId, (item) => ({ ...item, status: 'COMPLETED' }));
-      await loadBaseData();
+      await fetchConversations();
 
       if (conversationId && routeConversationId !== conversationId) {
         router.replace(getChatConversationPath(conversationId));
@@ -309,7 +306,7 @@ export function ChatShell() {
 
     try {
       await updateAiConversation(activeConversationId, { modelConfigId });
-      await loadBaseData();
+      await fetchConversations();
     } catch {
       // 请求错误由 alova 全局提示处理。
     }
@@ -322,7 +319,7 @@ export function ChatShell() {
 
     await updateAiConversation(activeConversationId, { title: renameValue.trim() });
     setRenameOpen(false);
-    await loadBaseData();
+    await fetchConversations();
   }
 
   async function removeConversation(id: string): Promise<void> {
@@ -338,7 +335,7 @@ export function ChatShell() {
       }
     }
 
-    await loadBaseData();
+    await fetchConversations();
   }
   const debouncedSendMessage = useDebounced(sendMessage, 300);
   const debouncedStopStreaming = useDebounced(stopStreaming, 300);
@@ -438,26 +435,11 @@ export function ChatShell() {
           <div ref={scrollRef} className={styles.messages} onScroll={handleScroll}>
             {messagesLoading ? <Skeleton active paragraph={{ rows: 6 }} /> : null}
             {!messagesLoading && messages.length === 0 ? (
-              <div className={styles.welcome}>
-                <Welcome
-                  description={
-                    activeModelId
-                      ? '选择提示词开始对话，或直接输入问题。'
-                      : '请先在 AI 设置中配置可用模型。'
-                  }
-                  title={welcomeTitle}
-                  variant="borderless"
-                />
-                <Prompts
-                  items={CHAT_PROMPT_ITEMS}
-                  wrap
-                  onItemClick={({ data }) => {
-                    if (typeof data.label === 'string') {
-                      setInput(data.label);
-                    }
-                  }}
-                />
-              </div>
+              <WelcomePanel
+                activeModelId={activeModelId}
+                title={welcomeTitle}
+                onPromptSelect={setInput}
+              />
             ) : null}
             {messages.map((item, index) => (
               <ChatMessage
@@ -492,17 +474,13 @@ export function ChatShell() {
           </footer>
         </section>
       </main>
-      <Modal
-        {...MODAL_OPTION}
-        okText="保存"
-        cancelText="取消"
+      <RenameConversationModal
         open={renameOpen}
-        title="重命名会话"
+        value={renameValue}
         onCancel={() => setRenameOpen(false)}
         onOk={debouncedRenameConversation}
-      >
-        <Input value={renameValue} onChange={(event) => setRenameValue(event.target.value)} />
-      </Modal>
+        onValueChange={setRenameValue}
+      />
     </>
   );
 }
