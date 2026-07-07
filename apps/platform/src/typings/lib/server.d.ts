@@ -79,7 +79,7 @@ declare namespace IServer {
   type RedisArrayValue = Array<string | number | null>;
   type RedisValue = string | number | null | RedisArrayValue;
 
-  type AuthCodePurpose = IApiAuth.AuthCodePurpose;
+  type AuthCodePurpose = IApiAuth.AuthCodePurpose | 'reset-password';
 
   interface StoredVerificationCode {
     attempts: number;

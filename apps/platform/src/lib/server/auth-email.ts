@@ -31,7 +31,15 @@ function escapeHtml(value: string): string {
 }
 
 function getPurposeText(purpose: AuthCodePurpose): string {
-  return purpose === 'sign-up' ? '注册账号' : '登录账号';
+  if (purpose === 'sign-up') {
+    return '注册账号';
+  }
+
+  if (purpose === 'reset-password') {
+    return '重置密码';
+  }
+
+  return '登录账号';
 }
 
 function buildVerificationEmailHtml(code: string, purpose: AuthCodePurpose): string {

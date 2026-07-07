@@ -1,0 +1,60 @@
+.page {
+  width: 100%;
+  padding: 0;
+  color: $site-color-text;
+}
+
+.panel {
+  border: 1px solid $site-color-border;
+  border-radius: $site-radius-md;
+  padding: 1.25rem;
+  background: $site-color-canvas;
+  box-shadow: $site-shadow-soft;
+}
+
+.heading {
+  margin-bottom: 1.5rem;
+}
+
+.heading h2 {
+  margin: 0 0 0.375rem;
+  color: $site-color-ink;
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+.heading p {
+  margin: 0;
+  color: $site-color-muted;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.form {
+  max-width: 30rem;
+}
+
+.code-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 112px;
+  gap: 0.625rem;
+}
+
+.code-row > button {
+  margin-top: 30px;
+}
+
+.submit {
+  width: 100%;
+  max-width: 30rem;
+}
+
+@media (max-width: 520px) {
+  .code-row {
+    grid-template-columns: 1fr;
+  }
+
+  .code-row > button {
+    margin-top: 0;
+  }
+}

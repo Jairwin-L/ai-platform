@@ -72,6 +72,7 @@
 - 不引入与需求无关的新依赖；如确需引入，须说明用途与体积影响。
 - 避免重复实现：已有工具函数（`src/utils/`）、请求封装与业务请求模块（`src/api/`）、组件可复用时不要新增平行实现。
 - 接口层响应提示统一在 `src/api/alova.ts` 全局处理：接口失败返回的错误信息使用 `message.error`，接口成功提示使用 `message.success`；业务组件与 `src/api/` 业务请求模块不要重复调用 `message.error` / `message.success` 处理 alova 接口响应。纯前端校验、上传进度、编辑器图片上传等非 alova 接口交互提示可在组件内按需处理。
+- 跟表单相关的新增或修改功能，前端表单输入与接口层请求参数都必须使用 `zod` 作为校验层；优先复用同一份 schema 或从共享 schema 派生，避免前端和接口层校验规则不一致。
 - 列表类接口响应不要在 `data` 下再用资源名包裹一层；例如返回凭证列表时使用 `data: [...]`，不要使用 `data: { credentials: [...] }`。分页接口保持既有分页结构（如 `data: { data, total, page, pageSize }`）。
 - 单文件代码行数上限：每个页面（`src/app/**/page.tsx`、`layout.tsx` 等）、每个组件文件不得超过 500 行（含注释与空行）；超过时必须按职责拆分为子组件 / 子模块，不允许通过删注释、压行等方式绕过该限制。
 - App Router 中区分 Server Component / Client Component，需要 `"use client"` 时务必显式声明，且只在确有客户端交互时使用。

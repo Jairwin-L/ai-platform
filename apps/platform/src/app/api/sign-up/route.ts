@@ -1,26 +1,12 @@
 import type { NextRequest } from 'next/server';
-import { z } from 'zod';
-import {
-  createDuplicateEmailError,
-  createValidationError,
-  emailSchema,
-  passwordSchema,
-  verificationCodeSchema,
-} from '@/lib/server/auth-route';
+import { createDuplicateEmailError, createValidationError } from '@/lib/server/auth-route';
+import { signUpSchema } from '@/lib/auth/schemas';
 import { createSuccessResponse, withApiHandler } from '@/lib/server';
 import { createEmailUser, findUserByEmail } from '@/lib/server/auth-user';
 import { normalizeEmail, verifyCode } from '@/lib/server/auth-verification';
 
-const requestSchema = z
-  .object({
-    code: verificationCodeSchema,
-    email: emailSchema,
-    password: passwordSchema,
-  })
-  .strict();
-
 export const POST = withApiHandler(async (request: NextRequest) => {
-  const parsed = requestSchema.safeParse(await request.json());
+  const parsed = signUpSchema.safeParse(await request.json());
 
   if (!parsed.success) {
     return createValidationError('注册请求参数无效');

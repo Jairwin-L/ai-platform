@@ -1,13 +1,11 @@
 import type { NextRequest } from 'next/server';
-import { z } from 'zod';
 import {
   createDuplicateEmailError,
   createEmailNotRegisteredError,
   createUnavailableAccountError,
   createValidationError,
-  authCodePurposeSchema,
-  emailSchema,
 } from '@/lib/server/auth-route';
+import { requestVerificationCodeSchema } from '@/lib/auth/schemas';
 import { createSuccessResponse, withApiHandler } from '@/lib/server';
 import { sendVerificationCodeEmail } from '@/lib/server/auth-email';
 import {
@@ -18,13 +16,8 @@ import {
 } from '@/lib/server/auth-verification';
 import { findUserByEmail } from '@/lib/server/auth-user';
 
-const requestSchema = z.object({
-  email: emailSchema,
-  purpose: authCodePurposeSchema,
-});
-
 export const POST = withApiHandler(async (request: NextRequest) => {
-  const parsed = requestSchema.safeParse(await request.json());
+  const parsed = requestVerificationCodeSchema.safeParse(await request.json());
 
   if (!parsed.success) {
     return createValidationError('邮箱或验证码用途无效');

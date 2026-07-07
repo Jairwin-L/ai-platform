@@ -57,3 +57,30 @@ export async function findUserByEmail(email: string) {
     where: { email },
   });
 }
+
+export async function updateUserPassword(userId: string, password: string) {
+  const passwordHash = await createPasswordHash(password);
+  const now = new Date();
+
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.users.update({
+      where: { id: userId },
+      data: {
+        password_hash: passwordHash,
+        updated_at: now,
+      },
+    });
+
+    await tx.userSessions.updateMany({
+      where: {
+        user_id: userId,
+        revoked_at: null,
+      },
+      data: {
+        revoked_at: now,
+      },
+    });
+
+    return user;
+  });
+}

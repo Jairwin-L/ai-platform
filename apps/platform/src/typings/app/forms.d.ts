@@ -15,6 +15,11 @@ declare namespace IAppForms {
     password: string;
   }
 
+  interface ResetPasswordValues {
+    code: string;
+    password: string;
+  }
+
   interface SettingsValues {
     allowRegistration: boolean;
     byokAllowedOrigins: string;

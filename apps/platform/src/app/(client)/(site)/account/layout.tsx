@@ -1,6 +1,6 @@
 'use client';
 
-import { ApiOutlined, KeyOutlined, UserOutlined } from '@ant-design/icons';
+import { ApiOutlined, KeyOutlined, LockOutlined, UserOutlined } from '@ant-design/icons';
 import { usePathname, useRouter } from 'next/navigation';
 import ClientSideOnly from '@/components/client-side-only';
 import { usePermission } from '@/hooks/use-permission';
@@ -14,9 +14,15 @@ function buildAccountNavItems(userId?: string): IAppPages.AccountNavItem[] {
       disabled: !userId,
       href: profileHref,
       icon: <UserOutlined />,
-      isActive: (pathname) =>
-        pathname.startsWith('/account/') && !pathname.startsWith('/account/setting'),
+      isActive: (pathname) => pathname === profileHref,
       label: '我的账户',
+    },
+    {
+      disabled: !userId,
+      href: '/account/reset-password',
+      icon: <LockOutlined />,
+      isActive: (pathname) => pathname === '/account/reset-password',
+      label: '重置密码',
     },
     {
       disabled: !userId,
@@ -41,6 +47,7 @@ export default function AccountLayout({ children }: IAppPages.AccountLayoutProps
   const { isReady, user } = usePermission();
   const navItems = buildAccountNavItems(user?.id);
   const isSettingPath = pathname.startsWith('/account/setting');
+  const isResetPasswordPath = pathname === '/account/reset-password';
 
   function onGoPage(item: IAppPages.AccountNavItem): void {
     if (item.disabled || pathname === item.href) {
@@ -52,7 +59,7 @@ export default function AccountLayout({ children }: IAppPages.AccountLayoutProps
 
   return (
     <ClientSideOnly>
-      {isReady && !user && !isSettingPath ? (
+      {isReady && !user && !isSettingPath && !isResetPasswordPath ? (
         <div className={styles['public-content']}>{children}</div>
       ) : (
         <div className={styles.shell}>
