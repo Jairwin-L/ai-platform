@@ -5,7 +5,7 @@ import { Button, Empty, Input, Skeleton } from 'antd';
 import Link from 'next/link';
 import type { AiChatConversation } from '@/api/modules/ai-chat';
 import { APP_BLACK_LOGO, APP_NAME } from '@/constants';
-import styles from './page.module.scss';
+import styles from '../page.module.scss';
 
 interface ConversationSidebarProps {
   activeConversationId: string | null;

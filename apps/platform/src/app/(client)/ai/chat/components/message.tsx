@@ -4,7 +4,7 @@ import { RedoOutlined } from '@ant-design/icons';
 import { Button, Tooltip } from 'antd';
 import { XMarkdown } from '@ant-design/x-markdown';
 import type { AiChatMessage } from '@/api/modules/ai-chat';
-import styles from './page.module.scss';
+import styles from '../page.module.scss';
 
 interface ChatMessageProps {
   index: number;
