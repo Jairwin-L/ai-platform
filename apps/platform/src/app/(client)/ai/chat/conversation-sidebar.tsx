@@ -4,7 +4,7 @@ import { PlusOutlined, SettingOutlined } from '@ant-design/icons';
 import { Button, Empty, Input, Skeleton } from 'antd';
 import Link from 'next/link';
 import type { AiChatConversation } from '@/api/modules/ai-chat';
-import styles from './ai-chat-screen.module.scss';
+import styles from './page.module.scss';
 
 interface ConversationSidebarProps {
   activeConversationId: string | null;

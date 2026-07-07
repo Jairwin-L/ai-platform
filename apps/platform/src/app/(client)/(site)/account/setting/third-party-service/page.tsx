@@ -35,6 +35,7 @@ import {
   type ThirdPartyServiceOption,
 } from '@/api/modules/third-party-service-credentials';
 import styles from './page.module.scss';
+import { MODAL_OPTION } from '@/constants/antd';
 
 const initialValues: IAppForms.ThirdPartyServiceCredentialFormValues = {
   apiKey: '',
@@ -369,10 +370,9 @@ export default function ThirdPartyServiceCredentialsPage() {
         </section>
       </main>
       <Modal
-        centered
+        {...MODAL_OPTION}
         cancelText="取消"
         confirmLoading={saving}
-        destroyOnHidden
         okText={isOverwriteMode ? '覆盖凭据' : '保存凭据'}
         open={modalOpen}
         title={isOverwriteMode ? '覆盖第三方服务 API 凭据' : '新增第三方服务 API 凭据'}

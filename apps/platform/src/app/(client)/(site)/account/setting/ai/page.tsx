@@ -36,6 +36,7 @@ import {
   type SaveAiCredentialPayload,
 } from '@/api/modules/ai-credentials';
 import styles from './page.module.scss';
+import { MODAL_OPTION } from '@/constants/antd';
 
 const initialValues: IAppForms.CredentialFormValues = {
   label: '',
@@ -367,10 +368,9 @@ export default function AiSettingsPage() {
         </section>
       </main>
       <Modal
-        centered
+        {...MODAL_OPTION}
         cancelText="取消"
         confirmLoading={saving}
-        destroyOnHidden
         okText={isOverwriteMode ? '覆盖密钥' : '保存密钥'}
         open={modalOpen}
         title={isOverwriteMode ? '覆盖 AI 密钥' : '新增 AI 密钥'}
