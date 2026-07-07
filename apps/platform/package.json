@@ -74,6 +74,7 @@
     "antd": "^6.4.4",
     "aws4fetch": "^1.0.20",
     "file-type": "^22.0.1",
+    "lodash-es": "^4.18.1",
     "next": "^16.2.9",
     "next-swagger-doc": "^0.4.1",
     "pg": "^8.22.0",

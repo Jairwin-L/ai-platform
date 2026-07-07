@@ -7,6 +7,7 @@ import { Button, Form, Input, Tabs, Typography } from 'antd';
 import type { FormInstance } from 'antd';
 import { APP_BLACK_LOGO, APP_NAME, VERIFICATION_CODE_TTL_SECONDS } from '@/constants';
 import { requestVerificationCode, signInWithCode, signInWithPassword } from '@/api/modules/auth';
+import { useDebounced } from '@/hooks/use-debounced';
 import { useAuthSessionStore } from '@/stores/auth-session';
 import styles from './page.module.scss';
 
@@ -96,6 +97,11 @@ export default function SignInPage() {
       setCodeLoading(false);
     }
   }
+  const debouncedPasswordFinish = useDebounced(onPasswordFinish, 300);
+  const debouncedCodeFinish = useDebounced(onCodeFinish, 300);
+  const debouncedRequestCode = useDebounced(() => {
+    requestCode(codeForm, setCodeCountdown, setCodeRequestLoading);
+  }, 300);
 
   return (
     <main className={styles['auth-page']}>
@@ -117,7 +123,7 @@ export default function SignInPage() {
                     className={styles.form}
                     form={passwordForm}
                     layout="vertical"
-                    onFinish={onPasswordFinish}
+                    onFinish={debouncedPasswordFinish}
                   >
                     <Form.Item
                       label="邮箱"
@@ -158,7 +164,7 @@ export default function SignInPage() {
                     className={styles.form}
                     form={codeForm}
                     layout="vertical"
-                    onFinish={onCodeFinish}
+                    onFinish={debouncedCodeFinish}
                   >
                     <Form.Item
                       label="邮箱"
@@ -184,9 +190,7 @@ export default function SignInPage() {
                       <Button
                         disabled={codeCountdown > 0}
                         loading={codeRequestLoading}
-                        onClick={() =>
-                          requestCode(codeForm, setCodeCountdown, setCodeRequestLoading)
-                        }
+                        onClick={debouncedRequestCode}
                       >
                         {codeCountdown > 0 ? `${codeCountdown} 秒后重发` : '获取验证码'}
                       </Button>

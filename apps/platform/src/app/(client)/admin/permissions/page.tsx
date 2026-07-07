@@ -17,6 +17,7 @@ import {
   type AdminPermission,
   type PermissionType,
 } from '@/api/modules/admin';
+import { useDebounced } from '@/hooks/use-debounced';
 import styles from './page.module.scss';
 
 const typeColor: Record<PermissionType, string> = {
@@ -86,6 +87,13 @@ export default function PermissionsPage() {
       // 请求错误由 alova 全局提示处理。
     }
   }
+  const debouncedRemovePermission = useDebounced(removePermission, 300);
+  const debouncedSearch = useDebounced((value: string) => {
+    setSearchTerm(value.trim());
+  }, 300);
+  const debouncedRefresh = useDebounced(async () => {
+    await loadPermissions();
+  }, 300);
 
   const columns: TableColumnsType<AdminPermission> = [
     {
@@ -143,7 +151,7 @@ export default function PermissionsPage() {
             okText="删除"
             title={`删除“${permission.name}”吗？`}
             onConfirm={async () => {
-              await removePermission(permission);
+              await debouncedRemovePermission(permission);
             }}
           >
             <Button
@@ -183,7 +191,7 @@ export default function PermissionsPage() {
             placeholder="按名称、编码或说明搜索"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            onSearch={(value) => setSearchTerm(value.trim())}
+            onSearch={debouncedSearch}
           />
           <Select
             options={[
@@ -193,12 +201,7 @@ export default function PermissionsPage() {
             value={filterType}
             onChange={(value) => setFilterType(value as PermissionType | 'all')}
           />
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={async () => {
-              await loadPermissions();
-            }}
-          >
+          <Button icon={<ReloadOutlined />} onClick={debouncedRefresh}>
             刷新
           </Button>
         </div>

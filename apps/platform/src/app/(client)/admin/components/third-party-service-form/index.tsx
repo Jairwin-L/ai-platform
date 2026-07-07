@@ -10,6 +10,7 @@ import {
   updateAdminThirdPartyServiceOption,
   type ThirdPartyServiceOption,
 } from '@/api/modules/admin';
+import { useDebounced } from '@/hooks/use-debounced';
 
 const defaultServiceValues: IAppForms.ThirdPartyServiceOptionValues = {
   apiKeyUrl: '',
@@ -119,6 +120,7 @@ export function ThirdPartyServiceForm({
       setSaving(false);
     }
   }
+  const debouncedFinish = useDebounced(onFinish, 300);
 
   return (
     <main className={styles.page}>
@@ -143,7 +145,7 @@ export function ThirdPartyServiceForm({
           initialValues={defaultServiceValues}
           layout="vertical"
           requiredMark="optional"
-          onFinish={onFinish}
+          onFinish={debouncedFinish}
         >
           <Form.Item
             label="服务标识"

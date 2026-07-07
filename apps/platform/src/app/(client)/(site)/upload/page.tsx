@@ -8,6 +8,7 @@ import {
   getThirdPartyServiceCredentials,
   type ThirdPartyServiceCredential,
 } from '@/api/modules/third-party-service-credentials';
+import { useDebounced } from '@/hooks/use-debounced';
 import { getFileLink } from '@/utils/link';
 import { fileTypeValid } from '@/utils/file';
 import { compressImage } from '@/utils/compress-image';
@@ -303,6 +304,9 @@ export default function Page() {
       message.error(error instanceof Error ? error.message : '上传失败');
     });
   }
+  const debouncedSubmit = useDebounced(onSubmit, 300);
+  const debouncedRetryFailed = useDebounced(onRetryFailed, 300);
+  const debouncedRetryItem = useDebounced(onRetryItem, 300);
 
   useEffect(() => {
     let ignore = false;
@@ -402,7 +406,7 @@ export default function Page() {
             清空
           </Button>
           {failedCount > 0 ? (
-            <Button danger loading={uploading} onClick={onRetryFailed}>
+            <Button danger loading={uploading} onClick={debouncedRetryFailed}>
               重试失败项
             </Button>
           ) : null}
@@ -410,7 +414,7 @@ export default function Page() {
             type="primary"
             loading={uploading}
             disabled={fileList.length === 0}
-            onClick={onSubmit}
+            onClick={debouncedSubmit}
           >
             开始上传
           </Button>
@@ -465,7 +469,11 @@ export default function Page() {
                   ) : null}
                   {file.status === 'done' ? <span className={styles.done}>完成</span> : null}
                   {file.status === 'error' ? (
-                    <Button type="text" disabled={uploading} onClick={() => onRetryItem(file.uid)}>
+                    <Button
+                      type="text"
+                      disabled={uploading}
+                      onClick={() => debouncedRetryItem(file.uid)}
+                    >
                       重试
                     </Button>
                   ) : null}

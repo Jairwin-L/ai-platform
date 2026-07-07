@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button, Input, Popconfirm, Space, Table, Tag, Typography } from 'antd';
 import type { TableProps } from 'antd';
 import { type Article, deleteArticle, listArticles } from '@/api/modules/articles';
+import { useDebounced } from '@/hooks/use-debounced';
 import styles from './index.module.scss';
 
 const { Title, Text } = Typography;
@@ -115,6 +116,8 @@ export default function ArticlesClient({
       console.error(`error----->：`, error);
     }
   };
+  const debouncedSearch = useDebounced(onSearch, 300);
+  const debouncedDelete = useDebounced(onDelete, 300);
 
   const columns: TableProps<Article>['columns'] = [
     {
@@ -169,7 +172,7 @@ export default function ArticlesClient({
             description="删除后不可恢复，确认继续？"
             okText="删除"
             cancelText="取消"
-            onConfirm={() => onDelete(article)}
+            onConfirm={() => debouncedDelete(article)}
           >
             <Button danger type="link">
               删除
@@ -237,7 +240,7 @@ export default function ArticlesClient({
             value={keyword}
             enterButton="搜索"
             onChange={(event) => setKeyword(event.target.value)}
-            onSearch={onSearch}
+            onSearch={debouncedSearch}
           />
         </div>
 

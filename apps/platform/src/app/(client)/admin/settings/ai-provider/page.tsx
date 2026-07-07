@@ -17,6 +17,7 @@ import {
   updateAdminAiProviderOption,
   type AiProviderOption,
 } from '@/api/modules/admin';
+import { useDebounced } from '@/hooks/use-debounced';
 import styles from './page.module.scss';
 
 function getProtocolLabel(protocol: IByok.AiProviderProtocol): string {
@@ -109,6 +110,11 @@ export default function AiProviderSettingsPage() {
       // 请求错误由 alova 全局提示处理。
     }
   }
+  const debouncedUpdateProviderEnabled = useDebounced(updateProviderEnabled, 300);
+  const debouncedRemoveProviderOption = useDebounced(removeProviderOption, 300);
+  const debouncedRefresh = useDebounced(async () => {
+    await loadProviderOptions();
+  }, 300);
 
   const columns: TableColumnsType<AiProviderOption> = [
     {
@@ -133,7 +139,7 @@ export default function AiProviderSettingsPage() {
           loading={updatingProvider === providerOption.value}
           unCheckedChildren="停用"
           onChange={async (checked) => {
-            await updateProviderEnabled(providerOption, checked);
+            await debouncedUpdateProviderEnabled(providerOption, checked);
           }}
         />
       ),
@@ -184,7 +190,7 @@ export default function AiProviderSettingsPage() {
             okText="删除"
             title={`删除“${providerOption.label}”吗？`}
             onConfirm={async () => {
-              await removeProviderOption(providerOption);
+              await debouncedRemoveProviderOption(providerOption);
             }}
           >
             <Button
@@ -224,12 +230,7 @@ export default function AiProviderSettingsPage() {
             onChange={(event) => setSearchInput(event.target.value)}
             onSearch={(value) => setSearchTerm(value.trim())}
           />
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={async () => {
-              await loadProviderOptions();
-            }}
-          >
+          <Button icon={<ReloadOutlined />} onClick={debouncedRefresh}>
             刷新
           </Button>
         </div>

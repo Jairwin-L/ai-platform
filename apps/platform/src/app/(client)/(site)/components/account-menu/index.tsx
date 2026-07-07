@@ -7,6 +7,7 @@ import type { MenuProps } from 'antd';
 import { signOut } from '@/api/modules/auth';
 import type { AuthUser } from '@/api/modules/auth';
 import { ADMIN_ROLE_CODES } from '@/constants';
+import { useDebounced } from '@/hooks/use-debounced';
 import { usePermission } from '@/hooks/use-permission';
 import styles from './index.module.scss';
 
@@ -53,6 +54,7 @@ export function AccountMenu() {
       setSigningOut(false);
     }
   }
+  const debouncedSignOutCurrentUser = useDebounced(signOutCurrentUser, 300);
 
   function onMenuClick({ key }: { key: string }): void {
     if (key === 'ACCOUNT') {
@@ -76,7 +78,7 @@ export function AccountMenu() {
     }
 
     if (key === 'SIGN_OUT') {
-      signOutCurrentUser();
+      debouncedSignOutCurrentUser();
     }
   }
 

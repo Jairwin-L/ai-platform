@@ -10,6 +10,7 @@ import {
   updateAdminAiProviderOption,
   type AiProviderOption,
 } from '@/api/modules/admin';
+import { useDebounced } from '@/hooks/use-debounced';
 import { BYOK_PROVIDER_VALUE_PATTERN } from '@/lib/ai/byok/constants';
 
 const defaultProviderValues: IAppForms.ProviderOptionValues = {
@@ -135,6 +136,7 @@ export function AiProviderForm({
       setSaving(false);
     }
   }
+  const debouncedFinish = useDebounced(onFinish, 300);
 
   return (
     <main className={styles.page}>
@@ -159,7 +161,7 @@ export function AiProviderForm({
           initialValues={defaultProviderValues}
           layout="vertical"
           requiredMark="optional"
-          onFinish={onFinish}
+          onFinish={debouncedFinish}
         >
           <Form.Item
             label="Provider 标识"

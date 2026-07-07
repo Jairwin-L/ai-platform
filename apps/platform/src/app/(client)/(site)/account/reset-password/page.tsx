@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Button, Form, Input, Typography } from 'antd';
 import { VERIFICATION_CODE_TTL_SECONDS } from '@/constants';
 import { requestResetPasswordCode, resetPassword } from '@/api/modules/auth';
+import { useDebounced } from '@/hooks/use-debounced';
 import { useAuthSessionStore } from '@/stores/auth-session';
 import { passwordSchema, verificationCodeSchema } from '@/lib/auth/schemas';
 import styles from './page.module.scss';
@@ -93,6 +94,10 @@ export default function ResetPasswordPage() {
   function onSubmit() {
     form.submit();
   }
+  const debouncedRequestCode = useDebounced(() => {
+    requestCode(setCodeCountdown, setCodeLoading);
+  }, 300);
+  const debouncedSubmit = useDebounced(onSubmit, 300);
 
   return (
     <main className={styles.page}>
@@ -115,7 +120,7 @@ export default function ResetPasswordPage() {
             <Button
               disabled={codeCountdown > 0}
               loading={codeLoading}
-              onClick={() => requestCode(setCodeCountdown, setCodeLoading)}
+              onClick={debouncedRequestCode}
             >
               {codeCountdown > 0 ? `${codeCountdown} 秒后重发` : '获取验证码'}
             </Button>
@@ -124,7 +129,7 @@ export default function ResetPasswordPage() {
         <Button
           className={styles.submit}
           htmlType="submit"
-          onClick={onSubmit}
+          onClick={debouncedSubmit}
           loading={submitLoading}
           type="primary"
         >

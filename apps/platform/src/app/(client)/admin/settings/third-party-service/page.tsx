@@ -17,6 +17,7 @@ import {
   updateAdminThirdPartyServiceOption,
   type ThirdPartyServiceOption,
 } from '@/api/modules/admin';
+import { useDebounced } from '@/hooks/use-debounced';
 import styles from './page.module.scss';
 
 function getFilteredServiceOptions(
@@ -98,6 +99,11 @@ export default function ThirdPartyServiceSettingsPage() {
       // 请求错误由 alova 全局提示处理。
     }
   }
+  const debouncedUpdateServiceEnabled = useDebounced(updateServiceEnabled, 300);
+  const debouncedRemoveServiceOption = useDebounced(removeServiceOption, 300);
+  const debouncedRefresh = useDebounced(async () => {
+    await loadServiceOptions();
+  }, 300);
 
   const columns: TableColumnsType<ThirdPartyServiceOption> = [
     {
@@ -122,7 +128,7 @@ export default function ThirdPartyServiceSettingsPage() {
           loading={updatingService === serviceOption.value}
           unCheckedChildren="停用"
           onChange={async (checked) => {
-            await updateServiceEnabled(serviceOption, checked);
+            await debouncedUpdateServiceEnabled(serviceOption, checked);
           }}
         />
       ),
@@ -160,7 +166,7 @@ export default function ThirdPartyServiceSettingsPage() {
             okText="删除"
             title={`删除“${serviceOption.label}”吗？`}
             onConfirm={async () => {
-              await removeServiceOption(serviceOption);
+              await debouncedRemoveServiceOption(serviceOption);
             }}
           >
             <Button
@@ -202,12 +208,7 @@ export default function ThirdPartyServiceSettingsPage() {
             onChange={(event) => setSearchInput(event.target.value)}
             onSearch={(value) => setSearchTerm(value.trim())}
           />
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={async () => {
-              await loadServiceOptions();
-            }}
-          >
+          <Button icon={<ReloadOutlined />} onClick={debouncedRefresh}>
             刷新
           </Button>
         </div>

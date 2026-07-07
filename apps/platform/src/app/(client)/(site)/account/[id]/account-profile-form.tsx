@@ -3,6 +3,7 @@
 import { EditOutlined, SaveOutlined } from '@ant-design/icons';
 import { Button, Form, Input } from 'antd';
 import { useState } from 'react';
+import { useDebounced } from '@/hooks/use-debounced';
 import { usePermission } from '@/hooks/use-permission';
 import { updateUser } from '@/api/modules/users';
 import styles from './page.module.scss';
@@ -42,6 +43,7 @@ export function AccountProfileForm({ profile }: IAppPages.AccountProfileFormProp
       setSaving(false);
     }
   }
+  const debouncedFormSubmit = useDebounced(onFormSubmit, 300);
 
   return (
     <section className={styles.panel}>
@@ -79,7 +81,7 @@ export function AccountProfileForm({ profile }: IAppPages.AccountProfileFormProp
             </Button>
             <Button
               htmlType="submit"
-              onClick={onFormSubmit}
+              onClick={debouncedFormSubmit}
               icon={<SaveOutlined />}
               loading={saving}
               type="primary"

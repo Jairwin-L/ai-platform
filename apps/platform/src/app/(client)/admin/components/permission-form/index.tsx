@@ -13,6 +13,7 @@ import {
   type PermissionPayload,
   type PermissionType,
 } from '@/api/modules/admin';
+import { useDebounced } from '@/hooks/use-debounced';
 import styles from './index.module.scss';
 
 const typeLabel: Record<PermissionType, string> = {
@@ -109,6 +110,7 @@ export function PermissionForm({ permissionId, parentId }: IComponent.Permission
       setSaving(false);
     }
   }
+  const debouncedFinish = useDebounced(onFinish, 300);
 
   const parentOptions = flatPermissions
     .filter((permission) => permission.id !== permissionId)
@@ -139,7 +141,7 @@ export function PermissionForm({ permissionId, parentId }: IComponent.Permission
           form={form}
           layout="vertical"
           requiredMark="optional"
-          onFinish={onFinish}
+          onFinish={debouncedFinish}
         >
           <Form.Item
             label="权限名称"

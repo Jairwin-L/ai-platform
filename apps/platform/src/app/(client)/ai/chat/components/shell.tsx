@@ -27,6 +27,7 @@ import { AccountMenu } from '@/app/(client)/(site)/components/account-menu';
 import { ChatMessage } from './message';
 import { ConversationSidebar } from './sidebar';
 import { MODAL_OPTION } from '@/constants/antd';
+import { useDebounced } from '@/hooks/use-debounced';
 import { useAuthSessionStore } from '@/stores/auth-session';
 import {
   CHAT_PROMPT_ITEMS,
@@ -339,6 +340,11 @@ export function ChatShell() {
 
     await loadBaseData();
   }
+  const debouncedSendMessage = useDebounced(sendMessage, 300);
+  const debouncedStopStreaming = useDebounced(stopStreaming, 300);
+  const debouncedRenameConversation = useDebounced(renameConversation, 300);
+  const debouncedRemoveConversation = useDebounced(removeConversation, 300);
+
   function onMoreHeaderOperate({ key }: { key: string }): void {
     if (key === 'RENAME') {
       setRenameValue(activeConversation?.title ?? '新建对话');
@@ -351,7 +357,7 @@ export function ChatShell() {
         centered: true,
         okButtonProps: { danger: true },
         cancelText: '取消',
-        onOk: () => removeConversation(activeConversationId),
+        onOk: () => debouncedRemoveConversation(activeConversationId),
       });
     }
   }
@@ -459,7 +465,7 @@ export function ChatShell() {
                 index={index}
                 message={item}
                 messages={messages}
-                onRegenerate={sendMessage}
+                onRegenerate={debouncedSendMessage}
               />
             ))}
           </div>
@@ -473,14 +479,14 @@ export function ChatShell() {
                 activeModelId ? '输入消息，Enter 发送，Shift + Enter 换行' : '请先配置并选择模型'
               }
               value={input}
-              onCancel={stopStreaming}
+              onCancel={debouncedStopStreaming}
               onChange={setInput}
               onKeyDown={(event) => {
                 if (event.key === 'Escape' && streaming) {
-                  stopStreaming();
+                  debouncedStopStreaming();
                 }
               }}
-              onSubmit={() => sendMessage(input)}
+              onSubmit={() => debouncedSendMessage(input)}
             />
             <p>AI 可能会产生错误，请核实重要信息。</p>
           </footer>
@@ -493,7 +499,7 @@ export function ChatShell() {
         open={renameOpen}
         title="重命名会话"
         onCancel={() => setRenameOpen(false)}
-        onOk={renameConversation}
+        onOk={debouncedRenameConversation}
       >
         <Input value={renameValue} onChange={(event) => setRenameValue(event.target.value)} />
       </Modal>

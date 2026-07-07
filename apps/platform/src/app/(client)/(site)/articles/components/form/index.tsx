@@ -11,6 +11,7 @@ import {
   getArticle,
   updateArticle,
 } from '@/api/modules/articles';
+import { useDebounced } from '@/hooks/use-debounced';
 import styles from './index.module.scss';
 
 const { Title } = Typography;
@@ -63,6 +64,8 @@ export default function ArticleForm(props: IAppPages.ArticleFormProps) {
       setSubmitting(false);
     }
   };
+  const debouncedFinish = useDebounced(onFinish, 300);
+
   useEffect(() => {
     async function fetchArticle() {
       if (!isEdit || currentArticle || !articleId) {
@@ -112,7 +115,7 @@ export default function ArticleForm(props: IAppPages.ArticleFormProps) {
               note: currentArticle?.note ?? '',
               published: currentArticle?.published ?? false,
             }}
-            onFinish={onFinish}
+            onFinish={debouncedFinish}
           >
             <Form.Item
               label="标题"

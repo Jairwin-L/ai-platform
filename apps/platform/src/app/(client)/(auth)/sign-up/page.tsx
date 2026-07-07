@@ -7,6 +7,7 @@ import { Button, Form, Input, Typography } from 'antd';
 import type { FormInstance } from 'antd';
 import { APP_BLACK_LOGO, APP_NAME, VERIFICATION_CODE_TTL_SECONDS } from '@/constants';
 import { requestVerificationCode, signUp } from '@/api/modules/auth';
+import { useDebounced } from '@/hooks/use-debounced';
 import styles from './page.module.scss';
 
 async function requestCode(
@@ -57,6 +58,10 @@ export default function SignUpPage() {
       setSubmitLoading(false);
     }
   }
+  const debouncedFinish = useDebounced(onFinish, 300);
+  const debouncedRequestCode = useDebounced(() => {
+    requestCode(form, setCodeCountdown, setCodeLoading);
+  }, 300);
 
   return (
     <main className={styles['auth-page']}>
@@ -67,7 +72,7 @@ export default function SignUpPage() {
         </div>
 
         <div className={styles.panel}>
-          <Form className={styles.form} form={form} layout="vertical" onFinish={onFinish}>
+          <Form className={styles.form} form={form} layout="vertical" onFinish={debouncedFinish}>
             <Form.Item
               label="邮箱"
               name="email"
@@ -103,7 +108,7 @@ export default function SignUpPage() {
               <Button
                 disabled={codeCountdown > 0}
                 loading={codeLoading}
-                onClick={() => requestCode(form, setCodeCountdown, setCodeLoading)}
+                onClick={debouncedRequestCode}
               >
                 {codeCountdown > 0 ? `${codeCountdown} 秒后重发` : '获取验证码'}
               </Button>

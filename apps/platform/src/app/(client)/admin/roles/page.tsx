@@ -12,6 +12,7 @@ import { Button, Input, Popconfirm, Space, Table, Tag, type TableColumnsType } f
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { deleteRole, getRoles, type AdminRole } from '@/api/modules/admin';
+import { useDebounced } from '@/hooks/use-debounced';
 import styles from './page.module.scss';
 
 function formatDate(value: string): string {
@@ -58,6 +59,14 @@ export default function RolesPage() {
       // 请求错误由 alova 全局提示处理。
     }
   }
+  const debouncedRemoveRole = useDebounced(removeRole, 300);
+  const debouncedSearch = useDebounced((value: string) => {
+    setPage(1);
+    setSearchTerm(value.trim());
+  }, 300);
+  const debouncedRefresh = useDebounced(async () => {
+    await loadRoles();
+  }, 300);
 
   const columns: TableColumnsType<AdminRole> = [
     {
@@ -105,7 +114,7 @@ export default function RolesPage() {
             okText="删除"
             title={`删除“${role.name}”吗？`}
             onConfirm={async () => {
-              await removeRole(role);
+              await debouncedRemoveRole(role);
             }}
           >
             <Button
@@ -146,17 +155,9 @@ export default function RolesPage() {
             placeholder="按角色名称或说明搜索"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            onSearch={(value) => {
-              setPage(1);
-              setSearchTerm(value.trim());
-            }}
+            onSearch={debouncedSearch}
           />
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={async () => {
-              await loadRoles();
-            }}
-          >
+          <Button icon={<ReloadOutlined />} onClick={debouncedRefresh}>
             刷新
           </Button>
         </div>

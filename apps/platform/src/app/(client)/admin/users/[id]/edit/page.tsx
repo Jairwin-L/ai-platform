@@ -13,6 +13,7 @@ import {
   type UserStatus,
 } from '@/api/modules/users';
 import { RoleCode } from '@/constants';
+import { useDebounced } from '@/hooks/use-debounced';
 import styles from './page.module.scss';
 
 const statusOptions: Array<{ label: string; value: UserStatus }> = [
@@ -112,6 +113,7 @@ export default function EditUserPage() {
       setSaving(false);
     }
   }
+  const debouncedFinish = useDebounced(onFinish, 300);
 
   return (
     <main className={styles.page}>
@@ -134,7 +136,7 @@ export default function EditUserPage() {
           layout="vertical"
           preserve={false}
           requiredMark="optional"
-          onFinish={onFinish}
+          onFinish={debouncedFinish}
         >
           <Form.Item label="姓名" name="full_name">
             <Input maxLength={120} />

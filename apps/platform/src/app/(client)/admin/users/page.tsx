@@ -27,6 +27,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { getRoles, type AdminRole } from '@/api/modules/admin';
 import { getUsers, updateUser, type UserListItem, type UserStatus } from '@/api/modules/users';
+import { useDebounced } from '@/hooks/use-debounced';
 import styles from './page.module.scss';
 
 const pageSize = 10;
@@ -105,6 +106,14 @@ export default function UsersPage() {
       // 请求错误由 alova 全局提示处理。
     }
   }
+  const debouncedUpdateUserStatus = useDebounced(updateUserStatus, 300);
+  const debouncedRefresh = useDebounced(() => {
+    loadData().catch(() => undefined);
+  }, 300);
+  const debouncedSearch = useDebounced((value: string) => {
+    setPage(1);
+    setSearchTerm(value.trim());
+  }, 300);
 
   const columns: TableColumnsType<UserListItem> = [
     {
@@ -191,7 +200,7 @@ export default function UsersPage() {
               size="small"
               type="text"
               onClick={() => {
-                updateUserStatus(user, 'banned').catch(() => undefined);
+                debouncedUpdateUserStatus(user, 'banned');
               }}
             >
               封禁
@@ -202,7 +211,7 @@ export default function UsersPage() {
               size="small"
               type="text"
               onClick={() => {
-                updateUserStatus(user, 'active').catch(() => undefined);
+                debouncedUpdateUserStatus(user, 'active');
               }}
             >
               启用
@@ -231,12 +240,7 @@ export default function UsersPage() {
           >
             新增用户
           </Button>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              loadData().catch(() => undefined);
-            }}
-          >
+          <Button icon={<ReloadOutlined />} onClick={debouncedRefresh}>
             刷新
           </Button>
         </Space>
@@ -250,10 +254,7 @@ export default function UsersPage() {
             placeholder="按姓名、用户名或邮箱搜索"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            onSearch={(value) => {
-              setPage(1);
-              setSearchTerm(value.trim());
-            }}
+            onSearch={debouncedSearch}
           />
           <Select
             options={[

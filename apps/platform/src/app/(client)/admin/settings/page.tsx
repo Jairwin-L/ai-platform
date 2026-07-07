@@ -9,6 +9,7 @@ import {
 import { Button, Card, Divider, Form, Input, Select, Switch, Tabs } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
 import { getSystemSettings, updateSystemSettings, type SystemSettings } from '@/api/modules/admin';
+import { useDebounced } from '@/hooks/use-debounced';
 import styles from './page.module.scss';
 
 const initialValues: IAppForms.SettingsValues = {
@@ -67,6 +68,12 @@ export default function SystemSettingsPage() {
       setSaving(false);
     }
   }
+  const debouncedLoadSettings = useDebounced(async () => {
+    await loadSettings();
+  }, 300);
+  const debouncedSubmit = useDebounced(() => {
+    form.submit();
+  }, 300);
 
   return (
     <main className={styles.page}>
@@ -163,19 +170,14 @@ export default function SystemSettingsPage() {
             ]}
           />
           <div className={styles.footer}>
-            <Button
-              htmlType="button"
-              onClick={async () => {
-                await loadSettings();
-              }}
-            >
+            <Button htmlType="button" onClick={debouncedLoadSettings}>
               恢复已保存值
             </Button>
             <Button
               icon={<SaveOutlined />}
               loading={saving}
               type="primary"
-              onClick={() => form.submit()}
+              onClick={debouncedSubmit}
             >
               保存设置
             </Button>

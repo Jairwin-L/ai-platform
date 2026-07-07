@@ -12,6 +12,7 @@ import {
   type AdminPermission,
   type RolePayload,
 } from '@/api/modules/admin';
+import { useDebounced } from '@/hooks/use-debounced';
 import styles from './index.module.scss';
 
 const defaultRoleValues: IAppForms.RoleFormValues = {
@@ -112,6 +113,7 @@ export function RoleForm({ roleId }: IComponent.RoleFormProps) {
       setSaving(false);
     }
   }
+  const debouncedFinish = useDebounced(onFinish, 300);
 
   return (
     <main className={styles.page}>
@@ -136,7 +138,7 @@ export function RoleForm({ roleId }: IComponent.RoleFormProps) {
           initialValues={defaultRoleValues}
           layout="vertical"
           requiredMark="optional"
-          onFinish={onFinish}
+          onFinish={debouncedFinish}
         >
           <Form.Item
             label="角色编码"

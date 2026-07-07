@@ -2,7 +2,9 @@
 
 import { PlusOutlined } from '@ant-design/icons';
 import { Button, Empty, Input, Skeleton } from 'antd';
+import { debounce } from 'lodash-es';
 import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
 import type { AiChatConversation } from '@/api/modules/ai-chat';
 import { APP_BLACK_LOGO, APP_NAME } from '@/constants';
 import styles from '../page.module.scss';
@@ -62,7 +64,26 @@ export function ConversationSidebar({
   onKeywordChange,
   onLoadConversation,
 }: ConversationSidebarProps) {
+  const [searchKeyword, setSearchKeyword] = useState(keyword);
+  const debouncedKeywordChange = useMemo(
+    () => debounce((value: string) => onKeywordChange(value), 300),
+    [onKeywordChange],
+  );
   const groupedConversations = groupConversations(conversations);
+
+  function onSearchChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const nextKeyword = event.target.value;
+    setSearchKeyword(nextKeyword);
+    debouncedKeywordChange(nextKeyword);
+  }
+
+  useEffect(() => {
+    setSearchKeyword(keyword);
+  }, [keyword]);
+
+  useEffect(() => {
+    return () => debouncedKeywordChange.cancel();
+  }, [debouncedKeywordChange]);
 
   return (
     <aside className={styles.sidebar}>
@@ -76,8 +97,8 @@ export function ConversationSidebar({
             allowClear
             className={styles['conversation-search']}
             placeholder="搜索会话"
-            value={keyword}
-            onChange={(event) => onKeywordChange(event.target.value)}
+            value={searchKeyword}
+            onChange={onSearchChange}
           />
           <Button
             aria-label="新建聊天"
