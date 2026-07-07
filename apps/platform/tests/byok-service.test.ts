@@ -6,6 +6,7 @@ import {
   createByokChatCompletion,
   listUserApiCredentials,
   saveUserApiCredential,
+  updateUserDefaultModelConfig,
 } from '@/lib/ai/byok/service';
 import type { ChatRequestInput } from '@/lib/ai/byok/schemas';
 
@@ -154,5 +155,63 @@ describe('BYOK service', () => {
     ).rejects.toMatchObject({ code: BYOK_ERROR_CODE.AI_PROVIDER_UNAVAILABLE });
 
     expect(deleteStoredApiCredential).not.toHaveBeenCalled();
+  });
+
+  it('updates the default model config for an active supported credential', async () => {
+    const saveStoredDefaultModelConfig = vi.fn(
+      async (_userId: string, input: IByok.DefaultModelConfig) => input,
+    );
+
+    await expect(
+      updateUserDefaultModelConfig(
+        'user-1',
+        { credentialId: CREDENTIAL_ID, modelId: 'test-model' },
+        {
+          listStoredApiCredentials: async () => [
+            {
+              credentialId: CREDENTIAL_ID,
+              provider: 'test-provider',
+              label: 'Test provider main',
+              keyHint: 'sk-****7890',
+              expiresAt: '2026-07-09T00:00:00.000Z',
+              remainingSeconds: 604800,
+              status: 'active',
+            },
+          ],
+          getStoredAiProviderOptions: async () => [PROVIDER_OPTION],
+          saveStoredDefaultModelConfig,
+        },
+      ),
+    ).resolves.toEqual({ credentialId: CREDENTIAL_ID, modelId: 'test-model' });
+
+    expect(saveStoredDefaultModelConfig).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects default model config when the model is not supported', async () => {
+    const saveStoredDefaultModelConfig = vi.fn();
+
+    await expect(
+      updateUserDefaultModelConfig(
+        'user-1',
+        { credentialId: CREDENTIAL_ID, modelId: 'other-model' },
+        {
+          listStoredApiCredentials: async () => [
+            {
+              credentialId: CREDENTIAL_ID,
+              provider: 'test-provider',
+              label: 'Test provider main',
+              keyHint: 'sk-****7890',
+              expiresAt: '2026-07-09T00:00:00.000Z',
+              remainingSeconds: 604800,
+              status: 'active',
+            },
+          ],
+          getStoredAiProviderOptions: async () => [PROVIDER_OPTION],
+          saveStoredDefaultModelConfig,
+        },
+      ),
+    ).rejects.toMatchObject({ code: BYOK_ERROR_CODE.UNSUPPORTED_PROVIDER });
+
+    expect(saveStoredDefaultModelConfig).not.toHaveBeenCalled();
   });
 });

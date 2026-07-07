@@ -7,7 +7,7 @@ import {
   MenuUnfoldOutlined,
   MoreOutlined,
 } from '@ant-design/icons';
-import { App, Button, Dropdown, Modal, Select, Skeleton } from 'antd';
+import { App, Button, Dropdown, Modal, Select, Skeleton, Tag } from 'antd';
 import { Sender } from '@ant-design/x';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -58,12 +58,18 @@ export function ChatShell() {
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState('');
   const activeConversation = conversations.find((item) => item.id === activeConversationId) ?? null;
+  const canChangeModel = !routeConversationId && !activeConversationId;
   const welcomeTitle = `hi，${userNickName ? `${userNickName}，` : ''}今天想聊点什么？`;
   const modelOptions = models
     .filter((item) => item.isEnabled)
     .map((item) => ({
       value: item.id,
-      label: `${item.name} · ${item.providerName} (${item.modelId})`,
+      label: (
+        <span className={styles['model-option']}>
+          <span>{`${item.name} · ${item.providerName} (${item.modelId})`}</span>
+          {item.isDefault ? <Tag color="blue">默认</Tag> : null}
+        </span>
+      ),
     }));
 
   const scrollToBottom = useCallback(() => {
@@ -90,8 +96,11 @@ export function ChatShell() {
 
   const fetchModelConfigs = useCallback(async () => {
     const result = await getAiModelConfigs();
+    const enabledModels = result.filter((item) => item.isEnabled);
+    const defaultModelId = enabledModels.find((item) => item.isDefault)?.id ?? enabledModels[0]?.id;
+
     setModels(result);
-    setActiveModelId((current) => current ?? result.find((item) => item.isDefault)?.id);
+    setActiveModelId((current) => current ?? defaultModelId);
   }, []);
 
   useEffect(() => {
@@ -297,19 +306,12 @@ export function ChatShell() {
     abortRef.current?.abort();
   }
 
-  async function changeModel(modelConfigId: string): Promise<void> {
-    setActiveModelId(modelConfigId);
-
-    if (!activeConversationId) {
+  function changeModel(modelConfigId: string): void {
+    if (!canChangeModel) {
       return;
     }
 
-    try {
-      await updateAiConversation(activeConversationId, { modelConfigId });
-      await fetchConversations();
-    } catch {
-      // 请求错误由 alova 全局提示处理。
-    }
+    setActiveModelId(modelConfigId);
   }
 
   async function renameConversation(): Promise<void> {
@@ -423,7 +425,7 @@ export function ChatShell() {
             <div className={styles['toolbar-actions']}>
               <Select
                 className={styles['model-select']}
-                disabled={streaming}
+                disabled={streaming || !canChangeModel}
                 options={modelOptions}
                 placeholder="选择模型"
                 value={activeModelId}

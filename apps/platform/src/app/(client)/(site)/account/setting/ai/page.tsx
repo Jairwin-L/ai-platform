@@ -1,26 +1,13 @@
 'use client';
 
-import {
-  DeleteOutlined,
-  EditOutlined,
-  KeyOutlined,
-  LinkOutlined,
-  PlusOutlined,
-  ReloadOutlined,
-} from '@ant-design/icons';
-import {
-  Button,
-  Form,
-  Input,
-  Modal,
-  Popconfirm,
-  Select,
-  Table,
-  Tag,
-  Tooltip,
-  type TableColumnsType,
-} from 'antd';
+import { KeyOutlined, LinkOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Button, Form, Input, Modal, Select, Table, Tag } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
+import {
+  getAiModelConfigs,
+  updateDefaultAiModelConfig,
+  type AiChatModelConfig,
+} from '@/api/modules/ai-chat';
 import {
   createAiCredential,
   deleteAiCredential,
@@ -29,12 +16,13 @@ import {
   overwriteAiCredential,
   type AiCredential,
   type AiCredentialProvider,
-  type AiCredentialStatus,
   type AiCredentialTtlOption,
   type AiProviderOption,
   type OverwriteAiCredentialPayload,
   type SaveAiCredentialPayload,
 } from '@/api/modules/ai-credentials';
+import { buildAiCredentialColumns } from './credential-columns';
+import { DefaultModelConfigPanel } from './default-model-config-panel';
 import styles from './page.module.scss';
 import { MODAL_OPTION } from '@/constants/antd';
 import { useDebounced } from '@/hooks/use-debounced';
@@ -53,52 +41,8 @@ const ttlOptions: Array<{ label: string; value: AiCredentialTtlOption }> = [
   { label: '4 周', value: '4w' },
 ];
 
-const statusOptions: Array<{ color: string; label: string; value: AiCredentialStatus }> = [
-  { color: 'success', label: '可用', value: 'active' },
-  { color: 'warning', label: '已禁用', value: 'disabled' },
-  { color: 'error', label: '已过期', value: 'expired' },
-  { color: 'error', label: '无效', value: 'invalid' },
-];
-
 function getProviderOption(providerOptions: AiProviderOption[], provider: AiCredentialProvider) {
   return providerOptions.find((item) => item.value === provider);
-}
-
-function getStatusOption(status: AiCredentialStatus) {
-  return statusOptions.find((item) => item.value === status);
-}
-
-function formatDate(value?: string): string {
-  if (!value) {
-    return '—';
-  }
-
-  return new Intl.DateTimeFormat('zh-CN', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value));
-}
-
-function formatRemainingTime(seconds: number): string {
-  if (seconds <= 0) {
-    return '已过期';
-  }
-
-  const days = Math.floor(seconds / 86400);
-
-  if (days >= 1) {
-    return `${days} 天`;
-  }
-
-  const hours = Math.floor(seconds / 3600);
-
-  if (hours >= 1) {
-    return `${hours} 小时`;
-  }
-
-  const minutes = Math.max(1, Math.floor(seconds / 60));
-
-  return `${minutes} 分钟`;
 }
 
 function hasBlankCharacter(value: string): boolean {
@@ -109,19 +53,20 @@ export default function AiSettingsPage() {
   const [form] = Form.useForm<IAppForms.CredentialFormValues>();
   const selectedProvider = Form.useWatch('provider', form);
   const [credentials, setCredentials] = useState<AiCredential[]>([]);
+  const [modelConfigs, setModelConfigs] = useState<AiChatModelConfig[]>([]);
   const [providerOptions, setProviderOptions] = useState<AiProviderOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [defaultModelSaving, setDefaultModelSaving] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [overwriteCredential, setOverwriteCredential] = useState<AiCredential | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [credentialsResult, providerOptionsResult] = await Promise.allSettled([
-      getAiCredentials(),
-      getAiProviderOptions(),
-    ]);
+    const [credentialsResult, providerOptionsResult, modelConfigsResult] = await Promise.allSettled(
+      [getAiCredentials(), getAiProviderOptions(), getAiModelConfigs()],
+    );
 
     if (credentialsResult.status === 'fulfilled') {
       setCredentials(credentialsResult.value);
@@ -133,6 +78,12 @@ export default function AiSettingsPage() {
       setProviderOptions(providerOptionsResult.value);
     } else {
       setProviderOptions([]);
+    }
+
+    if (modelConfigsResult.status === 'fulfilled') {
+      setModelConfigs(modelConfigsResult.value);
+    } else {
+      setModelConfigs([]);
     }
 
     setLoading(false);
@@ -223,6 +174,28 @@ export default function AiSettingsPage() {
       setDeletingId(null);
     }
   }
+
+  async function onDefaultModelChange(modelConfigId: string): Promise<void> {
+    const modelConfig = modelConfigs.find((item) => item.id === modelConfigId);
+
+    if (!modelConfig || defaultModelSaving) {
+      return;
+    }
+
+    setDefaultModelSaving(true);
+
+    try {
+      await updateDefaultAiModelConfig({
+        credentialId: modelConfig.providerConfigId,
+        modelId: modelConfig.modelId,
+      });
+      await loadData();
+    } catch {
+      // 请求错误由 alova 全局提示处理。
+    } finally {
+      setDefaultModelSaving(false);
+    }
+  }
   const debouncedDeleteConfirm = useDebounced(onDeleteConfirm, 300);
   const debouncedRefresh = useDebounced(() => {
     loadData().catch(() => undefined);
@@ -240,98 +213,14 @@ export default function AiSettingsPage() {
     ? getProviderOption(providerOptions, overwriteCredential.provider)
     : undefined;
 
-  const columns: TableColumnsType<AiCredential> = [
-    {
-      title: '密钥',
-      key: 'label',
-      width: 260,
-      fixed: 'left',
-      render: (_, credential) => (
-        <div className={styles['credential-title']}>
-          <strong>{credential.label}</strong>
-          <span className={styles.code}>{credential.keyHint}</span>
-        </div>
-      ),
+  const columns = buildAiCredentialColumns({
+    deletingId,
+    providerOptions,
+    onDeleteConfirm: async (credential) => {
+      await debouncedDeleteConfirm(credential);
     },
-    {
-      title: 'Provider',
-      dataIndex: 'provider',
-      width: 140,
-      render: (provider: AiCredentialProvider) => {
-        const option = getProviderOption(providerOptions, provider);
-
-        return <Tag color={option?.color ?? 'default'}>{option?.label ?? provider}</Tag>;
-      },
-    },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      width: 112,
-      render: (status: AiCredentialStatus) => {
-        const option = getStatusOption(status);
-
-        return <Tag color={option?.color ?? 'default'}>{option?.label ?? status}</Tag>;
-      },
-    },
-    {
-      title: '剩余有效期',
-      dataIndex: 'remainingSeconds',
-      width: 136,
-      render: (seconds: number) => (
-        <span className={styles.muted}>{formatRemainingTime(seconds)}</span>
-      ),
-    },
-    {
-      title: '过期时间',
-      dataIndex: 'expiresAt',
-      width: 180,
-      render: (value: string) => <span className={styles.muted}>{formatDate(value)}</span>,
-    },
-    {
-      title: '最近使用',
-      dataIndex: 'lastUsedAt',
-      width: 180,
-      render: (value?: string) => <span className={styles.muted}>{formatDate(value)}</span>,
-    },
-    {
-      title: '操作',
-      key: 'actions',
-      width: 112,
-      fixed: 'right',
-      render: (_, credential) => (
-        <div className={styles.actions}>
-          <Tooltip title="覆盖密钥">
-            <Button
-              aria-label={`覆盖 ${credential.label}`}
-              icon={<EditOutlined />}
-              size="small"
-              type="text"
-              onClick={() => onOverwriteClick(credential)}
-            />
-          </Tooltip>
-          <Popconfirm
-            cancelText="取消"
-            description="删除后需要重新保存密钥才能继续使用。"
-            okText="删除"
-            okType="danger"
-            title={`删除“${credential.label}”吗？`}
-            onConfirm={async () => {
-              await debouncedDeleteConfirm(credential);
-            }}
-          >
-            <Button
-              aria-label={`删除 ${credential.label}`}
-              danger
-              icon={<DeleteOutlined />}
-              loading={deletingId === credential.credentialId}
-              size="small"
-              type="text"
-            />
-          </Popconfirm>
-        </div>
-      ),
-    },
-  ];
+    onOverwriteClick,
+  });
   return (
     <>
       <main className={styles.page}>
@@ -351,6 +240,12 @@ export default function AiSettingsPage() {
             新增密钥
           </Button>
         </section>
+        <DefaultModelConfigPanel
+          loading={loading}
+          models={modelConfigs}
+          saving={defaultModelSaving}
+          onDefaultModelChange={onDefaultModelChange}
+        />
         <section className={styles.panel}>
           <div className={styles.filters}>
             <span className={styles.summary}>共 {credentials.length} 个密钥</span>

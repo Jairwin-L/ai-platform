@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vite-plus/test';
 import {
+  createByokDefaultModelConfigRedisKey,
   createByokCredentialIndexKey,
   createByokCredentialRedisKey,
   deleteStoredApiCredential,
+  getStoredDefaultModelConfig,
   listStoredApiCredentials,
+  saveStoredDefaultModelConfig,
   saveStoredApiCredential,
   touchStoredApiCredentialLastUsed,
   type ByokRedisClient,
@@ -168,6 +171,29 @@ describe('BYOK key store', () => {
     const stored = JSON.parse(client.values.get(redisKey) || '{}') as { lastUsedAt?: string };
     expect(client.ttls.get(redisKey)).toBe(120);
     expect(stored.lastUsedAt).toBeTruthy();
+  });
+
+  it('saves one default model config per user', async () => {
+    const client = new MemoryRedisClient();
+    const defaultKey = createByokDefaultModelConfigRedisKey('user-1');
+
+    await saveStoredDefaultModelConfig(
+      'user-1',
+      { credentialId: CREDENTIAL_ID, modelId: 'test-model' },
+      client,
+    );
+    await saveStoredDefaultModelConfig(
+      'user-1',
+      { credentialId: CREDENTIAL_ID, modelId: 'next-model' },
+      client,
+    );
+
+    await expect(getStoredDefaultModelConfig('user-1', client)).resolves.toEqual({
+      credentialId: CREDENTIAL_ID,
+      modelId: 'next-model',
+    });
+    expect(client.values.has(defaultKey)).toBe(true);
+    expect(client.ttls.get(defaultKey)).toBeGreaterThan(0);
   });
 
   it('keeps different users isolated in Redis', async () => {

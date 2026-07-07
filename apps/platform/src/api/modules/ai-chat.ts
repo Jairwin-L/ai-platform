@@ -38,6 +38,12 @@ export async function getAiModelConfigs(): Promise<AiChatModelConfig[]> {
   return alovaGet<AiChatModelConfig[]>('/ai/model-configs');
 }
 
+export async function updateDefaultAiModelConfig(
+  payload: IApiAiChat.DefaultModelConfigPayload,
+): Promise<IApiAiChat.DefaultModelConfigPayload> {
+  return alovaPost<IApiAiChat.DefaultModelConfigPayload>('/ai/model-configs/default', payload);
+}
+
 export async function createAiModelConfig(
   payload: Required<Pick<IApiAiChat.ModelConfigPayload, 'modelId' | 'name' | 'providerConfigId'>> &
     IApiAiChat.ModelConfigPayload,

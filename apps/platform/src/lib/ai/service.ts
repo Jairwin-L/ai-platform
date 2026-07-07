@@ -7,7 +7,7 @@ import { buildChatContextMessages, buildSystemPrompt } from './context';
 import { BYOK_CREDENTIAL_STATUS } from './byok/constants';
 import { getEnabledAiProviderOptions, type EnabledAiProviderOption } from './byok/provider-options';
 import { getStoredAiProviderOptions } from './byok/provider-options-store';
-import { listUserApiCredentials } from './byok/service';
+import { getUserDefaultModelConfig, listUserApiCredentials } from './byok/service';
 import { prisma } from '@/lib/prisma';
 import type {
   AiUsagePayload,
@@ -342,15 +342,16 @@ export async function listModelConfigs(userId: string): Promise<PublicModelConfi
   );
   const providerOptions = getEnabledAiProviderOptions(await getStoredAiProviderOptions());
   const providerOptionsByValue = new Map(providerOptions.map((option) => [option.value, option]));
+  const defaultModelConfig = await getUserDefaultModelConfig(userId);
 
-  return credentials.flatMap((credential, credentialIndex) => {
+  return credentials.flatMap((credential) => {
     const providerOption = providerOptionsByValue.get(credential.provider);
 
     if (!providerOption) {
       return [];
     }
 
-    return providerOption.models.map((modelId, modelIndex) => ({
+    return providerOption.models.map((modelId) => ({
       id: createByokModelConfigId(credential.credentialId, modelId),
       providerConfigId: credential.credentialId,
       providerName: providerOption.label,
@@ -361,7 +362,9 @@ export async function listModelConfigs(userId: string): Promise<PublicModelConfi
       generationDefaults: null,
       maxOutputTokens: null,
       isEnabled: true,
-      isDefault: credentialIndex === 0 && modelIndex === 0,
+      isDefault:
+        defaultModelConfig?.credentialId === credential.credentialId &&
+        defaultModelConfig.modelId === modelId,
       createdAt: credential.expiresAt,
       updatedAt: credential.lastUsedAt ?? credential.expiresAt,
     }));
@@ -475,7 +478,7 @@ async function getAvailableByokModelConfig(
   const modelConfigs = await listModelConfigs(userId);
   const selectedModelConfig = modelConfigId
     ? modelConfigs.find((modelConfig) => modelConfig.id === modelConfigId)
-    : modelConfigs.find((modelConfig) => modelConfig.isDefault);
+    : (modelConfigs.find((modelConfig) => modelConfig.isDefault) ?? modelConfigs[0]);
 
   if (!selectedModelConfig) {
     throw new AiPublicError('MODEL_NOT_AVAILABLE', 404);

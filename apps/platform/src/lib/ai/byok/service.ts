@@ -1,5 +1,6 @@
 import {
   BYOK_AUDIT_EVENT,
+  BYOK_CREDENTIAL_STATUS,
   BYOK_ERROR_CODE,
 } from './constants';
 import { decryptApiKey, encryptApiKey } from './crypto';
@@ -11,8 +12,10 @@ import {
   buildCredentialExpiry,
   createCredentialId,
   deleteStoredApiCredential,
+  getStoredDefaultModelConfig,
   getStoredApiCredential,
   listStoredApiCredentials,
+  saveStoredDefaultModelConfig,
   saveStoredApiCredential,
   touchStoredApiCredentialLastUsed,
   type StoredCredentialStatus,
@@ -24,6 +27,7 @@ import {
 } from './provider';
 import type {
   ChatRequestInput,
+  DefaultModelConfigInput,
   OverwriteApiCredentialInput,
   SaveApiCredentialInput,
 } from './schemas';
@@ -90,6 +94,47 @@ export async function listUserApiCredentials(
   const listCredentials = dependencies.listStoredApiCredentials ?? listStoredApiCredentials;
 
   return { credentials: await listCredentials(userId) };
+}
+
+export async function getUserDefaultModelConfig(
+  userId: string,
+  dependencies: ByokServiceDependencies = {},
+): Promise<IByok.DefaultModelConfig | null> {
+  const getDefaultModelConfig =
+    dependencies.getStoredDefaultModelConfig ?? getStoredDefaultModelConfig;
+
+  return getDefaultModelConfig(userId);
+}
+
+export async function updateUserDefaultModelConfig(
+  userId: string,
+  input: DefaultModelConfigInput,
+  dependencies: ByokServiceDependencies = {},
+): Promise<IByok.DefaultModelConfig> {
+  const listCredentials = dependencies.listStoredApiCredentials ?? listStoredApiCredentials;
+  const getProviderOptions = dependencies.getStoredAiProviderOptions ?? getStoredAiProviderOptions;
+  const saveDefaultModelConfig =
+    dependencies.saveStoredDefaultModelConfig ?? saveStoredDefaultModelConfig;
+  const credentials = await listCredentials(userId);
+  const credential = credentials.find(
+    (item) =>
+      item.credentialId === input.credentialId &&
+      item.status === BYOK_CREDENTIAL_STATUS.ACTIVE &&
+      item.remainingSeconds > 0,
+  );
+
+  if (!credential) {
+    throw new ByokPublicError(BYOK_ERROR_CODE.BYOK_KEY_UNAVAILABLE, 404);
+  }
+
+  const providerOptions = getEnabledAiProviderOptions(await getProviderOptions());
+  const providerOption = providerOptions.find((option) => option.value === credential.provider);
+
+  if (!providerOption || !providerOption.models.includes(input.modelId)) {
+    throw new ByokPublicError(BYOK_ERROR_CODE.UNSUPPORTED_PROVIDER, 400);
+  }
+
+  return saveDefaultModelConfig(userId, input);
 }
 
 export async function deleteUserApiCredential(

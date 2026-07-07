@@ -68,6 +68,18 @@ export const saveOrOverwriteApiCredentialSchema = z.union([
   overwriteApiCredentialPayloadSchema,
 ]);
 
+export const defaultModelConfigSchema = z
+  .object({
+    credentialId: credentialIdSchema,
+    modelId: z
+      .string()
+      .trim()
+      .min(1)
+      .max(128)
+      .refine((value) => !hasWhitespaceOrControlCharacter(value), '模型名称不能包含空白或控制字符'),
+  })
+  .strict();
+
 const chatMessageSchema = z.object({
   role: z.enum(['system', 'user', 'assistant']),
   content: z.string().min(1).max(BYOK_CHAT_LIMITS.maxMessageLength),
@@ -98,6 +110,7 @@ export const chatRequestSchema = z
   });
 
 export type ChatRequestInput = IByok.ChatRequestInput;
+export type DefaultModelConfigInput = IByok.DefaultModelConfigInput;
 export type SaveApiCredentialInput = IByok.SaveApiCredentialInput;
 export type OverwriteApiCredentialInput = IByok.OverwriteApiCredentialInput;
 export type SaveOrOverwriteApiCredentialInput = IByok.SaveOrOverwriteApiCredentialInput;

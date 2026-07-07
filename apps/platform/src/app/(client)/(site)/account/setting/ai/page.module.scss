@@ -53,6 +53,30 @@
   font-size: 0.875rem;
 }
 
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: #182230;
+  font-size: 0.9375rem;
+}
+
+.section-desc {
+  margin: 0.25rem 0 0;
+  color: #667085;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  .section-desc-link {
+    color: #344054;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+}
+
+.default-model-select {
+  width: min(32rem, 100%);
+}
+
 .table {
   padding: 0 0.5rem;
 }

@@ -50,6 +50,11 @@ const encryptedPayloadSchema = z.object({
   ]),
 });
 
+const defaultModelConfigSchema = z.object({
+  credentialId: z.string().regex(/^cred_[a-f0-9]{32}$/u),
+  modelId: z.string().min(1).max(128),
+});
+
 const defaultRedisClient: ByokRedisClient = {
   del: redisDel,
   expire: redisExpire,
@@ -98,6 +103,10 @@ export function createByokCredentialRedisKey(userId: string, credentialId: strin
 
 export function createByokCredentialIndexKey(userId: string): string {
   return `ai:byok:index:${createByokUserHash(userId)}`;
+}
+
+export function createByokDefaultModelConfigRedisKey(userId: string): string {
+  return `ai:byok:default-model:v1:${createByokUserHash(userId)}`;
 }
 
 function getCredentialExpiresAt(ttlSeconds: number): string {
@@ -255,6 +264,37 @@ export async function listStoredApiCredentials(
   return statusResults.flatMap((result) =>
     result.status === 'fulfilled' && result.value ? [result.value] : [],
   );
+}
+
+export async function getStoredDefaultModelConfig(
+  userId: string,
+  client: ByokRedisClient = defaultRedisClient,
+): Promise<IByok.DefaultModelConfig | null> {
+  const raw = await client.get(createByokDefaultModelConfigRedisKey(userId));
+
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return defaultModelConfigSchema.parse(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
+
+export async function saveStoredDefaultModelConfig(
+  userId: string,
+  input: IByok.DefaultModelConfig,
+  client: ByokRedisClient = defaultRedisClient,
+): Promise<IByok.DefaultModelConfig> {
+  await client.setEx(
+    createByokDefaultModelConfigRedisKey(userId),
+    getMaxIndexTtlSeconds(),
+    JSON.stringify(input),
+  );
+
+  return input;
 }
 
 export async function deleteStoredApiCredential(

@@ -56,6 +56,11 @@ declare namespace IApiAiChat {
     isDefault?: boolean;
   }
 
+  interface DefaultModelConfigPayload {
+    credentialId: string;
+    modelId: string;
+  }
+
   interface Conversation {
     id: string;
     title: string;
