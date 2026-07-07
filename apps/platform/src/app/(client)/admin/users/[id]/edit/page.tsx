@@ -4,7 +4,7 @@ import { ArrowLeftOutlined, SaveOutlined, UserOutlined } from '@ant-design/icons
 import { Button, Form, Input, Select, Skeleton } from 'antd';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getRoles, type AdminRole } from '@/api/modules/admin';
 import {
   getUserProfileById,
@@ -35,6 +35,25 @@ export default function EditUserPage() {
   const [roles, setRoles] = useState<AdminRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const roleLabelMap = useMemo(() => {
+    const nextRoleLabelMap = new Map<number, string>();
+
+    roles.forEach((role) => {
+      nextRoleLabelMap.set(Number(role.id), role.name);
+    });
+    user?.roles.forEach((role) => {
+      nextRoleLabelMap.set(Number(role.id), role.name);
+    });
+
+    return nextRoleLabelMap;
+  }, [roles, user?.roles]);
+  const roleOptions = useMemo(
+    () =>
+      roles
+        .filter((role) => role.code !== RoleCode.SUPER_ADMIN && role.status === 'ENABLED')
+        .map((role) => ({ label: role.name, value: Number(role.id) })),
+    [roles],
+  );
 
   const loadForm = useCallback(async () => {
     if (!id) {
@@ -143,10 +162,10 @@ export default function EditUserPage() {
             <Select
               maxTagCount="responsive"
               mode="multiple"
-              options={roles
-                .filter((role) => role.code !== RoleCode.SUPER_ADMIN && role.status === 'ENABLED')
-                .map((role) => ({ label: role.name, value: Number(role.id) }))}
+              optionLabelProp="label"
+              options={roleOptions}
               placeholder="选择用户角色"
+              labelRender={(item) => roleLabelMap.get(Number(item.value)) ?? item.label}
             />
           </Form.Item>
           <div className={styles.actions}>
