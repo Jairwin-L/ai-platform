@@ -1,0 +1,52 @@
+.trigger {
+  display: inline-flex;
+  min-height: 2.125rem;
+  align-items: center;
+  gap: 0.375rem;
+  border: 0;
+  border-radius: $site-radius-sm;
+  background: transparent;
+  padding: 0.45rem 0.625rem;
+  color: $site-color-muted;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 520;
+  line-height: 1rem;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+
+  &:hover,
+  &[data-active='true'] {
+    background: $site-color-surface-hover;
+    color: $site-color-ink;
+  }
+}
+
+.chevron {
+  width: 0.6875rem;
+  height: 0.6875rem;
+  flex: 0 0 auto;
+  font-size: 0.6875rem;
+}
+
+.menu-panel {
+  min-width: 7rem;
+
+  :global(.ant-dropdown-menu) {
+    border: 1px solid $site-color-border;
+    box-shadow: 0 12px 32px $site-color-shadow;
+  }
+
+  :global(.ant-dropdown-menu-item) {
+    color: $site-color-text;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    text-align: center;
+  }
+
+  :global(.ant-dropdown-menu-title-content) {
+    text-align: center;
+  }
+}

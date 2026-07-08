@@ -63,7 +63,8 @@
       background 0.2s ease,
       color 0.2s ease;
 
-    &:hover {
+    &:hover,
+    &[data-active='true'] {
       background: $site-color-surface-hover;
       color: $site-color-ink;
     }
