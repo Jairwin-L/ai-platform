@@ -22,6 +22,87 @@ const aiUploadPermissionCodes = [
   'UPLOAD:COMPRESS',
 ];
 
+interface PermissionSeed {
+  code: string;
+  name: string;
+  parentCode: string | null;
+  type: 'module' | 'page' | 'operation';
+  description: string;
+}
+
+const aiUploadPermissionSeeds: PermissionSeed[] = [
+  {
+    code: 'AI',
+    name: 'AI',
+    parentCode: null,
+    type: 'module',
+    description: 'AI 模块',
+  },
+  {
+    code: 'UPLOAD',
+    name: 'Upload',
+    parentCode: null,
+    type: 'module',
+    description: '上传模块',
+  },
+  {
+    code: 'AI:CHAT',
+    name: 'AI Chat',
+    parentCode: 'AI',
+    type: 'page',
+    description: 'AI Chat 页面',
+  },
+  {
+    code: 'AI:SETTINGS',
+    name: 'AI Settings',
+    parentCode: 'AI',
+    type: 'page',
+    description: 'AI 设置页面',
+  },
+  {
+    code: 'UPLOAD:MANAGEMENT',
+    name: 'Upload Management',
+    parentCode: 'UPLOAD',
+    type: 'page',
+    description: '上传管理页面',
+  },
+  {
+    code: 'AI:CHAT:USE',
+    name: 'AI Chat:Use',
+    parentCode: 'AI:CHAT',
+    type: 'operation',
+    description: 'AI Chat:使用',
+  },
+  {
+    code: 'AI:SETTINGS:VIEW',
+    name: 'AI Settings:View',
+    parentCode: 'AI:SETTINGS',
+    type: 'operation',
+    description: 'AI 设置:查看',
+  },
+  {
+    code: 'AI:SETTINGS:MANAGE',
+    name: 'AI Settings:Manage',
+    parentCode: 'AI:SETTINGS',
+    type: 'operation',
+    description: 'AI 设置:管理',
+  },
+  {
+    code: 'UPLOAD:CREATE',
+    name: 'Upload:Create',
+    parentCode: 'UPLOAD:MANAGEMENT',
+    type: 'operation',
+    description: '上传管理:上传文件',
+  },
+  {
+    code: 'UPLOAD:COMPRESS',
+    name: 'Upload:Compress',
+    parentCode: 'UPLOAD:MANAGEMENT',
+    type: 'operation',
+    description: '上传管理:压缩图片',
+  },
+];
+
 if (!databaseUrl) {
   throw new Error('DATABASE_URL is not configured.');
 }
@@ -115,134 +196,121 @@ function markMigrationsApplied(migrationNames: string[]): void {
   }
 }
 
-async function applyAiUploadPermissionsRepair(client: PoolClient): Promise<void> {
-  await client.query(`
-    WITH module_permission_seeds ("code", "name", "parent_id", "type", "description") AS (
-      VALUES
-        ('AI', 'AI', NULL::INTEGER, 'module'::"PermissionType", 'AI 模块'),
-        ('UPLOAD', 'Upload', NULL::INTEGER, 'module'::"PermissionType", '上传模块')
-    ),
-    updated_permissions AS (
-      UPDATE "permissions" permissions
-      SET
-        "name" = module_permission_seeds."name",
-        "parent_id" = module_permission_seeds."parent_id",
-        "type" = module_permission_seeds."type",
-        "description" = module_permission_seeds."description",
-        "updated_at" = now()
-      FROM module_permission_seeds
-      WHERE permissions."code" = module_permission_seeds."code"
-      RETURNING permissions."code"
-    )
-    INSERT INTO "permissions" ("code", "name", "parent_id", "type", "description", "updated_at")
-    SELECT
-      module_permission_seeds."code",
-      module_permission_seeds."name",
-      module_permission_seeds."parent_id",
-      module_permission_seeds."type",
-      module_permission_seeds."description",
-      now()
-    FROM module_permission_seeds
-    WHERE NOT EXISTS (
-      SELECT 1
-      FROM updated_permissions
-      WHERE updated_permissions."code" = module_permission_seeds."code"
-    )
-      AND NOT EXISTS (
-        SELECT 1
-        FROM "permissions"
-        WHERE "permissions"."code" = module_permission_seeds."code"
-      );
-  `);
-
-  await client.query(`
-    WITH page_permission_seeds ("code", "name", "parent_code", "type", "description") AS (
-      VALUES
-        ('AI:CHAT', 'AI Chat', 'AI', 'page'::"PermissionType", 'AI Chat 页面'),
-        ('AI:SETTINGS', 'AI Settings', 'AI', 'page'::"PermissionType", 'AI 设置页面'),
-        ('UPLOAD:MANAGEMENT', 'Upload Management', 'UPLOAD', 'page'::"PermissionType", '上传管理页面'),
-        ('AI:CHAT:USE', 'AI Chat:Use', 'AI:CHAT', 'operation'::"PermissionType", 'AI Chat:使用'),
-        ('AI:SETTINGS:VIEW', 'AI Settings:View', 'AI:SETTINGS', 'operation'::"PermissionType", 'AI 设置:查看'),
-        ('AI:SETTINGS:MANAGE', 'AI Settings:Manage', 'AI:SETTINGS', 'operation'::"PermissionType", 'AI 设置:管理'),
-        ('UPLOAD:CREATE', 'Upload:Create', 'UPLOAD:MANAGEMENT', 'operation'::"PermissionType", '上传管理:上传文件'),
-        ('UPLOAD:COMPRESS', 'Upload:Compress', 'UPLOAD:MANAGEMENT', 'operation'::"PermissionType", '上传管理:压缩图片')
-    ),
-    parent_permissions AS (
-      SELECT DISTINCT ON ("code") "code", "id"
+async function getPermissionId(client: PoolClient, code: string): Promise<number | null> {
+  const result = await client.query<{ id: number }>(
+    `
+      SELECT "id"
       FROM "permissions"
-      ORDER BY "code", "id"
-    ),
-    seed_permissions AS (
-      SELECT
-        page_permission_seeds."code",
-        page_permission_seeds."name",
-        parent_permissions."id" AS "parent_id",
-        page_permission_seeds."type",
-        page_permission_seeds."description"
-      FROM page_permission_seeds
-      INNER JOIN parent_permissions ON parent_permissions."code" = page_permission_seeds."parent_code"
-    ),
-    updated_permissions AS (
-      UPDATE "permissions" permissions
-      SET
-        "name" = seed_permissions."name",
-        "parent_id" = seed_permissions."parent_id",
-        "type" = seed_permissions."type",
-        "description" = seed_permissions."description",
-        "updated_at" = now()
-      FROM seed_permissions
-      WHERE permissions."code" = seed_permissions."code"
-      RETURNING permissions."code"
-    )
-    INSERT INTO "permissions" ("code", "name", "parent_id", "type", "description", "updated_at")
-    SELECT
-      seed_permissions."code",
-      seed_permissions."name",
-      seed_permissions."parent_id",
-      seed_permissions."type",
-      seed_permissions."description",
-      now()
-    FROM seed_permissions
-    WHERE NOT EXISTS (
-      SELECT 1
-      FROM updated_permissions
-      WHERE updated_permissions."code" = seed_permissions."code"
-    )
-      AND NOT EXISTS (
-        SELECT 1
-        FROM "permissions"
-        WHERE "permissions"."code" = seed_permissions."code"
-      );
-  `);
+      WHERE "code" = $1
+      ORDER BY "id"
+      LIMIT 1
+    `,
+    [code],
+  );
 
+  return result.rows[0]?.id ?? null;
+}
+
+async function getSiteRoleId(client: PoolClient): Promise<number | null> {
+  const result = await client.query<{ id: number }>(
+    `
+      SELECT "id"
+      FROM "roles"
+      WHERE "code" = 'SITE_USER'
+      ORDER BY "id"
+      LIMIT 1
+    `,
+  );
+
+  return result.rows[0]?.id ?? null;
+}
+
+async function upsertPermission(client: PoolClient, seed: PermissionSeed): Promise<number> {
+  const existingId = await getPermissionId(client, seed.code);
+  const parentId = seed.parentCode ? await getPermissionId(client, seed.parentCode) : null;
+
+  if (seed.parentCode && parentId === null) {
+    throw new Error(`Missing parent permission ${seed.parentCode} for ${seed.code}.`);
+  }
+
+  if (existingId !== null) {
+    await client.query(
+      `
+        UPDATE "permissions"
+        SET
+          "name" = $2,
+          "parent_id" = $3,
+          "type" = $4::"PermissionType",
+          "description" = $5,
+          "updated_at" = now()
+        WHERE "id" = $1
+      `,
+      [existingId, seed.name, parentId, seed.type, seed.description],
+    );
+
+    return existingId;
+  }
+
+  const created = await client.query<{ id: number }>(
+    `
+      INSERT INTO "permissions" ("code", "name", "parent_id", "type", "description", "updated_at")
+      VALUES ($1, $2, $3, $4::"PermissionType", $5, now())
+      RETURNING "id"
+    `,
+    [seed.code, seed.name, parentId, seed.type, seed.description],
+  );
+
+  const createdId = created.rows[0]?.id;
+
+  if (!createdId) {
+    throw new Error(`Failed to create permission ${seed.code}.`);
+  }
+
+  return createdId;
+}
+
+async function ensureSiteRolePermission(
+  client: PoolClient,
+  siteRoleId: number,
+  permissionId: number,
+): Promise<void> {
   await client.query(
     `
-      WITH site_role AS (
-        SELECT "id"
-        FROM "roles"
-        WHERE "code" = 'SITE_USER'
-        ORDER BY "id"
-        LIMIT 1
-      ),
-      site_permissions AS (
-        SELECT DISTINCT ON ("code") "id", "code"
-        FROM "permissions"
-        WHERE "code" = ANY($1::TEXT[])
-        ORDER BY "code", "id"
-      )
       INSERT INTO "role_permissions" ("role_id", "permission_id")
-      SELECT site_role."id", site_permissions."id"
-      FROM site_role
-      CROSS JOIN site_permissions
+      SELECT $1, $2
       WHERE NOT EXISTS (
         SELECT 1
-        FROM "role_permissions" existing_role_permissions
-        WHERE existing_role_permissions."role_id" = site_role."id"
-          AND existing_role_permissions."permission_id" = site_permissions."id"
-      );
+        FROM "role_permissions"
+        WHERE "role_id" = $1
+          AND "permission_id" = $2
+      )
     `,
-    [aiUploadPermissionCodes],
+    [siteRoleId, permissionId],
   );
+}
+
+async function applyAiUploadPermissionsRepair(client: PoolClient): Promise<void> {
+  const permissionIds = new Map<string, number>();
+
+  for (const seed of aiUploadPermissionSeeds) {
+    permissionIds.set(seed.code, await upsertPermission(client, seed));
+  }
+
+  const siteRoleId = await getSiteRoleId(client);
+
+  if (siteRoleId === null) {
+    throw new Error('SITE_USER role is missing.');
+  }
+
+  for (const permissionCode of aiUploadPermissionCodes) {
+    const permissionId = permissionIds.get(permissionCode);
+
+    if (!permissionId) {
+      throw new Error(`Permission ${permissionCode} was not repaired.`);
+    }
+
+    await ensureSiteRolePermission(client, siteRoleId, permissionId);
+  }
 }
 
 async function validateAiUploadPermissionsRepair(client: PoolClient): Promise<void> {
