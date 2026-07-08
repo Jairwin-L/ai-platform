@@ -1,7 +1,7 @@
 INSERT INTO "permissions" ("code", "name", "parent_id", "type", "description", "updated_at")
 VALUES
-  ('AI', 'AI', NULL, 'module'::"PermissionType", 'AI 模块'),
-  ('UPLOAD', 'Upload', NULL, 'module'::"PermissionType", '上传模块')
+  ('AI', 'AI', NULL, 'module'::"PermissionType", 'AI 模块', now()),
+  ('UPLOAD', 'Upload', NULL, 'module'::"PermissionType", '上传模块', now())
 ON CONFLICT ("code") DO UPDATE
 SET
   "name" = EXCLUDED."name",
