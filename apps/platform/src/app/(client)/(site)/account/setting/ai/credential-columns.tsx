@@ -89,7 +89,7 @@ export function buildAiCredentialColumns({
       render: (provider: AiCredentialProvider) => {
         const option = getProviderOption(providerOptions, provider);
 
-        return <Tag color={option?.color ?? 'default'}>{option?.label ?? provider}</Tag>;
+        return <Tag>{option?.label ?? provider}</Tag>;
       },
     },
     {

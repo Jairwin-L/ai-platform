@@ -4,21 +4,18 @@ const thirdPartyServicesData = [
   {
     value: 'tinypng',
     label: 'TinyPNG',
-    color: 'green',
     apiKeyUrl: 'https://tinypng.com/developers',
     enabled: true,
   },
   {
     value: 'stripe',
     label: 'Stripe',
-    color: 'purple',
     apiKeyUrl: 'https://dashboard.stripe.com/apikeys',
     enabled: true,
   },
   {
     value: 'github',
     label: 'GitHub',
-    color: 'geekblue',
     apiKeyUrl: 'https://github.com/settings/tokens',
     enabled: true,
   },
@@ -30,18 +27,16 @@ export async function seedThirdPartyServices(prisma: PrismaClient): Promise<void
   const seedResults = await Promise.allSettled(
     thirdPartyServicesData.map(
       (service, index) => prisma.$executeRaw`
-      INSERT INTO third_party_services (value, label, color, api_key_url, enabled, sort_order)
+      INSERT INTO third_party_services (value, label, api_key_url, enabled, sort_order)
       VALUES (
         ${service.value},
         ${service.label},
-        ${service.color},
         ${service.apiKeyUrl},
         ${service.enabled},
         ${index}
       )
       ON CONFLICT (value) DO UPDATE
       SET label = EXCLUDED.label,
-          color = EXCLUDED.color,
           api_key_url = EXCLUDED.api_key_url,
           enabled = EXCLUDED.enabled,
           sort_order = EXCLUDED.sort_order,

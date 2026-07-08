@@ -300,9 +300,7 @@ export default function AiSettingsPage() {
           {isOverwriteMode ? (
             <Form.Item label="Provider">
               <div className={styles['readonly-value']}>
-                <Tag color={overwriteProviderOption?.color ?? 'default'}>
-                  {overwriteProviderOption?.label ?? overwriteCredential?.provider}
-                </Tag>
+                <Tag>{overwriteProviderOption?.label ?? overwriteCredential?.provider}</Tag>
               </div>
             </Form.Item>
           ) : (

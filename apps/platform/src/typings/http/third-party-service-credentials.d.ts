@@ -29,7 +29,6 @@ declare namespace IApiThirdPartyServiceCredentials {
 
   interface ThirdPartyServiceOption {
     apiKeyUrl?: string;
-    color: string;
     label: string;
     value: string;
   }

@@ -68,7 +68,6 @@ declare namespace IApiAdmin {
   interface AiProviderOption {
     apiKeyUrl?: string;
     chatBaseUrl: string;
-    color: string;
     enabled: boolean;
     label: string;
     models: string[];
@@ -78,7 +77,6 @@ declare namespace IApiAdmin {
 
   interface ThirdPartyServiceOption {
     apiKeyUrl?: string;
-    color: string;
     enabled: boolean;
     label: string;
     value: string;

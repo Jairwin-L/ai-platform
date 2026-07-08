@@ -10,20 +10,6 @@ const providerProtocols = new Set<IByok.AiProviderProtocol>([
   'messages',
 ]);
 
-const allowedProviderColors = new Set([
-  'blue',
-  'cyan',
-  'geekblue',
-  'gold',
-  'green',
-  'lime',
-  'magenta',
-  'orange',
-  'purple',
-  'red',
-  'volcano',
-]);
-
 function getStringField(value: unknown, fieldName: string, maxLength: number): string {
   if (typeof value !== 'string') {
     throw new Error(`${fieldName} 必须是字符串`);
@@ -174,16 +160,9 @@ function normalizeProviderOption(value: unknown): AiProviderOption {
     throw new Error('Provider 标识只能包含小写字母、数字、下划线和连字符，且必须以小写字母开头');
   }
 
-  const color = getStringField(option.color, 'provider color', 32);
-
-  if (!allowedProviderColors.has(color)) {
-    throw new Error('provider color 不受支持');
-  }
-
   return {
     value: provider,
     label: getStringField(option.label, 'provider label', 40),
-    color,
     apiKeyUrl: getOptionalUrlField(option.apiKeyUrl, 'apiKeyUrl', 2048),
     protocol: getProviderProtocol(option.protocol),
     chatBaseUrl: getRequiredUrlField(option.chatBaseUrl, 'chatBaseUrl', 2048),
@@ -204,16 +183,9 @@ function normalizeStoredProviderOption(value: unknown): AiProviderOption {
     throw new Error('Provider 标识只能包含小写字母、数字、下划线和连字符，且必须以小写字母开头');
   }
 
-  const color = getStringField(option.color, 'provider color', 32);
-
-  if (!allowedProviderColors.has(color)) {
-    throw new Error('provider color 不受支持');
-  }
-
   return {
     value: provider,
     label: getStringField(option.label, 'provider label', 40),
-    color,
     apiKeyUrl: getOptionalUrlField(option.apiKeyUrl, 'apiKeyUrl', 2048),
     protocol: getStoredProviderProtocol(option.protocol),
     chatBaseUrl: getOptionalUrlField(option.chatBaseUrl, 'chatBaseUrl', 2048) ?? '',

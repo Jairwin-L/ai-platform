@@ -2,7 +2,6 @@ model AiProviders {
   id          Int      @id @default(autoincrement())
   value       String   @unique
   label       String
-  color       String
   api_key_url String?
   protocol    String   @default("chat-completions")
   chat_base_url String   @default("")

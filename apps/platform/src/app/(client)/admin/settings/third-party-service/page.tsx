@@ -8,7 +8,7 @@ import {
   ReloadOutlined,
   SearchOutlined,
 } from '@ant-design/icons';
-import { Button, Input, Popconfirm, Space, Switch, Table, Tag, type TableColumnsType } from 'antd';
+import { Button, Input, Popconfirm, Space, Switch, Table, type TableColumnsType } from 'antd';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -132,12 +132,6 @@ export default function ThirdPartyServiceSettingsPage() {
           }}
         />
       ),
-    },
-    {
-      title: '标签颜色',
-      dataIndex: 'color',
-      width: 140,
-      render: (color: string) => <Tag color={color}>{color}</Tag>,
     },
     {
       title: 'API Key 链接',

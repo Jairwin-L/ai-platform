@@ -3,7 +3,6 @@ import type { PrismaClient } from '../../generated/prisma/client';
 interface SeedAiProvider {
   apiKeyUrl: string;
   chatBaseUrl: string;
-  color: string;
   enabled: boolean;
   label: string;
   models: string[];
@@ -15,7 +14,6 @@ const aiProvidersData: SeedAiProvider[] = [
   {
     value: 'openai',
     label: 'OpenAI',
-    color: 'blue',
     apiKeyUrl: 'https://platform.openai.com/api-keys',
     protocol: 'chat-completions',
     chatBaseUrl: 'https://api.openai.com/v1/chat/completions',
@@ -25,7 +23,6 @@ const aiProvidersData: SeedAiProvider[] = [
   {
     value: 'anthropic',
     label: 'Anthropic',
-    color: 'purple',
     apiKeyUrl: 'https://platform.claude.com/settings/keys',
     protocol: 'messages',
     chatBaseUrl: 'https://api.anthropic.com/v1/messages',
@@ -35,7 +32,6 @@ const aiProvidersData: SeedAiProvider[] = [
   {
     value: 'gemini',
     label: 'Gemini',
-    color: 'green',
     apiKeyUrl: 'https://aistudio.google.com/app/apikey',
     protocol: 'generate-content',
     chatBaseUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
@@ -45,7 +41,6 @@ const aiProvidersData: SeedAiProvider[] = [
   {
     value: 'deepseek',
     label: 'DeepSeek',
-    color: 'geekblue',
     apiKeyUrl: 'https://platform.deepseek.com/api_keys',
     protocol: 'chat-completions',
     chatBaseUrl: 'https://api.deepseek.com/chat/completions',
@@ -55,7 +50,6 @@ const aiProvidersData: SeedAiProvider[] = [
   {
     value: 'kimi',
     label: 'Kimi',
-    color: 'cyan',
     apiKeyUrl: 'https://platform.kimi.ai/console/api-keys',
     protocol: 'chat-completions',
     chatBaseUrl: 'https://api.moonshot.ai/v1/chat/completions',
@@ -73,7 +67,6 @@ export async function seedAiProviders(prisma: PrismaClient): Promise<void> {
       INSERT INTO ai_providers (
         value,
         label,
-        color,
         api_key_url,
         protocol,
         chat_base_url,
@@ -84,7 +77,6 @@ export async function seedAiProviders(prisma: PrismaClient): Promise<void> {
       VALUES (
         ${provider.value},
         ${provider.label},
-        ${provider.color},
         ${provider.apiKeyUrl},
         ${provider.protocol},
         ${provider.chatBaseUrl},
@@ -94,7 +86,6 @@ export async function seedAiProviders(prisma: PrismaClient): Promise<void> {
       )
       ON CONFLICT (value) DO UPDATE
       SET label = EXCLUDED.label,
-          color = EXCLUDED.color,
           api_key_url = EXCLUDED.api_key_url,
           protocol = EXCLUDED.protocol,
           chat_base_url = EXCLUDED.chat_base_url,

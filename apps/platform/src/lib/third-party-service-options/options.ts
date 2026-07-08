@@ -1,20 +1,6 @@
 export type ThirdPartyServiceOption = IThirdPartyServiceOptions.ServiceOption;
 export type EnabledThirdPartyServiceOption = IThirdPartyServiceOptions.EnabledServiceOption;
 
-const allowedServiceColors = new Set([
-  'blue',
-  'cyan',
-  'geekblue',
-  'gold',
-  'green',
-  'lime',
-  'magenta',
-  'orange',
-  'purple',
-  'red',
-  'volcano',
-]);
-
 function getStringField(value: unknown, fieldName: string, maxLength: number): string {
   if (typeof value !== 'string') {
     throw new Error(`${fieldName} 必须是字符串`);
@@ -88,16 +74,10 @@ function normalizeServiceOption(value: unknown): ThirdPartyServiceOption {
 
   const option = value as Partial<ThirdPartyServiceOption>;
   const serviceValue = normalizeServiceValue(getStringField(option.value, 'service value', 40));
-  const color = getStringField(option.color, 'service color', 32);
-
-  if (!allowedServiceColors.has(color)) {
-    throw new Error('service color 不受支持');
-  }
 
   return {
     value: serviceValue,
     label: getStringField(option.label, 'service label', 40),
-    color,
     apiKeyUrl: getOptionalUrlField(option.apiKeyUrl, 'apiKeyUrl', 2048),
     enabled: getBooleanField(option.enabled, 'service enabled'),
   };

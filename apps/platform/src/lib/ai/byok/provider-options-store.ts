@@ -37,7 +37,6 @@ function toAiProviderOptions(rows: IByok.ProviderOptionRow[]): AiProviderOption[
     rows.map((row) => ({
       value: row.value,
       label: row.label,
-      color: row.color,
       apiKeyUrl: row.api_key_url ?? undefined,
       protocol: row.protocol,
       chatBaseUrl: row.chat_base_url,
@@ -49,7 +48,7 @@ function toAiProviderOptions(rows: IByok.ProviderOptionRow[]): AiProviderOption[
 
 async function fetchAiProviderRows(): Promise<IByok.ProviderOptionRow[]> {
   return prisma.$queryRaw<IByok.ProviderOptionRow[]>`
-    SELECT value, label, color, api_key_url, protocol, chat_base_url, models, enabled, sort_order
+    SELECT value, label, api_key_url, protocol, chat_base_url, models, enabled, sort_order
     FROM ai_providers
     ORDER BY sort_order ASC, id ASC
   `;
@@ -57,7 +56,7 @@ async function fetchAiProviderRows(): Promise<IByok.ProviderOptionRow[]> {
 
 async function fetchAiProviderRow(value: string): Promise<IByok.ProviderOptionRow | null> {
   const rows = await prisma.$queryRaw<IByok.ProviderOptionRow[]>`
-    SELECT value, label, color, api_key_url, protocol, chat_base_url, models, enabled, sort_order
+    SELECT value, label, api_key_url, protocol, chat_base_url, models, enabled, sort_order
     FROM ai_providers
     WHERE value = ${value}
     LIMIT 1
@@ -101,7 +100,6 @@ export async function createStoredAiProviderOption(option: AiProviderOption): Pr
       INSERT INTO ai_providers (
         value,
         label,
-        color,
         api_key_url,
         protocol,
         chat_base_url,
@@ -112,7 +110,6 @@ export async function createStoredAiProviderOption(option: AiProviderOption): Pr
       VALUES (
         ${normalizedOption.value},
         ${normalizedOption.label},
-        ${normalizedOption.color},
         ${normalizedOption.apiKeyUrl ?? null},
         ${normalizedOption.protocol},
         ${normalizedOption.chatBaseUrl},
@@ -159,7 +156,6 @@ export async function updateStoredAiProviderOption(
       UPDATE ai_providers
       SET value = ${normalizedOption.value},
           label = ${normalizedOption.label},
-          color = ${normalizedOption.color},
           api_key_url = ${normalizedOption.apiKeyUrl ?? null},
           protocol = ${normalizedOption.protocol},
           chat_base_url = ${normalizedOption.chatBaseUrl},
@@ -214,7 +210,6 @@ export async function updateStoredAiProviderOptions(options: AiProviderOption[])
         INSERT INTO ai_providers (
           value,
           label,
-          color,
           api_key_url,
           protocol,
           chat_base_url,
@@ -225,7 +220,6 @@ export async function updateStoredAiProviderOptions(options: AiProviderOption[])
         VALUES (
           ${option.value},
           ${option.label},
-          ${option.color},
           ${option.apiKeyUrl ?? null},
           ${option.protocol},
           ${option.chatBaseUrl},
@@ -235,7 +229,6 @@ export async function updateStoredAiProviderOptions(options: AiProviderOption[])
         )
         ON CONFLICT (value) DO UPDATE
         SET label = EXCLUDED.label,
-            color = EXCLUDED.color,
             api_key_url = EXCLUDED.api_key_url,
             protocol = EXCLUDED.protocol,
             chat_base_url = EXCLUDED.chat_base_url,

@@ -2,7 +2,6 @@ model ThirdPartyServices {
   id          Int      @id @default(autoincrement())
   value       String   @unique
   label       String
-  color       String
   api_key_url String?
   enabled     Boolean  @default(true)
   sort_order  Int      @default(0)

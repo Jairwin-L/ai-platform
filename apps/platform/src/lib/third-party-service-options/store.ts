@@ -35,7 +35,6 @@ function toThirdPartyServiceOptions(
     rows.map((row) => ({
       value: row.value,
       label: row.label,
-      color: row.color,
       apiKeyUrl: row.api_key_url ?? undefined,
       enabled: row.enabled,
     })),
@@ -46,7 +45,7 @@ async function fetchThirdPartyServiceRows(): Promise<
   IThirdPartyServiceOptions.ServiceOptionRow[]
 > {
   return prisma.$queryRaw<IThirdPartyServiceOptions.ServiceOptionRow[]>`
-    SELECT value, label, color, api_key_url, enabled, sort_order
+    SELECT value, label, api_key_url, enabled, sort_order
     FROM third_party_services
     ORDER BY sort_order ASC, id ASC
   `;
@@ -56,7 +55,7 @@ async function fetchThirdPartyServiceRow(
   value: string,
 ): Promise<IThirdPartyServiceOptions.ServiceOptionRow | null> {
   const rows = await prisma.$queryRaw<IThirdPartyServiceOptions.ServiceOptionRow[]>`
-    SELECT value, label, color, api_key_url, enabled, sort_order
+    SELECT value, label, api_key_url, enabled, sort_order
     FROM third_party_services
     WHERE value = ${value}
     LIMIT 1
@@ -101,11 +100,10 @@ export async function createStoredThirdPartyServiceOption(
     const sortOrder = sortRows[0]?.sort_order ?? 0;
 
     await transaction.$executeRaw`
-      INSERT INTO third_party_services (value, label, color, api_key_url, enabled, sort_order)
+      INSERT INTO third_party_services (value, label, api_key_url, enabled, sort_order)
       VALUES (
         ${normalizedOption.value},
         ${normalizedOption.label},
-        ${normalizedOption.color},
         ${normalizedOption.apiKeyUrl ?? null},
         ${normalizedOption.enabled},
         ${sortOrder}
@@ -149,7 +147,6 @@ export async function updateStoredThirdPartyServiceOption(
       UPDATE third_party_services
       SET value = ${normalizedOption.value},
           label = ${normalizedOption.label},
-          color = ${normalizedOption.color},
           api_key_url = ${normalizedOption.apiKeyUrl ?? null},
           enabled = ${normalizedOption.enabled},
           updated_at = NOW()
@@ -200,18 +197,16 @@ export async function updateStoredThirdPartyServiceOptions(
 
     const upsertResults = await Promise.allSettled(
       normalizedOptions.map((option, index) => transaction.$executeRaw`
-        INSERT INTO third_party_services (value, label, color, api_key_url, enabled, sort_order)
+        INSERT INTO third_party_services (value, label, api_key_url, enabled, sort_order)
         VALUES (
           ${option.value},
           ${option.label},
-          ${option.color},
           ${option.apiKeyUrl ?? null},
           ${option.enabled},
           ${index}
         )
         ON CONFLICT (value) DO UPDATE
         SET label = EXCLUDED.label,
-            color = EXCLUDED.color,
             api_key_url = EXCLUDED.api_key_url,
             enabled = EXCLUDED.enabled,
             sort_order = EXCLUDED.sort_order,

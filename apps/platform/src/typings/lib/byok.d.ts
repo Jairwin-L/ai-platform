@@ -129,7 +129,6 @@ declare namespace IByok {
   interface AiProviderOption {
     apiKeyUrl?: string;
     chatBaseUrl: string;
-    color: string;
     enabled: boolean;
     label: string;
     models: string[];
@@ -203,7 +202,6 @@ declare namespace IByok {
   interface ProviderOptionRow {
     api_key_url: string | null;
     chat_base_url: string;
-    color: string;
     enabled: boolean;
     label: string;
     models: string[];

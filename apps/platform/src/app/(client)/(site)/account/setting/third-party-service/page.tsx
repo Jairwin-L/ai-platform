@@ -261,7 +261,7 @@ export default function ThirdPartyServiceCredentialsPage() {
       render: (serviceName: string) => {
         const option = getServiceOption(serviceOptions, serviceName);
 
-        return <Tag color={option?.color ?? 'default'}>{option?.label ?? serviceName}</Tag>;
+        return <Tag>{option?.label ?? serviceName}</Tag>;
       },
     },
     {
@@ -407,9 +407,7 @@ export default function ThirdPartyServiceCredentialsPage() {
           {isOverwriteMode ? (
             <Form.Item label="第三方服务">
               <div className={styles['readonly-value']}>
-                <Tag color={overwriteServiceOption?.color ?? 'default'}>
-                  {overwriteServiceOption?.label ?? overwriteCredential?.serviceName}
-                </Tag>
+                <Tag>{overwriteServiceOption?.label ?? overwriteCredential?.serviceName}</Tag>
               </div>
             </Form.Item>
           ) : (

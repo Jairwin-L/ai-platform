@@ -1,7 +1,7 @@
 'use client';
 
 import { ApiOutlined, ArrowLeftOutlined, SaveOutlined } from '@ant-design/icons';
-import { Button, Form, Input, Select, Skeleton, Switch } from 'antd';
+import { Button, Form, Input, Skeleton, Switch } from 'antd';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -14,25 +14,10 @@ import { useDebounced } from '@/hooks/use-debounced';
 
 const defaultServiceValues: IAppForms.ThirdPartyServiceOptionValues = {
   apiKeyUrl: '',
-  color: 'green',
   enabled: true,
   label: '',
   value: '',
 };
-
-const serviceColorOptions = [
-  'blue',
-  'cyan',
-  'geekblue',
-  'gold',
-  'green',
-  'lime',
-  'magenta',
-  'orange',
-  'purple',
-  'red',
-  'volcano',
-].map((color) => ({ label: color, value: color }));
 
 const serviceValuePatternMessage = '服务标识只能包含小写字母、数字和连字符';
 const serviceValuePattern = /^[a-z0-9][a-z0-9-]{0,39}$/u;
@@ -57,7 +42,6 @@ function getServicePayload(
   return {
     value: values.value.trim(),
     label: values.label.trim(),
-    color: values.color,
     ...(apiKeyUrl ? { apiKeyUrl } : {}),
     enabled: values.enabled,
   };
@@ -166,13 +150,6 @@ export function ThirdPartyServiceForm({
             rules={[{ required: true, whitespace: true, message: '请输入展示名称' }]}
           >
             <Input maxLength={40} placeholder="TinyPNG" />
-          </Form.Item>
-          <Form.Item
-            label="标签颜色"
-            name="color"
-            rules={[{ required: true, message: '请选择标签颜色' }]}
-          >
-            <Select options={serviceColorOptions} />
           </Form.Item>
           <Form.Item
             label="API Key 链接"
