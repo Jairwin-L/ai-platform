@@ -182,6 +182,7 @@ jobs:
           POSTGRES_OLD_DATA_TARGET: ${{ vars.POSTGRES_OLD_DATA_TARGET || '' }}
           POSTGRES_UPGRADE_MODE: ${{ vars.POSTGRES_UPGRADE_MODE || '' }}
           DATABASE_URL: ${{ secrets.DATABASE_URL || (github.event_name == 'pull_request_target' && 'postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit?schema=public' || 'postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit_dev?schema=public') }}
+          BYOK_TRUST_PROXY_HEADERS: ${{ vars.BYOK_TRUST_PROXY_HEADERS || secrets.BYOK_TRUST_PROXY_HEADERS || (github.event_name == 'pull_request_target' && 'false' || 'true') }}
           BOOTSTRAP_ADMIN_EMAIL: ${{ vars.BOOTSTRAP_ADMIN_EMAIL }}
           BOOTSTRAP_ADMIN_STRICT: ${{ vars.BOOTSTRAP_ADMIN_STRICT || 'true' }}
           AUTH_CODE_SECRET: ${{ secrets.AUTH_CODE_SECRET }}
@@ -244,6 +245,7 @@ jobs:
           write_env POSTGRES_OLD_DATA_TARGET "${POSTGRES_OLD_DATA_TARGET}"
           write_env POSTGRES_UPGRADE_MODE "${POSTGRES_UPGRADE_MODE}"
           write_env DATABASE_URL "${DATABASE_URL}"
+          write_env BYOK_TRUST_PROXY_HEADERS "${BYOK_TRUST_PROXY_HEADERS}"
           write_env BOOTSTRAP_ADMIN_EMAIL "${BOOTSTRAP_ADMIN_EMAIL}"
           write_env BOOTSTRAP_ADMIN_STRICT "${BOOTSTRAP_ADMIN_STRICT}"
           write_env AUTH_CODE_SECRET "${AUTH_CODE_SECRET}"

@@ -64,7 +64,7 @@ Redis TTL 到期表示在线 Redis 中的数据自动失效与删除；历史 RD
 
 ## 7. 认证、HTTPS、CSRF、CORS、限流
 
-所有 BYOK 接口要求登录态。生产环境只允许 HTTPS；状态变更接口必须提供并通过精确 Origin 校验，Cookie Session 场景下校验 `Sec-Fetch-Site`，默认不返回 `Access-Control-Allow-Origin: *`。BYOK 允许 Origin 只从管理系统配置读取，不使用 env 兜底；配置为空时保存、删除和聊天请求会被拒绝。只有在可信反向代理已经清洗客户端伪造头时，才可设置 `BYOK_TRUST_PROXY_HEADERS=true` 并信任 `X-Forwarded-Proto`。
+所有 BYOK 接口要求登录态。生产环境只允许 HTTPS；状态变更接口必须提供并通过精确 Origin 校验，Cookie Session 场景下校验 `Sec-Fetch-Site`，默认不返回 `Access-Control-Allow-Origin: *`。BYOK 允许 Origin 只从管理系统配置读取，不使用 env 兜底；配置为空时保存、删除和聊天请求会被拒绝。只有在可信反向代理已经清洗客户端伪造头时，才可设置 `BYOK_TRUST_PROXY_HEADERS=true` 并信任 `X-Forwarded-Proto`。Compose 部署默认开发环境启用该开关，生产环境默认关闭，生产启用前必须先确认反向代理会覆盖外部传入的协议头。
 
 限流维度为 `userId + IP + route`，保存 Credential 每小时 10 次，删除 Credential 每小时 20 次，AI Chat 每小时 120 次、每天 1000 次。AI Chat 额外限制单用户同一路由最多 3 个并发请求，同时限制请求体大小、消息条数、单条长度、总字符数，并按管理端 Provider 配置校验模型 allowlist。
 
