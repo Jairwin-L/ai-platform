@@ -93,6 +93,8 @@ Docker / SSH 部署流程使用以下变量或 GitHub Secrets：
 - `BOOTSTRAP_ADMIN_EMAIL`（GitHub Actions 默认写入 `example@email.com`）
 - `BOOTSTRAP_ADMIN_STRICT`（GitHub Actions 默认写入 `true`，指定用户不存在时部署失败）
 - `AUTH_CODE_SECRET`
+- `AI_KEY_ENCRYPTION_KEY_V1`
+- `AI_KEY_REDIS_ID_SECRET`
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL`
 - `DEPLOY_HOST`

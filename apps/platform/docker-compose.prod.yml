@@ -41,6 +41,8 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit?schema=public}
       REDIS_URL: redis://redis:6379/0
       AUTH_CODE_SECRET: ${AUTH_CODE_SECRET:?AUTH_CODE_SECRET is required}
+      AI_KEY_ENCRYPTION_KEY_V1: ${AI_KEY_ENCRYPTION_KEY_V1:?AI_KEY_ENCRYPTION_KEY_V1 is required}
+      AI_KEY_REDIS_ID_SECRET: ${AI_KEY_REDIS_ID_SECRET:?AI_KEY_REDIS_ID_SECRET is required}
       RESEND_API_KEY: ${RESEND_API_KEY:?RESEND_API_KEY is required}
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:?RESEND_FROM_EMAIL is required}
       BYOK_TRUST_PROXY_HEADERS: ${BYOK_TRUST_PROXY_HEADERS:-false}
