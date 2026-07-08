@@ -7,7 +7,6 @@ const API_KEY = ['sk', 'test', 'secret'].join('-');
 const PROVIDER_OPTION: IByok.AiProviderOption = {
   value: 'test-provider',
   label: 'Test Provider',
-  color: 'blue',
   apiKeyUrl: 'https://provider.example/keys',
   protocol: 'chat-completions',
   chatBaseUrl: 'https://provider.example/v1/chat/completions',

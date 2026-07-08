@@ -208,8 +208,13 @@ const updateRoleHandler: ApiHandler = async (request: NextRequest, context: ApiC
         throw new TypeError('角色不存在');
       }
 
-      if (existingRole.code === RoleCode.SUPER_ADMIN || code === RoleCode.SUPER_ADMIN) {
-        throw new RangeError('SUPER_ADMIN 不允许通过普通 API 修改');
+      if (
+        existingRole.code === RoleCode.SUPER_ADMIN ||
+        existingRole.code === RoleCode.SITE_USER ||
+        code === RoleCode.SUPER_ADMIN ||
+        code === RoleCode.SITE_USER
+      ) {
+        throw new RangeError('SUPER_ADMIN/SITE_USER 不允许通过普通 API 修改');
       }
 
       if (permissions) {

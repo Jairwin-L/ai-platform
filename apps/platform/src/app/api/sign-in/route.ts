@@ -13,6 +13,7 @@ import { createErrorResponse, createSuccessResponse, withApiHandler } from '@/li
 import {
   createUserSession,
   getAuthUserBySessionToken,
+  isSupportedPasswordHash,
   setSessionCookie,
   toAuthPayload,
   verifyPassword,
@@ -61,6 +62,15 @@ export const POST = withApiHandler(async (request: NextRequest) => {
   }
 
   if (parsed.data.method === 'password') {
+    if (!isSupportedPasswordHash(user.password_hash)) {
+      return createErrorResponse(
+        AUTH_ERROR.UNAUTHORIZED,
+        '账号未设置可用密码，请使用验证码登录或重置密码',
+        null,
+        401,
+      );
+    }
+
     const passwordOk = await verifyPassword(parsed.data.password, user.password_hash);
 
     if (!passwordOk) {

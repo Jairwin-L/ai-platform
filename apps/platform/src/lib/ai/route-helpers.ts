@@ -5,8 +5,12 @@ import { createByokErrorOptions, requireByokUser } from './byok/route-helpers';
 import { createRequestId } from './security/request-security';
 import { COMMON_ERROR, createErrorResponse, createSuccessResponse } from '@/lib/server';
 
-export async function requireAiUser(request: NextRequest, requestId: string): Promise<string> {
-  return requireByokUser(request, requestId);
+export async function requireAiUser(
+  request: NextRequest,
+  requestId: string,
+  permissionCode = 'AI:CHAT:USE',
+): Promise<string> {
+  return requireByokUser(request, requestId, permissionCode);
 }
 
 export async function parseJsonBySchema<T extends z.ZodType>(

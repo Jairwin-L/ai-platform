@@ -10,12 +10,12 @@ export async function createEmailUser(input: CreateEmailUserInput) {
 
   return prisma.$transaction(async (tx) => {
     const userRole = await tx.roles.upsert({
-      where: { code: RoleCode.READ_ONLY },
+      where: { code: RoleCode.SITE_USER },
       update: { updated_at: new Date() },
       create: {
-        code: RoleCode.READ_ONLY,
-        name: '只读用户',
-        description: '普通只读角色',
+        code: RoleCode.SITE_USER,
+        name: '站点用户',
+        description: '默认拥有站点全部功能权限',
         is_system: true,
         status: 'ENABLED',
       },

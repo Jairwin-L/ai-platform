@@ -2,6 +2,8 @@ import crypto from 'node:crypto';
 import { promisify } from 'node:util';
 import type { NextResponse } from 'next/server';
 import { AUTH_SESSION_COOKIE_NAME } from '@/constants/auth';
+import { SITE_PERMISSION_CODES } from '@/constants/permissions';
+import { RoleCode } from '@/constants/roles';
 import { prisma } from '@/lib/prisma';
 import type { AuthUser } from './types';
 
@@ -37,20 +39,27 @@ export async function verifyPassword(
   password: string,
   passwordHash?: string | null,
 ): Promise<boolean> {
+  if (!isSupportedPasswordHash(passwordHash)) {
+    return false;
+  }
+
+  const parts = passwordHash.split(':');
+  const salt = parts[1] as string;
+  const stored = parts[2] as string;
+  const derived = (await scryptAsync(password, salt, 64)) as Buffer;
+  const storedBuffer = Buffer.from(stored, 'base64url');
+
+  return storedBuffer.length === derived.length && crypto.timingSafeEqual(storedBuffer, derived);
+}
+
+export function isSupportedPasswordHash(passwordHash?: string | null): passwordHash is string {
   if (!passwordHash) {
     return false;
   }
 
   const [algorithm, salt, stored] = passwordHash.split(':');
 
-  if (algorithm !== 'scrypt' || !salt || !stored) {
-    return false;
-  }
-
-  const derived = (await scryptAsync(password, salt, 64)) as Buffer;
-  const storedBuffer = Buffer.from(stored, 'base64url');
-
-  return storedBuffer.length === derived.length && crypto.timingSafeEqual(storedBuffer, derived);
+  return algorithm === 'scrypt' && Boolean(salt && stored);
 }
 
 export function setSessionCookie(response: NextResponse, token: string): void {
@@ -129,6 +138,74 @@ export async function revokeUserSession(token?: string | null): Promise<void> {
   });
 }
 
+async function ensureSiteRoleForUser(userId: string): Promise<boolean> {
+  let changed = false;
+  const siteRole = await prisma.roles.upsert({
+    where: { code: RoleCode.SITE_USER },
+    update: { updated_at: new Date() },
+    create: {
+      code: RoleCode.SITE_USER,
+      name: '站点用户',
+      description: '默认拥有站点全部功能权限',
+      is_system: true,
+      status: 'ENABLED',
+    },
+    select: { id: true },
+  });
+  const sitePermissions = await prisma.permissions.findMany({
+    where: { code: { in: SITE_PERMISSION_CODES } },
+    select: { id: true },
+  });
+
+  if (sitePermissions.length > 0) {
+    const existingRolePermissions = await prisma.rolePermissions.findMany({
+      where: {
+        role_id: siteRole.id,
+        permission_id: { in: sitePermissions.map((permission) => permission.id) },
+      },
+      select: { permission_id: true },
+    });
+    const existingPermissionIds = new Set(
+      existingRolePermissions.map((rolePermission) => rolePermission.permission_id),
+    );
+    const missingRolePermissions = sitePermissions.filter(
+      (permission) => !existingPermissionIds.has(permission.id),
+    );
+
+    if (missingRolePermissions.length > 0) {
+      await prisma.rolePermissions.createMany({
+        data: missingRolePermissions.map((permission) => ({
+          role_id: siteRole.id,
+          permission_id: permission.id,
+        })),
+      });
+      changed = true;
+    }
+  }
+
+  const existingSiteRole = await prisma.userRoles.findFirst({
+    where: {
+      user_id: userId,
+      role_id: siteRole.id,
+      revoked_at: null,
+    },
+    select: { id: true },
+  });
+
+  if (existingSiteRole) {
+    return changed;
+  }
+
+  await prisma.userRoles.create({
+    data: {
+      user_id: userId,
+      role_id: siteRole.id,
+    },
+  });
+
+  return true;
+}
+
 export async function getAuthUserBySessionToken(token?: string | null): Promise<AuthUser | null> {
   if (!token) {
     return null;
@@ -172,6 +249,26 @@ export async function getAuthUserBySessionToken(token?: string | null): Promise<
 
   if (!session || session.user.is_deleted || session.user.status !== 'active') {
     return null;
+  }
+
+  const currentPermissionCodes = new Set(
+    session.user.user_roles.flatMap((userRole) =>
+      userRole.role.role_permissions.map((rolePermission) => rolePermission.permission.code),
+    ),
+  );
+  const hasSiteRole = session.user.user_roles.some(
+    (userRole) => userRole.role.code === RoleCode.SITE_USER,
+  );
+  const hasSitePermissions = SITE_PERMISSION_CODES.every((code) =>
+    currentPermissionCodes.has(code),
+  );
+
+  if (!hasSiteRole || !hasSitePermissions) {
+    const assigned = await ensureSiteRoleForUser(session.user.id);
+
+    if (assigned) {
+      return getAuthUserBySessionToken(token);
+    }
   }
 
   const roles = new Set<string>();

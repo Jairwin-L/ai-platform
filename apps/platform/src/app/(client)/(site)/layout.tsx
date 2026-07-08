@@ -1,5 +1,3 @@
-import { cookies } from 'next/headers';
-import { getAuthUserBySessionToken, getSessionCookieName } from '@/lib/server/auth-session';
 import Link from 'next/link';
 import { APP_BLACK_LOGO, APP_NAME } from '@/constants';
 import { AccountMenu } from './components/account-menu';
@@ -8,10 +6,6 @@ import { SiteNavLink } from './components/site-nav-link';
 import styles from './index.module.scss';
 
 export default async function SiteLayout({ children }: Readonly<IComponent.ChildrenProps>) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(getSessionCookieName())?.value;
-  const user = await getAuthUserBySessionToken(token);
-
   return (
     <>
       <header className={styles['site-header']}>
@@ -21,17 +15,13 @@ export default async function SiteLayout({ children }: Readonly<IComponent.Child
             <span>{APP_NAME}</span>
           </Link>
           <div className={styles.links}>
-            {user ? (
-              <>
-                <AiMenu />
-                <SiteNavLink href="/articles" matchPrefix="/articles">
-                  文章
-                </SiteNavLink>
-                <SiteNavLink href="/upload" matchPrefix="/upload">
-                  上传
-                </SiteNavLink>
-              </>
-            ) : null}
+            <AiMenu />
+            <SiteNavLink href="/articles" matchPrefix="/articles">
+              文章
+            </SiteNavLink>
+            <SiteNavLink href="/upload" matchPrefix="/upload">
+              上传
+            </SiteNavLink>
           </div>
           <div className={styles['site-actions']}>
             <AccountMenu />

@@ -15,6 +15,7 @@ import {
 import { getAuthPayloadBySessionToken, getSessionCookieName } from '@/lib/server/auth-session';
 import { writeByokAuditEvent } from '@/lib/ai/security/audit';
 import { getRequestIp } from '@/lib/ai/security/request-security';
+import { getMissingPermissionMessage } from '@/constants/permissions';
 
 export function getByokErrorResponseType(status: number): ErrorType {
   const code = HTTP_STATUS_TO_ERROR_CODE[status] ?? COMMON_ERROR.REQUEST_ERROR.code;
@@ -39,7 +40,11 @@ export function createByokErrorOptions(
   };
 }
 
-export async function requireByokUser(request: NextRequest, requestId: string): Promise<string> {
+export async function requireByokUser(
+  request: NextRequest,
+  requestId: string,
+  permissionCode?: string,
+): Promise<string> {
   const token = request.cookies.get(getSessionCookieName())?.value;
   const payload = await getAuthPayloadBySessionToken(token);
 
@@ -52,6 +57,14 @@ export async function requireByokUser(request: NextRequest, requestId: string): 
       reasonCode: BYOK_ERROR_CODE.UNAUTHENTICATED,
     });
     throw new ByokPublicError(BYOK_ERROR_CODE.UNAUTHENTICATED, 401);
+  }
+
+  if (permissionCode && !payload.permissions.includes(permissionCode)) {
+    throw new ByokPublicError(
+      BYOK_ERROR_CODE.FORBIDDEN,
+      403,
+      getMissingPermissionMessage([permissionCode]),
+    );
   }
 
   return payload.user.id;

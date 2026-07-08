@@ -15,7 +15,7 @@ export async function PATCH(request: NextRequest, context: IRouteApi.IdRouteCont
   const requestId = getAiRequestId();
 
   try {
-    const userId = await requireAiUser(request, requestId);
+    const userId = await requireAiUser(request, requestId, 'AI:SETTINGS:MANAGE');
     const { id } = await context.params;
     const input = await parseJsonBySchema(request, providerConfigUpdateSchema);
 
@@ -32,7 +32,7 @@ export async function DELETE(request: NextRequest, context: IRouteApi.IdRouteCon
   const requestId = getAiRequestId();
 
   try {
-    const userId = await requireAiUser(request, requestId);
+    const userId = await requireAiUser(request, requestId, 'AI:SETTINGS:MANAGE');
     const { id } = await context.params;
 
     await deleteProviderConfig(userId, id);

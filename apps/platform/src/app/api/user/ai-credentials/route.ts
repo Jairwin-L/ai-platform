@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
   try {
     await assertByokRequestSecurity(request);
-    const userId = await requireByokUser(request, requestId);
+    const userId = await requireByokUser(request, requestId, 'AI:SETTINGS:VIEW');
     const result = await listUserApiCredentials(userId);
 
     return createSuccessResponse(
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
   try {
     await assertByokRequestSecurity(request, { requireJson: true, requireOrigin: true });
-    const userId = await requireByokUser(request, requestId);
+    const userId = await requireByokUser(request, requestId, 'AI:SETTINGS:MANAGE');
     const ip = getRequestIp(request);
 
     await assertRateLimit({

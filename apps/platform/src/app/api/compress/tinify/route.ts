@@ -5,7 +5,7 @@ import {
   COMMON_ERROR,
   FILE_ERROR,
   createErrorResponse,
-  withAuthenticatedApiHandler,
+  withPermissionApiHandler,
 } from '@/lib/server';
 import type { ApiContext, ApiHandler } from '@/lib/server/types';
 import { createRequestId, getRequestIp } from '@/lib/ai/security/request-security';
@@ -128,4 +128,4 @@ const tinifyHandler: ApiHandler = async (request: NextRequest, context: ApiConte
   }
 };
 
-export const POST = withAuthenticatedApiHandler(tinifyHandler);
+export const POST = withPermissionApiHandler(['UPLOAD:COMPRESS'], tinifyHandler);

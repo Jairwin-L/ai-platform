@@ -13,7 +13,7 @@ export async function POST(request: NextRequest, context: IRouteApi.IdRouteConte
   const requestId = getAiRequestId();
 
   try {
-    const userId = await requireAiUser(request, requestId);
+    const userId = await requireAiUser(request, requestId, 'AI:SETTINGS:MANAGE');
     const { id } = await context.params;
 
     return createAiSuccessResponse(await verifyProviderConfig(userId, id), 'Provider 验证完成');

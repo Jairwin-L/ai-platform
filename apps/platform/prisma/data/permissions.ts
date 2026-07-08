@@ -10,6 +10,48 @@ interface PermissionData {
 
 const permissionsData: PermissionData[] = [
   {
+    name: 'AI',
+    code: 'AI',
+    parentCode: null,
+    type: 'module',
+    description: 'AI 模块',
+  },
+  {
+    name: 'AI Chat',
+    code: 'AI:CHAT',
+    parentCode: 'AI',
+    type: 'page',
+    description: 'AI Chat 页面',
+  },
+  {
+    name: 'AI Chat:Use',
+    code: 'AI:CHAT:USE',
+    parentCode: 'AI:CHAT',
+    type: 'operation',
+    description: 'AI Chat:使用',
+  },
+  {
+    name: 'AI Settings',
+    code: 'AI:SETTINGS',
+    parentCode: 'AI',
+    type: 'page',
+    description: 'AI 设置页面',
+  },
+  {
+    name: 'AI Settings:View',
+    code: 'AI:SETTINGS:VIEW',
+    parentCode: 'AI:SETTINGS',
+    type: 'operation',
+    description: 'AI 设置:查看',
+  },
+  {
+    name: 'AI Settings:Manage',
+    code: 'AI:SETTINGS:MANAGE',
+    parentCode: 'AI:SETTINGS',
+    type: 'operation',
+    description: 'AI 设置:管理',
+  },
+  {
     name: 'Articles',
     code: 'ARTICLES',
     parentCode: null,
@@ -51,7 +93,37 @@ const permissionsData: PermissionData[] = [
     type: 'operation',
     description: '文章管理:删除',
   },
+  {
+    name: 'Upload',
+    code: 'UPLOAD',
+    parentCode: null,
+    type: 'module',
+    description: '上传模块',
+  },
+  {
+    name: 'Upload Management',
+    code: 'UPLOAD:MANAGEMENT',
+    parentCode: 'UPLOAD',
+    type: 'page',
+    description: '上传管理页面',
+  },
+  {
+    name: 'Upload:Create',
+    code: 'UPLOAD:CREATE',
+    parentCode: 'UPLOAD:MANAGEMENT',
+    type: 'operation',
+    description: '上传管理:上传文件',
+  },
+  {
+    name: 'Upload:Compress',
+    code: 'UPLOAD:COMPRESS',
+    parentCode: 'UPLOAD:MANAGEMENT',
+    type: 'operation',
+    description: '上传管理:压缩图片',
+  },
 ];
+
+export const SITE_PERMISSION_CODES = permissionsData.map((permission) => permission.code);
 
 export async function seedPermissions(prisma: PrismaClient): Promise<void> {
   console.log('Seeding permissions...');

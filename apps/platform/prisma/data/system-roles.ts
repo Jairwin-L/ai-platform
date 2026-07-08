@@ -1,6 +1,7 @@
 export enum RoleCode {
   SUPER_ADMIN = 'SUPER_ADMIN',
   ADMIN = 'ADMIN',
+  SITE_USER = 'SITE_USER',
   OPERATOR = 'OPERATOR',
   APPROVER = 'APPROVER',
   AUDITOR = 'AUDITOR',

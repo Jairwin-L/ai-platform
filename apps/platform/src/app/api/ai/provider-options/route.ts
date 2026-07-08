@@ -2,7 +2,7 @@ import {
   DATA_ERROR,
   createErrorResponse,
   createSuccessResponse,
-  withApiHandler,
+  withPermissionApiHandler,
   type ApiHandler,
 } from '@/lib/server';
 import { getPublicAiProviderOptions } from '@/lib/ai/byok/provider-options';
@@ -26,4 +26,4 @@ const getAiProviderOptionsHandler: ApiHandler = async () => {
   }
 };
 
-export const GET = withApiHandler(getAiProviderOptionsHandler);
+export const GET = withPermissionApiHandler(['AI:SETTINGS:VIEW'], getAiProviderOptionsHandler);

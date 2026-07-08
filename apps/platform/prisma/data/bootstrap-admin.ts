@@ -67,33 +67,45 @@ async function main(): Promise<void> {
   }
 
   const [user] = users;
-  const adminRole = await prisma.roles.findUnique({ where: { code: RoleCode.SUPER_ADMIN } });
-  if (!adminRole) {
+  const roles = await prisma.roles.findMany({
+    where: { code: { in: [RoleCode.SUPER_ADMIN, RoleCode.SITE_USER] } },
+    select: { code: true, id: true },
+  });
+  const roleIdsByCode = new Map(roles.map((role) => [role.code, role.id]));
+  const adminRoleId = roleIdsByCode.get(RoleCode.SUPER_ADMIN);
+  const siteRoleId = roleIdsByCode.get(RoleCode.SITE_USER);
+
+  if (!adminRoleId) {
     throw new Error(
       'SUPER_ADMIN role not found. Run "vp run prisma:seed" before bootstrapping admin.',
     );
   }
 
-  const now = new Date();
-  const existingRole = await prisma.userRoles.findFirst({
+  if (!siteRoleId) {
+    throw new Error(
+      'SITE_USER role not found. Run "vp run prisma:seed" before bootstrapping admin.',
+    );
+  }
+
+  const requiredRoleIds = [adminRoleId, siteRoleId];
+  const existingRoles = await prisma.userRoles.findMany({
     where: {
       user_id: user.id,
-      role_id: adminRole.id,
+      role_id: { in: requiredRoleIds },
       revoked_at: null,
-      AND: [
-        { OR: [{ valid_from: null }, { valid_from: { lte: now } }] },
-        { OR: [{ valid_until: null }, { valid_until: { gt: now } }] },
-      ],
     },
+    select: { role_id: true },
   });
+  const existingRoleIds = new Set(existingRoles.map((role) => role.role_id));
+  const missingRoleIds = requiredRoleIds.filter((roleId) => !existingRoleIds.has(roleId));
 
-  if (!existingRole) {
-    await prisma.userRoles.create({
-      data: { user_id: user.id, role_id: adminRole.id },
+  if (missingRoleIds.length > 0) {
+    await prisma.userRoles.createMany({
+      data: missingRoleIds.map((roleId) => ({ user_id: user.id, role_id: roleId })),
     });
   }
 
-  console.log('Bootstrap SUPER_ADMIN role assigned.');
+  console.log('Bootstrap SUPER_ADMIN and SITE_USER roles assigned.');
 }
 
 main()

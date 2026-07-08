@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
   try {
     await assertByokRequestSecurity(request, { requireJson: true, requireOrigin: true });
-    const userId = await requireByokUser(request, requestId);
+    const userId = await requireByokUser(request, requestId, 'AI:CHAT:USE');
     const ip = getRequestIp(request);
 
     await assertRateLimit({

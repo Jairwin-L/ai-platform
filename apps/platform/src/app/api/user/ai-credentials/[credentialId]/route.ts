@@ -23,7 +23,7 @@ export async function DELETE(request: NextRequest, context: IRouteApi.AiCredenti
 
   try {
     await assertByokRequestSecurity(request, { requireOrigin: true });
-    const userId = await requireByokUser(request, requestId);
+    const userId = await requireByokUser(request, requestId, 'AI:SETTINGS:MANAGE');
     const ip = getRequestIp(request);
     const params = await context.params;
     const parsedCredentialId = credentialIdSchema.safeParse(params.credentialId);

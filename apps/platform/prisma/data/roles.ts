@@ -23,6 +23,12 @@ const SYSTEM_ROLE_SEEDS: RoleSeed[] = [
     legacyNames: ['admin', 'ADMIN'],
   },
   {
+    code: RoleCode.SITE_USER,
+    name: '站点用户',
+    description: '默认拥有站点全部功能权限',
+    legacyNames: ['site_user', 'SITE_USER'],
+  },
+  {
     code: RoleCode.OPERATOR,
     name: '操作员',
     description: '日常业务操作员',

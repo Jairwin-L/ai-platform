@@ -1,6 +1,11 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { COMMON_ERROR, FILE_ERROR, createErrorResponse, withApiHandler } from '@/lib/server';
+import {
+  COMMON_ERROR,
+  FILE_ERROR,
+  createErrorResponse,
+  withPermissionApiHandler,
+} from '@/lib/server';
 import type { ApiHandler } from '@/lib/server/types';
 import { compressWithSharp } from '@/lib/server/image-compress';
 
@@ -85,4 +90,4 @@ const sharpHandler: ApiHandler = async (request: NextRequest) => {
   }
 };
 
-export const POST = withApiHandler(sharpHandler);
+export const POST = withPermissionApiHandler(['UPLOAD:COMPRESS'], sharpHandler);

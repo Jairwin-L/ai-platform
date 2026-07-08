@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const requestId = getAiRequestId();
 
   try {
-    const userId = await requireAiUser(request, requestId);
+    const userId = await requireAiUser(request, requestId, 'AI:SETTINGS:VIEW');
 
     return createAiSuccessResponse(await listModelConfigs(userId));
   } catch (error) {
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   const requestId = getAiRequestId();
 
   try {
-    const userId = await requireAiUser(request, requestId);
+    const userId = await requireAiUser(request, requestId, 'AI:SETTINGS:MANAGE');
     const input = await parseJsonBySchema(request, modelConfigCreateSchema);
 
     return createAiSuccessResponse(await createModelConfig(userId, input), '模型配置创建成功');

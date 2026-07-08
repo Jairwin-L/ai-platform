@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { AUTH_SESSION_COOKIE_NAME } from '@/constants/auth';
 
 const LOGIN_PATH = '/sign-in';
-const PROTECTED_PATHS = ['/admin', '/articles', '/upload'];
+const PROTECTED_PATHS = ['/admin', '/ai', '/articles', '/upload'];
 
 function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
@@ -28,5 +28,12 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/articles/:path*', '/upload/:path*', '/account', '/account/:path*'],
+  matcher: [
+    '/admin/:path*',
+    '/ai/:path*',
+    '/articles/:path*',
+    '/upload/:path*',
+    '/account',
+    '/account/:path*',
+  ],
 };

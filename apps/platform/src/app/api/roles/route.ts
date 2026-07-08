@@ -142,10 +142,10 @@ const createRoleHandler: ApiHandler = async (request: NextRequest) => {
     return createErrorResponse(DATA_ERROR.VALIDATION_FAILED, '角色名称不能为空', null, 400);
   }
 
-  if (code === RoleCode.SUPER_ADMIN) {
+  if (code === RoleCode.SUPER_ADMIN || code === RoleCode.SITE_USER) {
     return createErrorResponse(
       DATA_ERROR.VALIDATION_FAILED,
-      'SUPER_ADMIN 只能通过 seed 初始化',
+      `${code} 只能通过 seed 初始化`,
       null,
       403,
     );

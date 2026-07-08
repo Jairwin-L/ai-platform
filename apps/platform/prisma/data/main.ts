@@ -4,7 +4,11 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '../../generated/prisma/client';
 import { seedAiProviders } from './ai-providers';
 import { seedPermissions } from './permissions';
-import { assignAdminRolePermissions, assignBasicRolePermissions } from './role-permissions';
+import {
+  assignAdminRolePermissions,
+  assignSiteRoleToActiveUsers,
+  assignSiteRolePermissions,
+} from './role-permissions';
 import { seedRoles } from './roles';
 import { seedThirdPartyServices } from './third-party-services';
 
@@ -19,9 +23,11 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 const requiredTables = [
+  'users',
   'roles',
   'permissions',
   'role_permissions',
+  'user_roles',
   'ai_providers',
   'third_party_services',
 ];
@@ -53,7 +59,8 @@ async function main(): Promise<void> {
   await seedAiProviders(prisma);
   await seedThirdPartyServices(prisma);
   await assignAdminRolePermissions(prisma);
-  await assignBasicRolePermissions(prisma);
+  await assignSiteRolePermissions(prisma);
+  await assignSiteRoleToActiveUsers(prisma);
 }
 
 main()

@@ -5,7 +5,7 @@ import {
   FILE_ERROR,
   createErrorResponse,
   createSuccessResponse,
-  withAuthenticatedApiHandler,
+  withPermissionApiHandler,
 } from '@/lib/server';
 
 export const runtime = 'nodejs';
@@ -281,4 +281,4 @@ const createPresignedUrlsHandler = async (request: NextRequest) => {
   }
 };
 
-export const POST = withAuthenticatedApiHandler(createPresignedUrlsHandler);
+export const POST = withPermissionApiHandler(['UPLOAD:CREATE'], createPresignedUrlsHandler);
