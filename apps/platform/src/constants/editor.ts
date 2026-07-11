@@ -5,7 +5,7 @@ export const EDITOR_ITEMS = [
     type: 'code-mirror',
     label: 'CodeMirror',
     title: 'CodeMirror 编辑器',
-    description: '面向代码输入的基础编辑器，支持语法高亮、行号和亮暗色适配。',
+    description: '面向代码输入的基础编辑器，支持语法高亮和行号。',
   },
   {
     type: 'tiptap-editor',
@@ -86,30 +86,14 @@ export const CODE_MIRROR_CONTENT_EXAMPLE = `
 3. 33
 
 \`\`\`ts
-function getDarkModePreference() {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
-  return (
-    document.documentElement.classList.contains('dark') ||
-    document.body.classList.contains('dark') ||
-    window.matchMedia('(prefers-color-scheme: dark)').matches
-  );
+function formatEditorStatus(lineCount: number, charCount: number) {
+  return lineCount + ' lines / ' + charCount + ' chars';
 }
 \`\`\`
 
 \`\`\`js
-function getDarkModePreference() {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
-  return (
-    document.documentElement.classList.contains('dark') ||
-    document.body.classList.contains('dark') ||
-    window.matchMedia('(prefers-color-scheme: dark)').matches
-  );
+function formatEditorStatus(lineCount, charCount) {
+  return lineCount + ' lines / ' + charCount + ' chars';
 }
 \`\`\`
 

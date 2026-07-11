@@ -77,6 +77,7 @@
   border: 1px solid $site-color-border;
   border-radius: $site-radius-md;
   background: $site-color-canvas;
+  color: $site-color-text;
   box-shadow: $site-shadow-soft;
 
   :global(.content-wrapper) {
@@ -94,38 +95,68 @@
   box-shadow: none;
 }
 
-.markdown-preview-shell {
-  background: $site-color-canvas;
-}
-
-@media (prefers-color-scheme: dark) {
-  .editor-page {
-    background: #0b1120;
-    color: #e5e7eb;
+.editor-page.editor-page .preview-shell {
+  :global(.content-wrapper) {
+    background: $site-color-canvas;
+    color: $site-color-text;
   }
 
-  .header {
-    h1 {
-      color: #f8fafc;
-    }
-
-    p {
-      color: rgb(229 231 235 / 72%);
-    }
+  :global(.simple-editor-viewer-content .tiptap.ProseMirror) {
+    --blockquote-bg-color: var(--tt-gray-light-900);
+    --link-text-color: var(--tt-brand-color-500);
+    --placeholder-color: var(--tt-gray-light-a-400);
+    --separator-color: var(--tt-gray-light-a-200);
+    --thread-text: var(--tt-gray-light-900);
+    --tiptap-mathematics-bg-color: var(--tt-gray-light-a-200);
+    --tiptap-mathematics-border-color: var(--tt-brand-color-500);
+    --tt-codeblock-bg: #fff;
+    --tt-codeblock-border: #e8eaed;
+    --tt-codeblock-header-bg: #f7f7f7;
+    --tt-codeblock-header-text: #5f6368;
+    --tt-codeblock-language-text: #c2c7cc;
+    --tt-codeblock-muted-text: #8a929a;
+    --tt-codeblock-text: #2f3337;
+    --tt-highlight-blue: #e0f2fe;
+    --tt-highlight-blue-contrast: #ceeafd;
+    --tt-highlight-green: #dcfce7;
+    --tt-highlight-green-contrast: #c7fad8;
+    --tt-highlight-purple: #f3e8ff;
+    --tt-highlight-purple-contrast: #e4ccff;
+    --tt-highlight-red: #ffe4e6;
+    --tt-highlight-red-contrast: #ffccd0;
+    --tt-highlight-yellow: #fef9c3;
+    --tt-highlight-yellow-contrast: #fbe604;
+    --tt-inline-code-bg-color: var(--tt-gray-light-a-100);
+    --tt-inline-code-border-color: var(--tt-gray-light-a-200);
+    --tt-inline-code-text-color: var(--tt-gray-light-a-700);
+    color: $site-color-text;
   }
 
-  .panel-header h2 {
-    color: #f8fafc;
+  :global(.simple-editor-viewer-content .tiptap.ProseMirror h1),
+  :global(.simple-editor-viewer-content .tiptap.ProseMirror h2),
+  :global(.simple-editor-viewer-content .tiptap.ProseMirror h3),
+  :global(.simple-editor-viewer-content .tiptap.ProseMirror h4),
+  :global(.simple-editor-viewer-content .tiptap.ProseMirror h5) {
+    color: $site-color-ink;
   }
 
-  .preview-shell,
-  .editor-shell {
-    border-color: rgb(255 255 255 / 16%);
-    background: #0f172a;
+  :global(.simple-editor-viewer-content .tiptap.ProseMirror h6),
+  :global(.simple-editor-viewer-content .tiptap.ProseMirror blockquote) {
+    color: $site-color-muted;
   }
 
-  .markdown-preview-shell {
-    background: #111827;
+  :global(.simple-editor-viewer-content .tiptap.ProseMirror blockquote) {
+    border-left-color: $site-color-border-strong;
+  }
+
+  :global(.simple-editor-viewer-content .tiptap.ProseMirror hr) {
+    background: $site-color-border;
+  }
+
+  :global(.simple-editor-viewer-content .tiptap.ProseMirror code:not(pre code)) {
+    border-color: $site-color-border;
+    background: $site-color-surface-subtle;
+    color: $site-color-muted;
   }
 }
 

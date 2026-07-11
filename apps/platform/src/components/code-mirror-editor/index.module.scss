@@ -32,7 +32,7 @@
   flex-wrap: wrap;
   gap: 0.75rem;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   border-top: 1px solid $site-color-border;
   padding: 0.625rem 0.875rem;
   background: $site-color-surface;
@@ -46,30 +46,4 @@
   flex-wrap: wrap;
   gap: 0.75rem;
   font-variant-numeric: tabular-nums;
-}
-
-@media (prefers-color-scheme: dark) {
-  .editor {
-    border-color: rgb(255 255 255 / 16%);
-    background: #0f172a;
-  }
-
-  .status {
-    border-top-color: rgb(255 255 255 / 14%);
-    background: #111827;
-    color: rgb(229 231 235 / 72%);
-  }
-}
-
-:global(.dark) {
-  .editor {
-    border-color: rgb(255 255 255 / 16%);
-    background: #0f172a;
-  }
-
-  .status {
-    border-top-color: rgb(255 255 255 / 14%);
-    background: #111827;
-    color: rgb(229 231 235 / 72%);
-  }
 }

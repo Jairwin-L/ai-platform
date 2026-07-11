@@ -89,13 +89,7 @@ export function EditorPage({ type }: EditorPageProps) {
             <div className={styles['panel-header']}>
               <h2>预览</h2>
             </div>
-            <div
-              className={`${styles['preview-shell']} ${
-                type === 'code-mirror' ? styles['markdown-preview-shell'] : ''
-              }`}
-            >
-              {preview}
-            </div>
+            <div className={styles['preview-shell']}>{preview}</div>
           </section>
         </div>
       </div>
