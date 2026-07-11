@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { APP_BLACK_LOGO, APP_NAME } from '@/constants';
 import { AccountMenu } from './components/account-menu';
 import { AiMenu } from './components/ai-menu';
+import { EditorMenu } from './components/editor-menu';
 import { SiteNavLink } from './components/site-nav-link';
 import styles from './index.module.scss';
 
@@ -16,6 +17,7 @@ export default async function SiteLayout({ children }: Readonly<IComponent.Child
           </Link>
           <div className={styles.links}>
             <AiMenu />
+            <EditorMenu />
             <SiteNavLink href="/articles" matchPrefix="/articles">
               文章
             </SiteNavLink>

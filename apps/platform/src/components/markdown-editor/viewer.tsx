@@ -17,6 +17,7 @@ import { StarterKit } from '@tiptap/starter-kit';
 import { Link } from '@/components/tiptap-extension/link-extension';
 import { Selection } from '@/components/tiptap-extension/selection-extension';
 import { TrailingNode } from '@/components/tiptap-extension/trailing-node-extension';
+import { TIPTAP_IMAGE_HTML_ATTRIBUTES } from '@/constants/tiptap';
 import '@/components/tiptap-node/code-block-node/code-block-node.scss';
 import '@/components/tiptap-node/list-node/list-node.scss';
 import '@/components/tiptap-node/image-node/image-node.scss';
@@ -44,7 +45,9 @@ export const MarkdownEditorViewer = React.forwardRef(
         TaskList,
         TaskItem.configure({ nested: true }),
         Highlight.configure({ multicolor: true }),
-        Image,
+        Image.configure({
+          HTMLAttributes: TIPTAP_IMAGE_HTML_ATTRIBUTES,
+        }),
         Typography,
         Superscript,
         Subscript,

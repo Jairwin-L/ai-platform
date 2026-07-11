@@ -58,6 +58,7 @@ import { useMobile } from '@/hooks/use-mobile';
 import { useWindowSize } from '@/hooks/use-window-size';
 
 // --- Lib ---
+import { TIPTAP_IMAGE_HTML_ATTRIBUTES } from '@/constants/tiptap';
 import { handleImageUpload, MAX_FILE_SIZE } from '@/lib/tiptap-utils';
 
 // --- Styles ---
@@ -204,7 +205,9 @@ export const MarkdownEditor = React.forwardRef(
         TaskList,
         TaskItem.configure({ nested: true }),
         Highlight.configure({ multicolor: true }),
-        Image,
+        Image.configure({
+          HTMLAttributes: TIPTAP_IMAGE_HTML_ATTRIBUTES,
+        }),
         Typography,
         Superscript,
         Subscript,
