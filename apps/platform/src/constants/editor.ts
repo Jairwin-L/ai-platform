@@ -39,6 +39,7 @@ export const CODE_MIRROR_CONTENT_EXAMPLE = `
 # CodeMirror Markdown
 
 使用 CodeMirror 编辑 Markdown，并通过 Tiptap 实时预览。
+
 ![图片](https://file-storage.jairwin.cc/file/placeholder-avatar.jpg)
 
 <span style="color: #ff4d4f;">字体颜色</span>

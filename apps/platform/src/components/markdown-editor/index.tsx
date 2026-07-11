@@ -64,6 +64,7 @@ import { handleImageUpload, MAX_FILE_SIZE } from '@/lib/tiptap-utils';
 
 // --- Styles ---
 import '@/components/tiptap-templates/simple/simple-editor.scss';
+import LoadingEditorPreview from '../loading/editor';
 
 const MainToolbarContent = ({
   onHighlighterClick,
@@ -319,11 +320,7 @@ export const MarkdownEditor = React.forwardRef(
     };
 
     if (!editor) {
-      return (
-        <div className="simple-editor-loading">
-          <div>Loading editor...</div>
-        </div>
-      );
+      return <LoadingEditorPreview />;
     }
 
     return (

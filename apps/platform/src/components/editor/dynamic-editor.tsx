@@ -1,14 +1,11 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import LoadingEditorPreview from '../loading/editor';
 
 const SimpleEditor = dynamic(() => import('@/components/editor').then((mod) => mod.SimpleEditor), {
   ssr: false,
-  loading: () => (
-    <div className="simple-editor-loading">
-      <div>Loading editor...</div>
-    </div>
-  ),
+  loading: () => <LoadingEditorPreview />,
 });
 
 export function DynamicSimpleEditor(props: IEditorComponent.SimpleEditorProps) {

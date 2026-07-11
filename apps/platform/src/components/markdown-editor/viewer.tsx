@@ -93,11 +93,20 @@ function writeTextToClipboard(text: string) {
   return Promise.resolve();
 }
 
+function removeReadonlyProseMirrorHackNodes(container: HTMLElement | null) {
+  container
+    ?.querySelectorAll('.ProseMirror-separator, .ProseMirror-trailingBreak')
+    .forEach((node) => {
+      node.remove();
+    });
+}
+
 export const MarkdownEditorViewer = React.forwardRef(
   (
     { content, onUpdate, renderImagesWithAntd }: IEditorComponent.MarkdownEditorViewerProps,
     ref,
   ) => {
+    const viewerContainerRef = React.useRef<HTMLDivElement>(null);
     const editor = useEditor({
       immediatelyRender: false,
       editable: false,
@@ -143,6 +152,22 @@ export const MarkdownEditorViewer = React.forwardRef(
       editor.commands.setContent(content, { emitUpdate: false, contentType: 'markdown' });
     }, [editor, content]);
 
+    React.useLayoutEffect(() => {
+      if (!editor || !viewerContainerRef.current) return;
+
+      const viewerContainer = viewerContainerRef.current;
+      const observer = new MutationObserver(() => {
+        removeReadonlyProseMirrorHackNodes(viewerContainer);
+      });
+
+      removeReadonlyProseMirrorHackNodes(viewerContainer);
+      observer.observe(viewerContainer, { childList: true, subtree: true });
+
+      return () => {
+        observer.disconnect();
+      };
+    }, [editor]);
+
     const onViewerClick = async (event: React.MouseEvent<HTMLDivElement>) => {
       if (!(event.target instanceof HTMLElement)) return;
 
@@ -187,7 +212,11 @@ export const MarkdownEditorViewer = React.forwardRef(
 
     return (
       <EditorContext.Provider value={{ editor }}>
-        <div className="content-wrapper simple-editor-viewer-container" onClick={onViewerClick}>
+        <div
+          className="content-wrapper simple-editor-viewer-container"
+          onClick={onViewerClick}
+          ref={viewerContainerRef}
+        >
           <EditorContent
             editor={editor}
             role="presentation"

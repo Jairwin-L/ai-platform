@@ -23,8 +23,17 @@ import '@/components/tiptap-node/image-node/image-node.scss';
 import '@/components/tiptap-node/paragraph-node/paragraph-node.scss';
 import '@/components/tiptap-templates/simple/simple-editor.scss';
 
+function removeReadonlyProseMirrorHackNodes(container: HTMLElement | null) {
+  container
+    ?.querySelectorAll('.ProseMirror-separator, .ProseMirror-trailingBreak')
+    .forEach((node) => {
+      node.remove();
+    });
+}
+
 export const SimpleEditorViewer = React.forwardRef(
   ({ content, onUpdate }: IEditorComponent.SimpleEditorViewerProps, ref) => {
+    const viewerContainerRef = React.useRef<HTMLDivElement>(null);
     const editor = useEditor({
       immediatelyRender: false,
       editable: false,
@@ -69,6 +78,22 @@ export const SimpleEditorViewer = React.forwardRef(
       editor.commands.setContent(content || '<p></p>', { emitUpdate: false });
     }, [editor, content]);
 
+    React.useLayoutEffect(() => {
+      if (!editor || !viewerContainerRef.current) return;
+
+      const viewerContainer = viewerContainerRef.current;
+      const observer = new MutationObserver(() => {
+        removeReadonlyProseMirrorHackNodes(viewerContainer);
+      });
+
+      removeReadonlyProseMirrorHackNodes(viewerContainer);
+      observer.observe(viewerContainer, { childList: true, subtree: true });
+
+      return () => {
+        observer.disconnect();
+      };
+    }, [editor]);
+
     React.useImperativeHandle(
       ref,
       () => ({
@@ -79,7 +104,7 @@ export const SimpleEditorViewer = React.forwardRef(
 
     return (
       <EditorContext.Provider value={{ editor }}>
-        <div className="content-wrapper simple-editor-viewer-container">
+        <div className="content-wrapper simple-editor-viewer-container" ref={viewerContainerRef}>
           <EditorContent
             editor={editor}
             role="presentation"
