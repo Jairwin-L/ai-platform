@@ -42,8 +42,19 @@
     }
 
     .tiptap.ProseMirror {
+      max-width: 920px;
+      height: auto !important;
+      min-height: 100%;
+      margin: 0 auto;
       color: $site-color-text;
-      line-height: 1.7;
+      font-family:
+        thicccboi,
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        sans-serif;
+      font-size: 1rem;
+      line-height: 1.72;
 
       h1,
       h2,
@@ -51,11 +62,11 @@
       h4,
       h5,
       h6 {
-        margin: 1.25em 0 0.5em;
+        margin: 1.65em 0 0.65em;
         color: $site-color-ink;
-        font-weight: 680;
+        font-weight: 700;
         letter-spacing: 0;
-        line-height: 1.25;
+        line-height: 1.32;
 
         &:first-child {
           margin-top: 0;
@@ -64,24 +75,32 @@
 
       h1 {
         font-size: 2rem;
+        line-height: 1.25;
       }
 
       h2 {
-        font-size: 1.5rem;
+        font-size: 1.625rem;
       }
 
       h3 {
-        font-size: 1.25rem;
+        font-size: 1.375rem;
       }
 
-      h4,
-      h5,
-      h6 {
+      h4 {
+        font-size: 1.125rem;
+      }
+
+      h5 {
         font-size: 1rem;
       }
 
+      h6 {
+        color: $site-color-muted;
+        font-size: 0.9375rem;
+      }
+
       p {
-        margin: 0.75em 0;
+        margin: 0.85em 0;
 
         &:first-child {
           margin-top: 0;
@@ -94,8 +113,8 @@
 
       ul,
       ol {
-        margin: 0.75em 0;
-        padding-left: 1.5em;
+        margin: 0.75em 0 1.1em;
+        padding-left: 1.7em;
       }
 
       ul {
@@ -123,7 +142,7 @@
       }
 
       li {
-        margin: 0.25em 0;
+        margin: 0.34em 0;
         list-style: inherit;
 
         p {
@@ -141,17 +160,24 @@
       }
 
       blockquote {
-        margin: 1em 0;
+        border-left: 3px solid $site-color-border-strong;
+        margin: 1.25em 0;
+        padding: 0.35em 0 0.35em 0.75em;
+        color: $site-color-muted;
+
+        &::before {
+          display: none;
+        }
       }
 
       pre {
-        overflow: auto;
+        overflow: hidden;
       }
 
       hr {
         height: 1px;
         border: 0;
-        margin: 1.5em 0;
+        margin: 1.65em 0;
         background: $site-color-border;
       }
 
@@ -169,8 +195,96 @@
         text-underline-offset: 0.15em;
       }
 
+      code:not(pre code) {
+        border: 1px solid $site-color-border;
+        border-radius: $site-radius-xs;
+        background: $site-color-surface-subtle;
+        color: $site-color-muted;
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        font-size: 0.875em;
+        padding: 0.08em 0.32em;
+      }
+
       strong {
         font-weight: 700;
+      }
+
+      u {
+        text-underline-offset: 0.18em;
+      }
+    }
+  }
+}
+
+.dark {
+  .simple-editor-viewer-container {
+    .simple-editor-viewer-content {
+      .tiptap.ProseMirror {
+        color: rgb(229 231 235 / 88%);
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5 {
+          color: #f8fafc;
+        }
+
+        h6,
+        blockquote {
+          color: rgb(229 231 235 / 64%);
+        }
+
+        blockquote {
+          border-left-color: rgb(255 255 255 / 22%);
+        }
+
+        hr {
+          background: rgb(255 255 255 / 14%);
+        }
+
+        code:not(pre code) {
+          border-color: rgb(255 255 255 / 14%);
+          background: rgb(255 255 255 / 8%);
+          color: rgb(229 231 235 / 78%);
+        }
+      }
+    }
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .simple-editor-viewer-container {
+    .simple-editor-viewer-content {
+      .tiptap.ProseMirror {
+        color: rgb(229 231 235 / 88%);
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5 {
+          color: #f8fafc;
+        }
+
+        h6,
+        blockquote {
+          color: rgb(229 231 235 / 64%);
+        }
+
+        blockquote {
+          border-left-color: rgb(255 255 255 / 22%);
+        }
+
+        hr {
+          background: rgb(255 255 255 / 14%);
+        }
+
+        code:not(pre code) {
+          border-color: rgb(255 255 255 / 14%);
+          background: rgb(255 255 255 / 8%);
+          color: rgb(229 231 235 / 78%);
+        }
       }
     }
   }

@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { Pool, type PoolClient } from 'pg';
+import { throwIfRejected } from './promise-results';
 
 const databaseUrl = process.env.DATABASE_URL;
 const migrationsPath = join(process.cwd(), 'prisma', 'migrations');
@@ -289,12 +290,35 @@ async function ensureSiteRolePermission(
   );
 }
 
+async function upsertPermissionSeedsByType(
+  client: PoolClient,
+  seedType: PermissionSeed['type'],
+): Promise<Array<{ code: string; id: number }>> {
+  const seedResults = await Promise.allSettled(
+    aiUploadPermissionSeeds
+      .filter((seed) => seed.type === seedType)
+      .map(async (seed) => ({
+        code: seed.code,
+        id: await upsertPermission(client, seed),
+      })),
+  );
+
+  throwIfRejected(seedResults);
+
+  return seedResults.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : []));
+}
+
 async function applyAiUploadPermissionsRepair(client: PoolClient): Promise<void> {
   const permissionIds = new Map<string, number>();
+  const repairedPermissions = [
+    ...(await upsertPermissionSeedsByType(client, 'module')),
+    ...(await upsertPermissionSeedsByType(client, 'page')),
+    ...(await upsertPermissionSeedsByType(client, 'operation')),
+  ];
 
-  for (const seed of aiUploadPermissionSeeds) {
-    permissionIds.set(seed.code, await upsertPermission(client, seed));
-  }
+  repairedPermissions.forEach((permission) => {
+    permissionIds.set(permission.code, permission.id);
+  });
 
   const siteRoleId = await getSiteRoleId(client);
 
@@ -302,15 +326,19 @@ async function applyAiUploadPermissionsRepair(client: PoolClient): Promise<void>
     throw new Error('SITE_USER role is missing.');
   }
 
-  for (const permissionCode of aiUploadPermissionCodes) {
-    const permissionId = permissionIds.get(permissionCode);
+  const rolePermissionResults = await Promise.allSettled(
+    aiUploadPermissionCodes.map((permissionCode) => {
+      const permissionId = permissionIds.get(permissionCode);
 
-    if (!permissionId) {
-      throw new Error(`Permission ${permissionCode} was not repaired.`);
-    }
+      if (!permissionId) {
+        throw new Error(`Permission ${permissionCode} was not repaired.`);
+      }
 
-    await ensureSiteRolePermission(client, siteRoleId, permissionId);
-  }
+      return ensureSiteRolePermission(client, siteRoleId, permissionId);
+    }),
+  );
+
+  throwIfRejected(rolePermissionResults);
 }
 
 async function validateAiUploadPermissionsRepair(client: PoolClient): Promise<void> {

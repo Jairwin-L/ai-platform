@@ -2,17 +2,25 @@
   --tt-inline-code-bg-color: var(--tt-gray-light-a-100);
   --tt-inline-code-text-color: var(--tt-gray-light-a-700);
   --tt-inline-code-border-color: var(--tt-gray-light-a-200);
-  --tt-codeblock-bg: var(--tt-gray-light-a-50);
-  --tt-codeblock-text: var(--tt-gray-light-a-800);
-  --tt-codeblock-border: var(--tt-gray-light-a-200);
+  --tt-codeblock-bg: #fff;
+  --tt-codeblock-header-bg: #f7f7f7;
+  --tt-codeblock-header-text: #5f6368;
+  --tt-codeblock-language-text: #c2c7cc;
+  --tt-codeblock-text: #2f3337;
+  --tt-codeblock-muted-text: #8a929a;
+  --tt-codeblock-border: #e8eaed;
 
   .dark & {
     --tt-inline-code-bg-color: var(--tt-gray-dark-a-100);
     --tt-inline-code-text-color: var(--tt-gray-dark-a-700);
     --tt-inline-code-border-color: var(--tt-gray-dark-a-200);
-    --tt-codeblock-bg: var(--tt-gray-dark-a-50);
+    --tt-codeblock-bg: #111827;
+    --tt-codeblock-header-bg: #1f2937;
+    --tt-codeblock-header-text: rgb(229 231 235 / 78%);
+    --tt-codeblock-language-text: rgb(229 231 235 / 38%);
     --tt-codeblock-text: var(--tt-gray-dark-a-800);
-    --tt-codeblock-border: var(--tt-gray-dark-a-200);
+    --tt-codeblock-muted-text: rgb(229 231 235 / 52%);
+    --tt-codeblock-border: rgb(255 255 255 / 14%);
   }
 }
 
@@ -34,21 +42,97 @@
 
   // Code blocks
   pre {
+    position: relative;
+    overflow: hidden;
     background-color: var(--tt-codeblock-bg);
     color: var(--tt-codeblock-text);
     border: 1px solid var(--tt-codeblock-border);
-    margin-top: 1.5em;
-    margin-bottom: 1.5em;
-    padding: 1em;
-    font-size: 1rem;
-    border-radius: 6px/0.375rem;
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+    padding: 3.375rem 1rem 1rem;
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    border-radius: 6px;
+
+    &::before {
+      position: absolute;
+      top: 0;
+      right: 0;
+      left: 0;
+      height: 2.375rem;
+      border-bottom: 1px solid var(--tt-codeblock-border);
+      background: var(--tt-codeblock-header-bg);
+      color: var(--tt-codeblock-header-text);
+      content: '代码块';
+      font-family:
+        thicccboi,
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        sans-serif;
+      font-size: 0.875rem;
+      line-height: 2.375rem;
+      padding-left: 3.25rem;
+    }
+
+    &::after {
+      position: absolute;
+      top: 0;
+      right: 1rem;
+      height: 2.375rem;
+      color: var(--tt-codeblock-muted-text);
+      content: '复制代码';
+      cursor: pointer;
+      font-family:
+        thicccboi,
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        sans-serif;
+      font-size: 0.8125rem;
+      line-height: 2.375rem;
+    }
+
+    &.is-code-copied::after {
+      content: '已复制';
+    }
+
+    &:hover::after {
+      color: var(--tt-codeblock-header-text);
+    }
+
+    &:has(code.language-ts)::before,
+    &:has(code.language-typescript)::before {
+      content: 'TS代码块';
+    }
+
+    &:has(code.language-js)::before,
+    &:has(code.language-javascript)::before {
+      content: 'JS代码块';
+    }
+
+    &:has(code.language-json)::before {
+      content: 'JSON代码块';
+    }
+
+    &:has(code.language-bash)::before,
+    &:has(code.language-sh)::before,
+    &:has(code.language-shell)::before {
+      content: 'Bash代码块';
+    }
 
     code {
+      display: block;
+      overflow-x: auto;
       background-color: transparent;
       border: none;
       border-radius: 0;
       -webkit-text-fill-color: inherit;
       color: inherit;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: inherit;
+      line-height: inherit;
+      padding: 0;
     }
   }
 }

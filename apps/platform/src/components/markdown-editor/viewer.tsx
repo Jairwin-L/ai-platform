@@ -14,6 +14,7 @@ import Youtube from '@tiptap/extension-youtube';
 import { Markdown } from '@tiptap/markdown';
 import { EditorContent, EditorContext, useEditor } from '@tiptap/react';
 import { StarterKit } from '@tiptap/starter-kit';
+import { ColoredText } from '@/components/tiptap-extension/colored-text-extension';
 import { Link } from '@/components/tiptap-extension/link-extension';
 import { Selection } from '@/components/tiptap-extension/selection-extension';
 import { TrailingNode } from '@/components/tiptap-extension/trailing-node-extension';
@@ -23,6 +24,24 @@ import '@/components/tiptap-node/list-node/list-node.scss';
 import '@/components/tiptap-node/image-node/image-node.scss';
 import '@/components/tiptap-node/paragraph-node/paragraph-node.scss';
 import '@/components/tiptap-templates/simple/simple-editor.scss';
+
+function writeTextToClipboard(text: string) {
+  if (navigator.clipboard?.writeText) {
+    return navigator.clipboard.writeText(text);
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', 'true');
+  textarea.style.position = 'fixed';
+  textarea.style.top = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  textarea.remove();
+
+  return Promise.resolve();
+}
 
 export const MarkdownEditorViewer = React.forwardRef(
   ({ content, onUpdate }: IEditorComponent.MarkdownEditorViewerProps, ref) => {
@@ -42,6 +61,7 @@ export const MarkdownEditorViewer = React.forwardRef(
         StarterKit,
         TextAlign.configure({ types: ['heading', 'paragraph'] }),
         Underline,
+        ColoredText,
         TaskList,
         TaskItem.configure({ nested: true }),
         Highlight.configure({ multicolor: true }),
@@ -72,6 +92,39 @@ export const MarkdownEditorViewer = React.forwardRef(
       editor.commands.setContent(content, { emitUpdate: false, contentType: 'markdown' });
     }, [editor, content]);
 
+    const onViewerClick = async (event: React.MouseEvent<HTMLDivElement>) => {
+      if (!(event.target instanceof HTMLElement)) return;
+
+      const codeBlock = event.target.closest('pre');
+      if (!(codeBlock instanceof HTMLPreElement)) return;
+
+      const codeBlockRect = codeBlock.getBoundingClientRect();
+      const isCopyAction =
+        event.clientY >= codeBlockRect.top &&
+        event.clientY <= codeBlockRect.top + 38 &&
+        event.clientX >= codeBlockRect.right - 128 &&
+        event.clientX <= codeBlockRect.right;
+
+      if (!isCopyAction) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const codeElement = codeBlock.querySelector('code');
+      if (!codeElement) return;
+
+      try {
+        await writeTextToClipboard(codeElement.textContent || '');
+        codeBlock.classList.add('is-code-copied');
+      } catch {
+        codeBlock.classList.remove('is-code-copied');
+      } finally {
+        window.setTimeout(() => {
+          codeBlock.classList.remove('is-code-copied');
+        }, 1600);
+      }
+    };
+
     React.useImperativeHandle(
       ref,
       () => ({
@@ -83,7 +136,7 @@ export const MarkdownEditorViewer = React.forwardRef(
 
     return (
       <EditorContext.Provider value={{ editor }}>
-        <div className="content-wrapper simple-editor-viewer-container">
+        <div className="content-wrapper simple-editor-viewer-container" onClick={onViewerClick}>
           <EditorContent
             editor={editor}
             role="presentation"

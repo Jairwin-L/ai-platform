@@ -7,6 +7,7 @@
   border: 1px solid $site-color-border;
   border-radius: $site-radius-md;
   background: $site-color-canvas;
+  box-shadow: $site-shadow-soft;
 }
 
 .editor-host {
@@ -16,8 +17,8 @@
   :global(.cm-editor) {
     height: 100%;
     min-height: inherit;
-    font-size: 0.875rem;
-    line-height: 1.65;
+    font-size: 0.9375rem;
+    line-height: 1.7;
   }
 
   :global(.cm-scroller) {

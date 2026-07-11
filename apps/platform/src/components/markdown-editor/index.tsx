@@ -19,6 +19,7 @@ import { StarterKit } from '@tiptap/starter-kit';
 import { Input, Modal, message } from 'antd';
 
 // --- Custom Extensions ---
+import { ColoredText } from '@/components/tiptap-extension/colored-text-extension';
 import { Link } from '@/components/tiptap-extension/link-extension';
 import { Selection } from '@/components/tiptap-extension/selection-extension';
 import { TrailingNode } from '@/components/tiptap-extension/trailing-node-extension';
@@ -202,6 +203,7 @@ export const MarkdownEditor = React.forwardRef(
         StarterKit,
         TextAlign.configure({ types: ['heading', 'paragraph'] }),
         Underline,
+        ColoredText,
         TaskList,
         TaskItem.configure({ nested: true }),
         Highlight.configure({ multicolor: true }),
