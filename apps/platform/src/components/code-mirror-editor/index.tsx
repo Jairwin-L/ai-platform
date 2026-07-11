@@ -88,7 +88,7 @@ export function CodeMirrorEditor({
   const editorViewRef = React.useRef<EditorView | null>(null);
   const contentRef = React.useRef(value);
   const [content, setContent] = React.useState(value);
-  const [isDarkMode, setIsDarkMode] = React.useState(getDarkModePreference);
+  const [isDarkMode, setIsDarkMode] = React.useState(false);
 
   const lineCount = React.useMemo(() => content.split('\n').length, [content]);
 

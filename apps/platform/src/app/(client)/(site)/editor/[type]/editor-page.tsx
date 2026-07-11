@@ -53,7 +53,13 @@ export function EditorPage({ type }: EditorPageProps) {
 
   const preview = React.useMemo(() => {
     if (type === 'code-mirror' || type === 'tiptap-markdown-editor') {
-      return <DynamicMarkdownEditorViewer content={content} />;
+      return (
+        <DynamicMarkdownEditorViewer
+          key={type}
+          content={content}
+          renderImagesWithAntd={type === 'code-mirror'}
+        />
+      );
     }
 
     return <DynamicSimpleEditorViewer content={content} />;

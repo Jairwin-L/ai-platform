@@ -1,8 +1,9 @@
 'use client';
 
 import * as React from 'react';
+import { Image as AntdImage } from 'antd';
 import { Highlight } from '@tiptap/extension-highlight';
-import { Image } from '@tiptap/extension-image';
+import { Image as TiptapImage } from '@tiptap/extension-image';
 import { Subscript } from '@tiptap/extension-subscript';
 import { Superscript } from '@tiptap/extension-superscript';
 import { TaskItem } from '@tiptap/extension-task-item';
@@ -12,7 +13,14 @@ import { Typography } from '@tiptap/extension-typography';
 import { Underline } from '@tiptap/extension-underline';
 import Youtube from '@tiptap/extension-youtube';
 import { Markdown } from '@tiptap/markdown';
-import { EditorContent, EditorContext, useEditor } from '@tiptap/react';
+import {
+  EditorContent,
+  EditorContext,
+  NodeViewWrapper,
+  ReactNodeViewRenderer,
+  type ReactNodeViewProps,
+  useEditor,
+} from '@tiptap/react';
 import { StarterKit } from '@tiptap/starter-kit';
 import { ColoredText } from '@/components/tiptap-extension/colored-text-extension';
 import { Link } from '@/components/tiptap-extension/link-extension';
@@ -24,6 +32,48 @@ import '@/components/tiptap-node/list-node/list-node.scss';
 import '@/components/tiptap-node/image-node/image-node.scss';
 import '@/components/tiptap-node/paragraph-node/paragraph-node.scss';
 import '@/components/tiptap-templates/simple/simple-editor.scss';
+
+interface TiptapImageAttributes {
+  alt?: string | null;
+  height?: number | string | null;
+  src?: string | null;
+  title?: string | null;
+  width?: number | string | null;
+}
+
+function AntdImageNodeView({ node }: ReactNodeViewProps) {
+  const attrs = node.attrs as TiptapImageAttributes;
+
+  return (
+    <NodeViewWrapper as="div" className="tiptap-antd-image-node">
+      <AntdImage
+        alt={attrs.alt || ''}
+        classNames={{ image: 'tiptap-antd-image' }}
+        crossOrigin="anonymous"
+        height={attrs.height || undefined}
+        preview
+        referrerPolicy="no-referrer"
+        src={attrs.src || ''}
+        title={attrs.title || undefined}
+        width={attrs.width || undefined}
+      />
+    </NodeViewWrapper>
+  );
+}
+
+const AntdImageExtension = TiptapImage.extend({
+  addNodeView() {
+    return ReactNodeViewRenderer(AntdImageNodeView);
+  },
+});
+
+function getImageExtension(renderImagesWithAntd?: boolean) {
+  const ImageExtension = renderImagesWithAntd ? AntdImageExtension : TiptapImage;
+
+  return ImageExtension.configure({
+    HTMLAttributes: TIPTAP_IMAGE_HTML_ATTRIBUTES,
+  });
+}
 
 function writeTextToClipboard(text: string) {
   if (navigator.clipboard?.writeText) {
@@ -44,7 +94,10 @@ function writeTextToClipboard(text: string) {
 }
 
 export const MarkdownEditorViewer = React.forwardRef(
-  ({ content, onUpdate }: IEditorComponent.MarkdownEditorViewerProps, ref) => {
+  (
+    { content, onUpdate, renderImagesWithAntd }: IEditorComponent.MarkdownEditorViewerProps,
+    ref,
+  ) => {
     const editor = useEditor({
       immediatelyRender: false,
       editable: false,
@@ -65,9 +118,7 @@ export const MarkdownEditorViewer = React.forwardRef(
         TaskList,
         TaskItem.configure({ nested: true }),
         Highlight.configure({ multicolor: true }),
-        Image.configure({
-          HTMLAttributes: TIPTAP_IMAGE_HTML_ATTRIBUTES,
-        }),
+        getImageExtension(renderImagesWithAntd),
         Typography,
         Superscript,
         Subscript,

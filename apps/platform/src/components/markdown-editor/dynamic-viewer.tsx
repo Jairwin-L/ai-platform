@@ -16,6 +16,7 @@ const MarkdownEditorViewer = dynamic(
 
 export function DynamicMarkdownEditorViewer({
   content,
+  renderImagesWithAntd,
 }: IEditorComponent.DynamicMarkdownEditorViewerProps) {
-  return <MarkdownEditorViewer content={content} />;
+  return <MarkdownEditorViewer content={content} renderImagesWithAntd={renderImagesWithAntd} />;
 }

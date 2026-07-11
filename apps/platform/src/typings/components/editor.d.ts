@@ -18,10 +18,12 @@ declare namespace IEditorComponent {
   interface MarkdownEditorViewerProps {
     content: string;
     onUpdate?: (markdown: string) => void;
+    renderImagesWithAntd?: boolean;
   }
 
   interface DynamicMarkdownEditorViewerProps {
     content: string;
+    renderImagesWithAntd?: boolean;
   }
 
   interface MarkdownEditorProps {
