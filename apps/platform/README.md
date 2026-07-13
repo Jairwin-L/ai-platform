@@ -90,8 +90,7 @@ Docker / SSH 部署流程使用以下变量或 GitHub Secrets：
 - `POSTGRES_DB`
 - `POSTGRES_USER`
 - `POSTGRES_PASSWORD`
-- `BOOTSTRAP_ADMIN_EMAIL`（GitHub Actions 默认写入 `example@email.com`）
-- `BOOTSTRAP_ADMIN_STRICT`（GitHub Actions 默认写入 `true`，指定用户不存在时部署失败）
+- `BOOTSTRAP_ADMIN_EMAIL`（GitHub Actions Variable 或 Secret；为空或用户不存在时跳过管理员授权）
 - `AUTH_CODE_SECRET`
 - `AI_KEY_ENCRYPTION_KEY_V1`
 - `AI_KEY_REDIS_ID_SECRET`

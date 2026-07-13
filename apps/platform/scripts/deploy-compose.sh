@@ -23,7 +23,6 @@ Optional environment variables:
   PRISMA_SYNC_COMMAND    Override Prisma sync command. Defaults to "vp run prisma:sync:deploy".
   PRISMA_SEED_COMMAND    Override Prisma seed command. Defaults to "vp run prisma:seed:deploy".
   BOOTSTRAP_ADMIN_EMAIL  Email address that should receive the admin role. May be provided by the env file.
-  BOOTSTRAP_ADMIN_STRICT Set to "true" to fail when BOOTSTRAP_ADMIN_EMAIL user is missing.
   BOOTSTRAP_ADMIN_COMMAND
                          Override admin bootstrap command. Defaults to "vp run prisma:bootstrap-admin:deploy".
 
@@ -317,7 +316,6 @@ postgres_old_image="${POSTGRES_OLD_IMAGE:-$(read_env_value POSTGRES_OLD_IMAGE)}"
 postgres_old_data_target="${POSTGRES_OLD_DATA_TARGET:-$(read_env_value POSTGRES_OLD_DATA_TARGET)}"
 postgres_upgrade_mode="${POSTGRES_UPGRADE_MODE:-$(read_env_value POSTGRES_UPGRADE_MODE)}"
 bootstrap_admin_email="${BOOTSTRAP_ADMIN_EMAIL:-$(read_env_value BOOTSTRAP_ADMIN_EMAIL)}"
-bootstrap_admin_strict="${BOOTSTRAP_ADMIN_STRICT:-$(read_env_value BOOTSTRAP_ADMIN_STRICT)}"
 postgres_image="${postgres_image:-${default_postgres_image}}"
 postgres_old_image="${postgres_old_image:-postgres:16-alpine}"
 target_postgres_major="$(get_postgres_major "${postgres_image}")"
@@ -399,7 +397,6 @@ compose run --rm migrate sh -lc "${prisma_sync_command}"
 compose run --rm migrate sh -lc "${prisma_seed_command}"
 compose run --rm \
   -e "BOOTSTRAP_ADMIN_EMAIL=${bootstrap_admin_email}" \
-  -e "BOOTSTRAP_ADMIN_STRICT=${bootstrap_admin_strict}" \
   migrate sh -lc "${bootstrap_admin_command}"
 
 compose up -d --no-build "${compose_service}"

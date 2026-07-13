@@ -5,7 +5,6 @@ import { Prisma, PrismaClient } from '../../generated/prisma/client';
 import { RoleCode } from './system-roles';
 
 const bootstrapAdminEmail = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim();
-const strictMode = process.env.BOOTSTRAP_ADMIN_STRICT === 'true';
 const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
@@ -53,12 +52,7 @@ async function main(): Promise<void> {
   });
 
   if (users.length === 0) {
-    const message = 'Bootstrap admin user not found';
-    if (strictMode) {
-      throw new Error(message);
-    }
-
-    console.warn(`${message}. Skipping admin bootstrap.`);
+    console.warn('Bootstrap admin user not found. Skipping admin bootstrap.');
     return;
   }
 
