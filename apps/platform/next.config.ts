@@ -3,7 +3,6 @@ import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = dirname(fileURLToPath(import.meta.url));
-const isDev = process.env.NODE_ENV === 'development';
 
 const REMOTE_PATTERNS = [
   {
@@ -21,11 +20,17 @@ function buildContentSecurityPolicy(): string {
     ['form-action', "'self'"],
     ['frame-ancestors', "'none'"],
     ['object-src', "'none'"],
-    ['script-src', "'self'", "'unsafe-inline'", ...(isDev ? ["'unsafe-eval'"] : [])],
+    [
+      'script-src',
+      "'self'",
+      "'unsafe-inline'",
+      'https://static.cloudflareinsights.com',
+      "'unsafe-eval'",
+    ],
     ['style-src', "'self'", "'unsafe-inline'"],
     ['img-src', "'self'", 'data:', 'blob:', 'https:'],
     ['font-src', "'self'", 'data:'],
-    ['connect-src', "'self'", 'https:', ...(isDev ? ['http:', 'ws:', 'wss:'] : [])],
+    ['connect-src', "'self'", 'https:', 'https://cloudflareinsights.com', 'http:', 'ws:', 'wss:'],
     ['media-src', "'self'", 'data:', 'blob:'],
     ['manifest-src', "'self'"],
     ['worker-src', "'self'", 'blob:'],

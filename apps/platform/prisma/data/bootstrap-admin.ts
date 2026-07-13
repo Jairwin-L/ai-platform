@@ -67,45 +67,36 @@ async function main(): Promise<void> {
   }
 
   const [user] = users;
-  const roles = await prisma.roles.findMany({
-    where: { code: { in: [RoleCode.SUPER_ADMIN, RoleCode.SITE_USER] } },
-    select: { code: true, id: true },
+  const adminRole = await prisma.roles.findUnique({
+    where: { code: RoleCode.SUPER_ADMIN },
+    select: { id: true },
   });
-  const roleIdsByCode = new Map(roles.map((role) => [role.code, role.id]));
-  const adminRoleId = roleIdsByCode.get(RoleCode.SUPER_ADMIN);
-  const siteRoleId = roleIdsByCode.get(RoleCode.SITE_USER);
 
-  if (!adminRoleId) {
+  if (!adminRole) {
     throw new Error(
       'SUPER_ADMIN role not found. Run "vp run prisma:seed" before bootstrapping admin.',
     );
   }
 
-  if (!siteRoleId) {
-    throw new Error(
-      'SITE_USER role not found. Run "vp run prisma:seed" before bootstrapping admin.',
-    );
-  }
-
-  const requiredRoleIds = [adminRoleId, siteRoleId];
-  const existingRoles = await prisma.userRoles.findMany({
+  const existingRole = await prisma.userRoles.findFirst({
     where: {
       user_id: user.id,
-      role_id: { in: requiredRoleIds },
+      role_id: adminRole.id,
       revoked_at: null,
     },
-    select: { role_id: true },
+    select: { id: true },
   });
-  const existingRoleIds = new Set(existingRoles.map((role) => role.role_id));
-  const missingRoleIds = requiredRoleIds.filter((roleId) => !existingRoleIds.has(roleId));
 
-  if (missingRoleIds.length > 0) {
-    await prisma.userRoles.createMany({
-      data: missingRoleIds.map((roleId) => ({ user_id: user.id, role_id: roleId })),
+  if (!existingRole) {
+    await prisma.userRoles.create({
+      data: {
+        user_id: user.id,
+        role_id: adminRole.id,
+      },
     });
   }
 
-  console.log('Bootstrap SUPER_ADMIN and SITE_USER roles assigned.');
+  console.log('Bootstrap SUPER_ADMIN role assigned.');
 }
 
 main()
