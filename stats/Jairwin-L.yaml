@@ -1,0 +1,14 @@
+username: Jairwin-L
+updatedAt: 2026-09-28T03:43:23.720Z
+skills: {}
+interventions:
+  sessions: 3
+  interrupt: 1
+  toolReject: 0
+  correction: 0
+prompts: 7
+tokens:
+  input: 214
+  output: 78754
+  cacheRead: 14572591
+  cacheCreation: 280976
