@@ -2,10 +2,6 @@
 
 pnpm workspace monorepo.
 
-| Path            | Package    | Description                                                           |
-| --------------- | ---------- | --------------------------------------------------------------------- |
-| `apps/platform` | `platform` | Next.js app, migrated from `nextjs-starter-kit` with full git history |
-
 ## Getting started
 
 ```bash
