@@ -10,7 +10,7 @@ function password(requiredMessage: string) {
   return z
     .string(requiredMessage)
     .min(1, requiredMessage)
-    .min(8, '密码至少 8 位')
+    .min(6, '密码至少 6 位')
     .max(128, '密码最多 128 位');
 }
 

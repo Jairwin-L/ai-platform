@@ -173,7 +173,7 @@ vpr dev:all
 - admin：[http://localhost:8050](http://localhost:8050)（vite 代理 `/api` → db-service）
 - db-service：[http://localhost:8070/doc](http://localhost:8070/doc)（Scalar API 文档，非生产环境默认开启）
 
-首个管理员：管理端使用独立的系统账号（与 platform 注册账号分表）。在 `apps/db-service/.env` 里设置 `BOOTSTRAP_ADMIN_ACCOUNT` 与 `BOOTSTRAP_ADMIN_PASSWORD`（至少 12 位，只放本地 env，不要提交），执行 `vpr @ai/db-service#prisma:seed` 后再执行 `vpr @ai/db-service#prisma:bootstrap-admin`，即可用该账号登录管理端。
+首个管理员：管理端使用独立的系统账号（与 platform 注册账号分表）。在 `apps/db-service/.env` 里设置 `BOOTSTRAP_ADMIN_ACCOUNT` 与 `BOOTSTRAP_ADMIN_PASSWORD`（密码至少 6 位，只放本地 env，不要提交），执行 `vpr @ai/db-service#prisma:seed` 后再执行 `vpr @ai/db-service#prisma:bootstrap-admin`，即可用该账号登录管理端。
 
 db-service 的其他脚本（均可用 `vpr @ai/db-service#<脚本>` 执行）：
 

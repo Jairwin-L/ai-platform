@@ -6,7 +6,13 @@ import {
   searchTermQuery,
   withPaginationRange,
 } from '@/common/schemas/query';
-import { passwordSchema } from '../schemas';
+
+/**
+ * 系统用户密码：至少 6 位，与 prisma:bootstrap-admin 的规则一致；
+ * 平台用户注册的 8 位规则见 ../schemas.ts 的 passwordSchema，两者互不影响。
+ * 上限挡住超长输入：scrypt 对超长串的开销可被用作 DoS 手段。
+ */
+const systemUserPasswordSchema = z.string().min(6, '密码至少 6 位').max(128, '密码最多 128 位');
 
 /** 账号是后台登录凭据，只允许常见的账号字符 */
 const ACCOUNT_PATTERN = /^[a-zA-Z0-9_.@-]+$/;
@@ -55,7 +61,7 @@ export const listUsersQuery = z
  */
 export const createUserSchema = z
   .object({
-    password: passwordSchema,
+    password: systemUserPasswordSchema,
     account: accountSchema,
     username: z.string().trim().min(1, '请输入用户名').max(100, '用户名不能超过 100 个字符'),
     nickname: optionalNullableText(100, '昵称不能超过 100 个字符'),
@@ -82,7 +88,7 @@ export const updateUserSchema = z
     avatar: patchNullableText(2000, '头像地址过长'),
     remark: patchNullableText(255, '备注不能超过 255 个字符'),
     status: z.enum(UserStatusType, '用户状态无效').optional(),
-    password: passwordSchema.optional(),
+    password: systemUserPasswordSchema.optional(),
   })
   .strict();
 

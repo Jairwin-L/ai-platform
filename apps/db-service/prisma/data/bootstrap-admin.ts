@@ -6,7 +6,7 @@ import { RoleCode } from './system-roles';
 const REQUIRED_TABLES = ['roles', 'user_roles', 'system_users'];
 /** 与后台新建系统用户的账号规则一致 */
 const ACCOUNT_PATTERN = /^[a-zA-Z0-9_.@-]{1,100}$/;
-const MIN_PASSWORD_LENGTH = 12;
+const MIN_PASSWORD_LENGTH = 6;
 
 interface BootstrapAdminConfig {
   account: string;

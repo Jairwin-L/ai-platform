@@ -102,7 +102,7 @@ export default function SystemUserCreatePage() {
             name="password"
             rules={[{ required: true, message: '请输入初始密码' }]}
           >
-            <Input.Password autoComplete="new-password" maxLength={128} placeholder="至少 8 位" />
+            <Input.Password autoComplete="new-password" maxLength={12} placeholder="至少 6 位" />
           </Form.Item>
           <Form.Item
             label="角色"

@@ -62,7 +62,7 @@ export default function ResetPasswordModal({ user, onClose }: ResetPasswordModal
           name="password"
           rules={[{ required: true, message: '请输入新密码' }]}
         >
-          <Input.Password autoComplete="new-password" maxLength={128} placeholder="至少 8 位" />
+          <Input.Password autoComplete="new-password" maxLength={128} placeholder="至少 6 位" />
         </Form.Item>
         <Form.Item
           dependencies={['password']}
