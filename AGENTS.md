@@ -1,18 +1,26 @@
 # AGENTS 规范（Codex 可识别）
 
-本文件定义 Codex 在 `nextjs-starter-kit` 仓库中的默认行为规范。
+本文件定义 Codex / Claude Code 在 `ai-platform` 仓库中的默认行为规范（`CLAUDE.md` 是指向本文件的软链接）。
 除非用户在当前对话中明确覆盖，否则统一按以下规则执行。
 
 ## 1. 项目背景
 
-- 技术栈：`Next.js (App Router) + React 19 + TypeScript + Tailwind CSS`
-- 请求层：`alova`，请求封装与业务请求模块统一位于 `src/api/`
-- 包管理与工具链：Vite+（`vp`）+ `pnpm`
+- 技术栈：`Next.js (App Router) + React 19 + TypeScript + Sass Module + Ant Design`
+- 请求层：`alova`，请求封装与业务请求模块统一位于 `apps/platform/src/api/`
+- 包管理与工具链：Vite+（`vp` / `vpr`）+ `pnpm` workspace（公开仓库）
 - 部署：GitHub Actions 构建 Docker 镜像并推送到 GHCR，再通过 SSH 登录服务器执行 Docker Compose 拉取镜像并重启服务。
 - Node 版本要求：`22.x`
-- 主要代码目录：`src/`（包含 `api/`、`app/`、`components/`、`constants/`、`lib/`、`styles/`、`utils/` 等）
-- 主要配置文件：`package.json`、`vite.config.ts`、`next.config.ts`、`tsconfig.json`、`postcss.config.mjs`
-- 部署相关文件：`Dockerfile`、`docker-compose.prod.yml`、`.github/workflows/deploy.yml`、`scripts/deploy-compose.sh`
+- 工作区结构：
+  - `apps/platform/`：Next.js 应用（`@ai/platform`），代码目录 `src/`（`api/`、`app/`、`components/`、`hooks/`、`lib/`、`stores/`、`styles/`、`types/`、`typings/` 等）
+  - `packages/constants/`：与应用解耦的常量（`@ai/constants`）
+  - `packages/utils/`：与应用解耦的纯工具函数（`@ai/utils`），依赖方向 `platform -> utils -> constants`
+  - `packages/types/`：与应用解耦的全局 ambient 类型声明（`@ai/types`），由 platform 的 tsconfig 通过 `include` 引入
+  - 依赖 `@/lib`、`@/api`、Prisma Client 或框架/第三方模块类型的代码与类型保留在 `apps/platform/src/`（如 `src/typings/`），不要下沉到 `packages/*`
+- 工具链配置统一在仓库根目录：`vite.config.ts`（lint / fmt / staged / `verify` 任务）、`vite.lint.config.ts`、`vite.fmt.config.ts`、`stylelint.config.mjs`、`tsconfig.base.json`；各包只保留自己的 `vite.config.ts`（resolve / test）与 `tsconfig.json`
+- 应用配置文件：`apps/platform/package.json`、`apps/platform/next.config.ts`、`apps/platform/tsconfig.json`、`apps/platform/prisma.config.ts`
+- 部署相关文件：`apps/platform/Dockerfile`（构建 context 为仓库根目录）、`apps/platform/docker-compose.{prod,dev}.yml`、`.github/workflows/deploy.yml`、`apps/platform/scripts/deploy-compose.sh`
+- AI 协作资源（teamai 单仓模式 `mode: self`）：`.teamai/` 就是团队仓，`teamai.yaml` 与 `skills/`、`rules/`、`docs/`、`agents/`、`env/`、`hooks/`、`mcp/`、`learnings/` 随业务代码入库；`config.yaml`、`state.json`、`search-index.json`、`reports-wt/` 等是本机状态（含本机绝对路径、用户名、token），由 `.teamai/.gitignore` 排除。根 `.gitignore` 禁止整目录忽略 `.teamai/`。
+- `.claude/skills/`、`.codex/skills/`、`**/.agents/`、`**/skills-lock.json` 是生成产物（已 gitignore，skills 唯一来源是 `.teamai/skills/`）；`.claude/settings.json`、`.codex/hooks.json` 是入库的团队 hooks；`.claude/settings.local.json` 是个人配置，不入库。
 
 ## 2. 工作优先级
 
@@ -27,11 +35,11 @@
 
 1. 先理解需求与影响范围，再动手改代码。
 2. 默认文档先行：无论是开发新功能、解决问题还是修改既有内容，都先查官方文档、项目文档、当前实现与已安装本地文档；确认依据后再实现。
-3. 先查现有实现（`src/app/` 路由、`src/api/` 请求封装、`src/components/` 组件、`src/utils/`、`src/lib/`），优先复用已有代码。
+3. 先查现有实现（`apps/platform/src/app/` 路由、`apps/platform/src/api/` 请求封装、`apps/platform/src/components/` 组件、`apps/platform/src/lib/`、`packages/utils/src/`、`packages/constants/src/`），优先复用已有代码。
 4. 涉及功能开发、框架能力或第三方库集成时，必须严格依据官方文档实现；例如 Tiptap 富文本、Next.js App Router、React、alova、Ant Design 等。若不确定 API、配置项或最佳实践，先查官方文档、官方仓库或项目内已安装文档，再实现。
 5. 如果官方文档与项目既有实现存在冲突，应优先说明差异、影响与取舍，再采用当前仓库成本最低且风险最小的方案。
 6. 修改完成后默认不主动执行构建、lint、test、`vp check` 等生成构建和代码检测相关命令；仅列出建议用户手动执行的最小必要校验命令。用户明确要求执行时再运行。
-7. 公开仓库在提交、发布或用户要求检查时，需要检查是否包含隐私或敏感数据；重点覆盖 `.env*`、部署配置、GitHub Actions、Docker/Compose、源码、文档、Git 跟踪文件与必要的 Git 历史。
+7. 本仓库是公开仓库，在提交、发布或用户要求检查时，需要检查是否包含隐私或敏感数据；重点覆盖 `.env*`、部署配置、GitHub Actions、Docker/Compose、源码、文档、`.teamai/`（尤其 `env/`、`mcp/`）、`.claude/`、`.codex/`、Git 跟踪文件与必要的 Git 历史。
 8. 隐私与敏感数据检查至少关注：密钥、token、密码、私钥、真实服务器地址、数据库连接串、Webhook、第三方服务凭证、个人邮箱/手机号、内部业务地址与生产环境配置；发现风险时先报告并给出最小修复建议。
 9. 检测到用户明确提出“提交代码”指令时，默认不主动执行构建、lint、test、`vp check` 等校验命令；应先提示建议用户手动校验，用户确认提交后再提交代码。若用户明确要求 Codex 执行校验，则在校验通过后提交代码。
 10. 提交说明必须参考 [conventional-changelog/commitlint](https://github.com/conventional-changelog/commitlint) 的 Conventional Commits 风格，格式为 `type(scope?): subject`；`scope` 可选，`subject` 必须使用简洁英文说明本次改动。
@@ -47,38 +55,45 @@
 ## 4. 常用命令基线
 
 - 安装依赖：`vp install`
-- 本地开发：`vp run dev`（端口 8060）
-- 生产构建：`vp run build`
-- Docker 生产构建：`docker build --target runner -t nextjs-starter-kit:local .`
-- 服务器部署脚本：`APP_IMAGE=<image> scripts/deploy-compose.sh <production|development>`
-- 启动生产服务：`vp run start`（端口 8062）
-- 代码检查：`vp check` 或 `vp run lint`
-- 自动修复：`vp run lint:fix`
-- 测试：`vp test`；CI 统一使用 `vp run verify`
+  以下命令均在仓库根目录执行。跨包调用形式为 `vpr <包名>#<脚本>`（`vpr` 是 `vp run` 的独立简写；包名即 `package.json` 的 `name`，如 `@ai/platform`），也可用 `vp -C apps/platform run <脚本>` 切到包目录执行。
+
+- 本地开发：`vpr dev`（= `vpr @ai/platform#dev`，端口 8060）
+- 生产构建：`vpr build`（= `vpr @ai/platform#build`，会先生成 OpenAPI 文档）
+- Docker 生产构建：`docker build -f apps/platform/Dockerfile --target runner -t ai-platform:local .`
+- 服务器部署脚本：`APP_IMAGE=<image> apps/platform/scripts/deploy-compose.sh <production|development>`
+- 启动生产服务：`vpr start`（端口 8062）
+- 代码检查：`vpr check`（= `vpr --cache -r check`）或 `vpr lint`（额外含 Stylelint）
+- 自动修复：`vpr lint:fix`
+- 测试：`vpr test`（= `vpr --cache -r test`）
+- 全量验证：`vpr verify`（Prisma Client 生成 + 全 workspace check + test + Stylelint，CI 使用）
+- Prisma：`vpr prisma:generate`；其余如 `vpr @ai/platform#prisma:migrate`、`vpr @ai/platform#prisma:studio`
+- 执行摘要 / 缓存命中：`vpr -v <task>`、`vpr --last-details`
 - Vite+ 帮助：`vp help`
 
 当改动涉及以下范围时，默认仅建议用户手动执行对应命令；用户明确要求 Codex 执行时再运行：
 
-- TS 类型、公共工具函数、路由、`next.config.ts`、`tsconfig.json` 等构建配置 -> 建议 `vp check`；影响面较大时建议 `vp run build`
-- 样式文件（`*.css`、`*.less`、`*.scss`） -> 建议 `vp run lint` 或更小范围的 Stylelint 检查
-- `vite.config.ts`、`package.json`、依赖与工具链配置 -> 建议 `vp install` + `vp check`，必要时建议 `vp env doctor`
-- `Dockerfile`、`docker-compose*.yml`、`.github/workflows/deploy.yml` 或 `scripts/deploy-compose.sh` -> 建议检查对应 Docker / GitHub Actions / Compose 流程，必要时建议针对性构建或脚本校验
-- 新增或修改测试后 -> 建议 `vp test`
+- TS 类型、公共工具函数、路由、`next.config.ts`、`tsconfig*.json` 等构建配置 -> 建议 `vpr check`；影响面较大时建议 `vpr build`
+- 样式文件（`*.css`、`*.less`、`*.scss`） -> 建议 `vpr lint` 或更小范围的 Stylelint 检查
+- `vite.config.ts`、`package.json`、`pnpm-workspace.yaml`、依赖与工具链配置 -> 建议 `vp install` + `vpr check`，必要时建议 `vp env doctor`
+- `apps/platform/Dockerfile`、`docker-compose*.yml`、`.github/workflows/deploy.yml` 或 `apps/platform/scripts/deploy-compose.sh` -> 建议检查对应 Docker / GitHub Actions / Compose 流程，必要时建议针对性构建或脚本校验；新增 `packages/*` 时同步 Dockerfile 的 `deps` 阶段 COPY
+- 新增或修改测试后 -> 建议 `vpr test`
 
 ## 5. 代码修改约束
 
 - 默认不做大规模无关重构。
-- 不随意改动构建配置（`next.config.ts`、`tsconfig.json`、`vite.config.ts`、`package.json`、`Dockerfile`、`docker-compose*.yml`、`.github/workflows/deploy.yml`、Stylelint/Prettier 配置），除非需求明确要求。
+- 不随意改动构建配置（`next.config.ts`、`tsconfig*.json`、`vite*.config.ts`、`package.json`、`pnpm-workspace.yaml`、`Dockerfile`、`docker-compose*.yml`、`.github/workflows/deploy.yml`、`stylelint.config.mjs`），除非需求明确要求。
 - 不引入与需求无关的新依赖；如确需引入，须说明用途与体积影响。
-- 避免重复实现：已有工具函数（`src/utils/`）、请求封装与业务请求模块（`src/api/`）、组件可复用时不要新增平行实现。
-- 接口层响应提示统一在 `src/api/alova.ts` 全局处理：接口失败返回的错误信息使用 `message.error`，接口成功提示使用 `message.success`；业务组件与 `src/api/` 业务请求模块不要重复调用 `message.error` / `message.success` 处理 alova 接口响应。纯前端校验、上传进度、编辑器图片上传等非 alova 接口交互提示可在组件内按需处理。
+- 避免重复实现：已有工具函数（`packages/utils/src/`）、常量（`packages/constants/src/`）、请求封装与业务请求模块（`apps/platform/src/api/`）、组件可复用时不要新增平行实现。
+- 包边界：`packages/*` 不得引用 `@/` 别名或任何 app 内部模块；`packages/types` 只放不依赖框架 / 第三方模块类型（如 `next/server`、`react`、`antd`、Prisma Client）的 ambient 声明，这类类型放在 `apps/platform/src/typings/`。新增共享包时同步根与 app 的 tsconfig `paths`、`next.config.ts` 的 `transpilePackages` 和 Dockerfile。
+- 新增/修改团队 skill、rule、agent、MCP 定义时，只改 `.teamai/` 下的对应目录（如 `.teamai/skills/<name>/SKILL.md`、`.teamai/mcp/mcp.yaml`），再用 `teamai pull` 注入本地验证；禁止直接写 `.claude/skills/` 或 `.codex/skills/`。
+- 接口层响应提示统一在 `apps/platform/src/api/alova.ts` 全局处理：接口失败返回的错误信息使用 `message.error`，接口成功提示使用 `message.success`；业务组件与 `apps/platform/src/api/` 业务请求模块不要重复调用 `message.error` / `message.success` 处理 alova 接口响应。纯前端校验、上传进度、编辑器图片上传等非 alova 接口交互提示可在组件内按需处理。
 - 跟表单相关的新增或修改功能，前端表单输入与接口层请求参数都必须使用 `zod` 作为校验层；优先复用同一份 schema 或从共享 schema 派生，避免前端和接口层校验规则不一致。
 - 列表类接口响应不要在 `data` 下再用资源名包裹一层；例如返回凭证列表时使用 `data: [...]`，不要使用 `data: { credentials: [...] }`。分页接口保持既有分页结构（如 `data: { data, total, page, pageSize }`）。
-- 单文件代码行数上限：每个页面（`src/app/**/page.tsx`、`layout.tsx` 等）、每个组件文件不得超过 500 行（含注释与空行）；超过时必须按职责拆分为子组件 / 子模块，不允许通过删注释、压行等方式绕过该限制。
+- 单文件代码行数上限：每个页面（`apps/platform/src/app/**/page.tsx`、`layout.tsx` 等）、每个组件文件不得超过 500 行（含注释与空行）；超过时必须按职责拆分为子组件 / 子模块，不允许通过删注释、压行等方式绕过该限制。
 - App Router 中区分 Server Component / Client Component，需要 `"use client"` 时务必显式声明，且只在确有客户端交互时使用。
 - CSS Module 多词类名必须使用 kebab-case，并通过 bracket notation 访问，例如 `.auth-page` 对应 `styles["auth-page"]`；单词类名保持不变，例如 `.auth` 对应 `styles.auth`。
 - `useEffect` 只能写在组件 `return` 的 DOM 节点之前。
-- 涉及密钥/凭证只能通过环境变量读取，禁止硬编码或提交到仓库。
+- 涉及密钥/凭证只能通过环境变量读取，禁止硬编码或提交到仓库；新增环境变量时同步更新 `apps/platform/.env.example`（只写占位值）与部署 workflow。
 - 多个异步任务并发执行时，只使用 `Promise.allSettled`，不使用 `Promise.all`；必须显式处理 `fulfilled` 与 `rejected` 两种状态，并根据业务语义决定是否中断后续流程。
 - 仅事件处理函数 / 用户操作回调方法名使用 `on` 前缀，例如 `onFinish`、`onClick`、`onSubmit`、`onCancel`、`onUpload`；纯工具函数、格式化函数、数据获取函数、创建函数、计算函数等不要使用 `on` 前缀，应使用 `get`、`format`、`create`、`fetch`、`validate`、`build` 等语义化动词。
 - 仅针对 `utils` 目录下所有文件，以及路径或文件名包含 `utils` 的文件：工具函数必须使用 `function` 声明形式，禁止使用 `const` + 箭头函数形式（如 `const foo = () => {}`）。

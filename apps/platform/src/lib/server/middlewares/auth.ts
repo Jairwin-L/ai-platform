@@ -1,6 +1,6 @@
 import type { NextRequest, NextResponse } from 'next/server';
-import { AUTH_ERROR } from '@/constants/error-codes';
-import { getMissingPermissionMessage } from '@/constants/permissions';
+import { AUTH_ERROR } from '@ai/constants/error-codes';
+import { getMissingPermissionMessage } from '@ai/constants/permissions';
 import { getAuthUserBySessionToken, getSessionCookieName } from '../auth-session';
 import { createErrorResponse } from '../responses/error';
 import type { ApiContext, ApiMiddleware } from '../types';

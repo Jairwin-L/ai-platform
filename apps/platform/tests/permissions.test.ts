@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { getMissingPermissionMessage } from '@/constants/permissions';
+import { getMissingPermissionMessage } from '@ai/constants/permissions';
 
 describe('permission messages', () => {
   it('maps permission codes to user-facing messages', () => {

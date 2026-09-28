@@ -6,7 +6,7 @@ import { Dropdown, Skeleton } from 'antd';
 import type { MenuProps } from 'antd';
 import { signOut } from '@/api/modules/auth';
 import type { AuthUser } from '@/api/modules/auth';
-import { ADMIN_ROLE_CODES } from '@/constants';
+import { ADMIN_ROLE_CODES } from '@ai/constants';
 import { useDebounced } from '@/hooks/use-debounced';
 import { usePermission } from '@/hooks/use-permission';
 import styles from './index.module.scss';

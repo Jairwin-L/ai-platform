@@ -4,4 +4,4 @@ export * from './permissions';
 export * from './types';
 export { logger } from './logger';
 
-export * from '@/constants/error-codes';
+export * from '@ai/constants/error-codes';

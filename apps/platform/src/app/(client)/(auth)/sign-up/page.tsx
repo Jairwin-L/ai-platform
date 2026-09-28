@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button, Form, Input, Typography } from 'antd';
 import type { FormInstance } from 'antd';
-import { APP_BLACK_LOGO, APP_NAME, VERIFICATION_CODE_TTL_SECONDS } from '@/constants';
+import { APP_BLACK_LOGO, APP_NAME, VERIFICATION_CODE_TTL_SECONDS } from '@ai/constants';
 import { requestVerificationCode, signUp } from '@/api/modules/auth';
 import { useDebounced } from '@/hooks/use-debounced';
 import styles from './page.module.scss';

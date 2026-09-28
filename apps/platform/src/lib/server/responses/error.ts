@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { COMMON_ERROR } from '@/constants/error-codes';
+import { COMMON_ERROR } from '@ai/constants/error-codes';
 import type { ApiErrorResponse, ErrorType } from '../types';
 import { JSON_HEADERS } from './success';
 

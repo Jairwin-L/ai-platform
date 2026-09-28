@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { AUTH_SESSION_COOKIE_NAME } from '@/constants/auth';
+import { AUTH_SESSION_COOKIE_NAME } from '@ai/constants/auth';
 
 const LOGIN_PATH = '/sign-in';
 const PROTECTED_PATHS = ['/admin', '/ai', '/articles', '/upload'];

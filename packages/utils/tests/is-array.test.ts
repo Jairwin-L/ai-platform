@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { isArray } from '@/utils';
+import { isArray } from '../src';
 
 describe('isArray', () => {
   it('detects arrays', () => {

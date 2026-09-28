@@ -1,4 +1,4 @@
-import { ADMIN_ROLE_CODES } from '@/constants';
+import { ADMIN_ROLE_CODES } from '@ai/constants';
 import { prisma } from '@/lib/prisma';
 
 export async function isAdmin(userId?: string): Promise<boolean> {

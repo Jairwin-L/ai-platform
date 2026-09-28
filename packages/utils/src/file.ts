@@ -4,7 +4,7 @@
  */
 
 import type { FileTypeResult } from 'file-type';
-import { ALLOW_FILE_TYPE } from '@/constants';
+import { ALLOW_FILE_TYPE } from '@ai/constants';
 
 /**
  * @func detectFileType

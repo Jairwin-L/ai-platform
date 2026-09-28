@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { RoleCode, SYSTEM_ROLE_CODES } from '@/constants';
+import { RoleCode, SYSTEM_ROLE_CODES } from '@ai/constants';
 import { RoleStatus, type Prisma } from '@/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
 import {

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import { AntdProvider, Wrapper } from '@/components';
-import { APP_NAME } from '@/constants';
+import { APP_NAME } from '@ai/constants';
 import { getAuthPayloadBySessionToken, getSessionCookieName } from '@/lib/server/auth-session';
 import 'antd/dist/reset.css';
 import '@/styles/globals.scss';

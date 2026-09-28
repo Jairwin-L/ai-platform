@@ -3,18 +3,39 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "homepage": "https://github.com/Jairwin-L/ai-platform#readme",
+  "bugs": {
+    "url": "https://github.com/Jairwin-L/ai-platform/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jairwin-L/ai-platform.git"
+  },
+  "funding": "https://github.com/sponsors/Jairwin-L",
+  "author": {
+    "name": "Jairwin",
+    "email": "jairwin@jairwin.cc"
+  },
   "scripts": {
-    "dev": "pnpm --filter platform dev",
-    "build": "pnpm --filter platform build",
-    "start": "pnpm --filter platform start",
-    "lint": "pnpm -r --if-present lint",
-    "lint:fix": "pnpm -r --if-present lint:fix",
-    "verify": "pnpm --filter platform exec vp run verify",
-    "prepare": "vp config"
+    "dev": "vpr @ai/platform#dev",
+    "build": "vpr --cache @ai/platform#build",
+    "start": "vpr @ai/platform#start",
+    "test": "vpr --cache -r test",
+    "check": "vpr --cache -r check",
+    "lint": "vpr --cache -r lint",
+    "lint:fix": "vpr -r lint:fix",
+    "prisma:generate": "vpr --cache @ai/platform#prisma:generate",
+    "fmt": "vp fmt --write .",
+    "prepare": "vp config",
+    "preinstall": "vp dlx only-allow pnpm"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
-    "@commitlint/config-conventional": "^19.8.1"
+    "@commitlint/config-conventional": "^19.8.1",
+    "stylelint": "^16.24.0",
+    "stylelint-config-ali": "^2.3.0",
+    "typescript": "^5.9.3",
+    "vite-plus": "catalog:"
   },
   "commitlint": {
     "extends": [

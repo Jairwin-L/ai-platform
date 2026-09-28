@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { EDITOR_ITEMS, isEditorType } from '@/constants/editor';
+import { EDITOR_ITEMS, isEditorType } from '@ai/constants/editor';
 import { EditorPage } from './editor-page';
 
 interface PageProps {

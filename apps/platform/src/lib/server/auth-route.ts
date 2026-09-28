@@ -1,4 +1,4 @@
-import { AUTH_ERROR, COMMON_ERROR, DATA_ERROR } from '@/constants/error-codes';
+import { AUTH_ERROR, COMMON_ERROR, DATA_ERROR } from '@ai/constants/error-codes';
 import { createErrorResponse } from './responses/error';
 
 export {

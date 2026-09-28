@@ -59,7 +59,7 @@ import { useMobile } from '@/hooks/use-mobile';
 import { useWindowSize } from '@/hooks/use-window-size';
 
 // --- Lib ---
-import { TIPTAP_IMAGE_HTML_ATTRIBUTES } from '@/constants/tiptap';
+import { TIPTAP_IMAGE_HTML_ATTRIBUTES } from '@ai/constants/tiptap';
 import { handleImageUpload, MAX_FILE_SIZE } from '@/lib/tiptap-utils';
 
 // --- Styles ---

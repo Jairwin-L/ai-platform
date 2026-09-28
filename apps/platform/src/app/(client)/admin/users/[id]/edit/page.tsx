@@ -12,7 +12,7 @@ import {
   type UserProfile,
   type UserStatus,
 } from '@/api/modules/users';
-import { RoleCode } from '@/constants';
+import { RoleCode } from '@ai/constants';
 import { useDebounced } from '@/hooks/use-debounced';
 import styles from './page.module.scss';
 

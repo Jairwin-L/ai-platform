@@ -35,7 +35,7 @@ import {
   type ThirdPartyServiceOption,
 } from '@/api/modules/third-party-service-credentials';
 import styles from './page.module.scss';
-import { MODAL_OPTION } from '@/constants/antd';
+import { MODAL_OPTION } from '@ai/constants/antd';
 import { useDebounced } from '@/hooks/use-debounced';
 
 const initialValues: IAppForms.ThirdPartyServiceCredentialFormValues = {

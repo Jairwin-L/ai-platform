@@ -3,7 +3,7 @@ import {
   COMMON_ERROR,
   ERROR_CODES,
   HTTP_STATUS_TO_ERROR_CODE,
-} from '@/constants/error-codes';
+} from '@ai/constants/error-codes';
 import { createErrorResponse } from '../responses/error';
 import { logger } from '../logger';
 import type { ApiContext, ApiMiddleware } from '../types';

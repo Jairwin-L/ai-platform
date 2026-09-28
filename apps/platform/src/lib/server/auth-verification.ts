@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { VERIFICATION_CODE_TTL_SECONDS } from '@/constants';
+import { VERIFICATION_CODE_TTL_SECONDS } from '@ai/constants';
 import { redisDel, redisGet, redisSetEx } from './redis';
 
 export type AuthCodePurpose = IServer.AuthCodePurpose;

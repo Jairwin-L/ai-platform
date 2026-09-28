@@ -22,6 +22,9 @@ FROM base AS deps
 # Build context is the workspace root: docker build -f apps/platform/Dockerfile .
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/platform/package.json ./apps/platform/
+COPY packages/constants/package.json ./packages/constants/
+COPY packages/types/package.json ./packages/types/
+COPY packages/utils/package.json ./packages/utils/
 RUN vp install --frozen-lockfile --ignore-scripts
 
 FROM deps AS builder

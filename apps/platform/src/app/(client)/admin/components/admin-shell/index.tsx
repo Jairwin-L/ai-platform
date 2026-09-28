@@ -10,10 +10,10 @@ import {
 import { ConfigProvider, Dropdown, Layout, Menu, type MenuProps } from 'antd';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { APP_BLACK_LOGO, APP_NAME } from '@/constants';
+import { APP_BLACK_LOGO, APP_NAME } from '@ai/constants';
 import { usePermission } from '@/hooks/use-permission';
 import styles from './index.module.scss';
-import { APP_WHITE_LOGO } from '@/constants/app';
+import { APP_WHITE_LOGO } from '@ai/constants/app';
 
 const menuItems: IComponent.AdminMenuItem[] = [
   { key: '/admin', icon: <DashboardOutlined />, label: '概览' },

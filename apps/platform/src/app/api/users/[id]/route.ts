@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { ADMIN_ROLE_CODES, RoleCode } from '@/constants';
+import { ADMIN_ROLE_CODES, RoleCode } from '@ai/constants';
 import { UserStatusType, type Prisma } from '@/generated/prisma/client';
 import {
   AUTH_ERROR,

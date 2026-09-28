@@ -44,7 +44,6 @@ jobs:
         run: vp run prisma:generate
 
       - name: Verify
-        working-directory: apps/platform
         env:
           DATABASE_URL: postgresql://prisma:prisma@localhost:5432/prisma?schema=public
         run: vp run verify

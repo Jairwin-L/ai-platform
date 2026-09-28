@@ -7,8 +7,8 @@ import { createAlova } from 'alova';
 import type { Method, RequestBody } from 'alova';
 import fetch from 'alova/fetch';
 import ReactHook from 'alova/react';
-import { AUTH_ERROR } from '@/constants/error-codes';
-import { getMissingPermissionMessage } from '@/constants/permissions';
+import { AUTH_ERROR } from '@ai/constants/error-codes';
+import { getMissingPermissionMessage } from '@ai/constants/permissions';
 
 let alovaMessageApi: IAlovaHttp.MessageApi | null = null;
 const PERMISSION_CODE_PATTERN = /^[A-Z][A-Z0-9_]*(?::[A-Z0-9_]+)+$/u;

@@ -8,7 +8,7 @@ import {
   passwordSchema,
   verificationCodeSchema,
 } from '@/lib/server/auth-route';
-import { AUTH_ERROR } from '@/constants/error-codes';
+import { AUTH_ERROR } from '@ai/constants/error-codes';
 import { createErrorResponse, createSuccessResponse, withApiHandler } from '@/lib/server';
 import {
   createUserSession,

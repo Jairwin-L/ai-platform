@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { RoleCode } from '@/constants';
+import { RoleCode } from '@ai/constants';
 import { prisma } from '@/lib/prisma';
 import { createPasswordHash } from './auth-session';
 

@@ -15,7 +15,7 @@ import {
 import { getAuthPayloadBySessionToken, getSessionCookieName } from '@/lib/server/auth-session';
 import { writeByokAuditEvent } from '@/lib/ai/security/audit';
 import { getRequestIp } from '@/lib/ai/security/request-security';
-import { getMissingPermissionMessage } from '@/constants/permissions';
+import { getMissingPermissionMessage } from '@ai/constants/permissions';
 
 export function getByokErrorResponseType(status: number): ErrorType {
   const code = HTTP_STATUS_TO_ERROR_CODE[status] ?? COMMON_ERROR.REQUEST_ERROR.code;

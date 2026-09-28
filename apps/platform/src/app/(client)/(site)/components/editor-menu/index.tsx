@@ -5,7 +5,7 @@ import { Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { EDITOR_MENU_ITEMS } from '@/constants/editor';
+import { EDITOR_MENU_ITEMS } from '@ai/constants/editor';
 import styles from '../ai-menu/index.module.scss';
 
 const menuItems: MenuProps['items'] = EDITOR_MENU_ITEMS.map((item) => ({

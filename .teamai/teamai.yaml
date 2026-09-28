@@ -1,0 +1,12 @@
+team: ai-platform
+mode: self
+description: TeamAI single-repo (knowledge on main, reports on teamai-reports)
+repo: https://github.com/Jairwin-L/ai-platform.git
+provider: github
+sharing:
+  rules:
+    enforced: []
+  docs:
+    localDir: ./.teamai/docs
+  env:
+    injectShellProfile: true

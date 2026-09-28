@@ -1,21 +1,8 @@
 {
-  "name": "platform",
+  "name": "@ai/platform",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "homepage": "https://github.com/Jairwin-L/nextjs-starter-kit#readme",
-  "bugs": {
-    "url": "https://github.com/Jairwin-L/nextjs-starter-kit/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Jairwin-L/nextjs-starter-kit.git"
-  },
-  "funding": "https://github.com/sponsors/Jairwin-L",
-  "author": {
-    "name": "Jairwin",
-    "email": "jairwin@jairwin.cc"
-  },
   "scripts": {
     "dev": "next dev --port 8060",
     "build": "vp run openapi:generate && next build",
@@ -25,8 +12,8 @@
     "cf:deploy:production": "vp run cf:build && vp exec opennextjs-cloudflare deploy --env production",
     "cf:typegen": "vp exec wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "ci:eslint": "vp lint -f json src -o ./.ci/eslint.json",
-    "lint": "vp lint . && stylelint --allow-empty-input \"**/*.{css,less,scss}\"",
-    "lint:fix": "vp fmt . && vp lint --fix . && stylelint --allow-empty-input --fix \"**/*.{css,less,scss}\"",
+    "lint": "vp check && vp exec stylelint --allow-empty-input --max-warnings 0 \"**/*.{css,less,scss}\"",
+    "lint:fix": "vp check --fix && vp exec stylelint --allow-empty-input --fix \"**/*.{css,less,scss}\"",
     "openapi:generate": "tsx scripts/generate-openapi.ts && vp fmt public/openapi.json",
     "prisma:generate": "prisma generate",
     "prisma:deploy": "prisma migrate deploy",
@@ -42,9 +29,13 @@
     "prisma:migrate": "dotenv -e .env -- prisma migrate dev",
     "start": "next start --port 8062",
     "start:test": "next start --port 8061",
-    "start:dev": "next start --port 8060"
+    "start:dev": "next start --port 8060",
+    "check": "vp check",
+    "test": "vp test"
   },
   "dependencies": {
+    "@ai/constants": "workspace:*",
+    "@ai/utils": "workspace:*",
     "@ant-design/icons": "^6.1.0",
     "@ant-design/nextjs-registry": "^1.0.0",
     "@ant-design/x": "^2.8.0",
@@ -88,6 +79,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@ai/types": "workspace:*",
     "@opennextjs/cloudflare": "1.19.11",
     "@types/node": "^24.13.2",
     "@types/pg": "^8.20.0",
@@ -98,17 +90,11 @@
     "prisma": "^7.8.0",
     "sass": "^1.101.0",
     "stylelint": "^16.24.0",
-    "stylelint-config-ali": "^2.3.0",
     "tsx": "^4.22.3",
     "typescript": "^5.9.3",
     "vite-plus": "catalog:",
     "vitest": "catalog:",
     "wrangler": "4.104.0"
-  },
-  "stylelint": {
-    "extends": [
-      "stylelint-config-ali"
-    ]
   },
   "engines": {
     "node": ">=22.18.0 <23"

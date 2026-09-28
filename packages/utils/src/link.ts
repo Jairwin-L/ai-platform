@@ -4,7 +4,7 @@
  *       供页面渲染 <img>/<a> 时统一调用。
  */
 
-import { R2_BUCKET_URL } from '@/constants';
+import { R2_BUCKET_URL } from '@ai/constants';
 /**
  * @func normalizeStorageKey
  * @desc 去掉对象 key 前导斜杠，避免和 base URL 拼接后产生双斜杠路径。

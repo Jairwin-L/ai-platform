@@ -1,9 +1,9 @@
 import crypto from 'node:crypto';
 import { promisify } from 'node:util';
 import type { NextResponse } from 'next/server';
-import { AUTH_SESSION_COOKIE_NAME } from '@/constants/auth';
-import { SITE_PERMISSION_CODES } from '@/constants/permissions';
-import { RoleCode } from '@/constants/roles';
+import { AUTH_SESSION_COOKIE_NAME } from '@ai/constants/auth';
+import { SITE_PERMISSION_CODES } from '@ai/constants/permissions';
+import { RoleCode } from '@ai/constants/roles';
 import { prisma } from '@/lib/prisma';
 import type { AuthUser } from './types';
 

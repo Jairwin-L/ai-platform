@@ -78,7 +78,6 @@ jobs:
         run: vp run prisma:generate
 
       - name: Verify
-        working-directory: apps/platform
         run: vp run verify
 
       - name: Build Cloudflare Worker

@@ -10,9 +10,9 @@ allowBuilds:
   vue-demi: true
   workerd: true
 catalog:
-  vite: npm:@voidzero-dev/vite-plus-core@latest
+  vite: npm:@voidzero-dev/vite-plus-core@0.2.4
   vitest: 4.1.9
-  vite-plus: latest
+  vite-plus: 0.2.4
 minimumReleaseAgeExclude:
   - miniflare@4.20260623.0
   - wrangler@4.104.0

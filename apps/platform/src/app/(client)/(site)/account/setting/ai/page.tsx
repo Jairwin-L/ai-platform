@@ -24,7 +24,7 @@ import {
 import { buildAiCredentialColumns } from './credential-columns';
 import { DefaultModelConfigPanel } from './default-model-config-panel';
 import styles from './page.module.scss';
-import { MODAL_OPTION } from '@/constants/antd';
+import { MODAL_OPTION } from '@ai/constants/antd';
 import { useDebounced } from '@/hooks/use-debounced';
 
 const initialValues: IAppForms.CredentialFormValues = {

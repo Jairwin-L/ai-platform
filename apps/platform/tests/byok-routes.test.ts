@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { describe, expect, it, vi } from 'vite-plus/test';
-import { AUTH_ERROR, COMMON_ERROR } from '@/constants/error-codes';
+import { AUTH_ERROR, COMMON_ERROR } from '@ai/constants/error-codes';
 import { BYOK_ERROR_CODE, BYOK_SUCCESS_RESPONSE_OPTIONS } from '@/lib/ai/byok/constants';
 import { createSuccessResponse } from '@/lib/server';
 import {

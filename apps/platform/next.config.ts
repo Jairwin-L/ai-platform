@@ -43,6 +43,8 @@ function buildContentSecurityPolicy(): string {
 }
 
 const nextConfig: NextConfig = {
+  // monorepo 内的共享包直接以 TS 源码发布，交给 Next 编译
+  transpilePackages: ['@ai/constants', '@ai/utils'],
   output: 'standalone',
   outputFileTracingRoot: workspaceRoot,
   // OpenNext's file tracer does not include pg-cloudflare's workerd entry by default.

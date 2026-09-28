@@ -1,4 +1,4 @@
-import { APP_NAME } from '@/constants';
+import { APP_NAME } from '@ai/constants';
 import type { AuthCodePurpose } from './auth-verification';
 
 function getResendApiKey(): string {
