@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { Auth, CurrentUser } from '@/common/decorators/auth.decorator';
-import { RateLimit } from '@/common/decorators/metadata';
+import { AllowRestricted, RateLimit } from '@/common/decorators/metadata';
 import { success } from '@/common/http/api-result';
 import { AuthService } from './auth.service';
 import {
@@ -67,7 +67,7 @@ export class PlatformAuthController {
 
   @Get('me')
   @Auth()
-  @ApiOperation({ summary: 'Get the current platform user, roles and permissions' })
+  @ApiOperation({ summary: 'Get the current platform user and account status' })
   async me(@CurrentUser() user: AuthUser) {
     return success(await this.auth.getAuthPayload(user));
   }
@@ -75,6 +75,8 @@ export class PlatformAuthController {
   @Post('reset-password/code')
   @HttpCode(200)
   @Auth()
+  // 受限用户仍然可以改密码：账号可能正是因为被盗用才被限制
+  @AllowRestricted()
   @RateLimit(SEND_CODE_IP_RATE_LIMIT)
   @ApiOperation({ summary: 'Send a reset-password code to the current account email' })
   async sendResetPasswordCode(@CurrentUser() user: AuthUser) {
@@ -84,6 +86,7 @@ export class PlatformAuthController {
   @Post('reset-password')
   @HttpCode(200)
   @Auth()
+  @AllowRestricted()
   @ApiOperation({ summary: 'Reset the current account password with a verification code' })
   async resetPassword(
     @CurrentUser() user: AuthUser,

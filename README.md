@@ -173,7 +173,7 @@ vpr dev:all
 - admin：[http://localhost:8050](http://localhost:8050)（vite 代理 `/api` → db-service）
 - db-service：[http://localhost:8070/doc](http://localhost:8070/doc)（Scalar API 文档，非生产环境默认开启）
 
-首个管理员：在 platform 注册账号后，把邮箱写进 `BOOTSTRAP_ADMIN_EMAIL` 再执行 `vpr @ai/db-service#prisma:bootstrap-admin`。
+首个管理员：管理端使用独立的系统账号（与 platform 注册账号分表）。在 `apps/db-service/.env` 里设置 `BOOTSTRAP_ADMIN_ACCOUNT` 与 `BOOTSTRAP_ADMIN_PASSWORD`（至少 12 位，只放本地 env，不要提交），执行 `vpr @ai/db-service#prisma:seed` 后再执行 `vpr @ai/db-service#prisma:bootstrap-admin`，即可用该账号登录管理端。
 
 db-service 的其他脚本（均可用 `vpr @ai/db-service#<脚本>` 执行）：
 
@@ -182,8 +182,10 @@ openapi:generate          # 生成 openapi.json
 prisma:generate           # 生成 Prisma Client
 prisma:migrate            # 创建并执行本地迁移
 prisma:push               # 根据 schema 推送数据库结构，仅适合空库或临时开发
-prisma:seed               # 写入基础角色 / 权限数据
-prisma:bootstrap-admin    # 为 BOOTSTRAP_ADMIN_EMAIL 指定用户授予管理员角色
+prisma:seed               # 初始化种子：菜单 / 角色只在 RBAC 未初始化时写入，并同步 AI Provider、第三方服务选项
+prisma:seed:menu          # 以 prisma/data/menu/data.ts 为准重新同步菜单 / 按钮资源（会删除后台手动新增的菜单）
+prisma:seed:role          # 以 prisma/data/role/data.ts 为准重置种子角色（后台新建的角色保留）
+prisma:bootstrap-admin    # 按 BOOTSTRAP_ADMIN_ACCOUNT / PASSWORD 创建或补齐超级管理员系统账号
 prisma:studio             # 打开 Prisma Studio
 prisma:deploy             # 部署环境执行已提交的 Prisma migrations
 prisma:sync:deploy        # 部署环境按数据库状态同步结构
@@ -223,14 +225,14 @@ docker compose -f apps/platform/docker-compose.prod.yml up -d
 1. 使用 Vite+ 安装依赖并在仓库根目录执行 `vp run verify`。
 2. 构建并推送 platform 镜像（`<sha>`）、db-service 镜像（`<sha>-service`）与迁移镜像（`<sha>-migrate`）到 GHCR；并行构建 admin 静态产物。
 3. 通过 SSH 登录服务器，同步 Compose 文件和部署脚本，按 GitHub Environment 的 secrets / vars 生成服务器 env 文件。
-4. 拉取镜像、执行 Prisma 同步 / seed / bootstrap-admin，依次重启 db-service 与 platform。
+4. 拉取镜像、执行 Prisma 同步 / seed / bootstrap-admin，依次重启 db-service 与 platform。菜单与角色种子只在库未初始化时自动执行；改了 `apps/db-service/prisma/data/menu` 或 `role` 后，在 Actions 页面手动触发（workflow_dispatch）并勾选 `run_menu_seed` / `run_role_seed` 重跑。
 5. 配置了 `DEPLOY_ADMIN_PATH` 时，把 admin 静态产物整体替换到服务器目录（由宿主机 Web 服务器托管）。
 
 workflow 使用 GitHub Environments 区分环境（`main` → `production`，`dev` → `development`），需要在 `Settings -> Environments` 中分别配置：
 
-- Secrets：`DEPLOY_HOST`、`DEPLOY_PORT`、`DEPLOY_USER`、`DEPLOY_PATH`、`DEPLOY_SSH_KEY`、`GHCR_READ_TOKEN`、`POSTGRES_PASSWORD`、`DATABASE_URL`、`AUTH_CODE_SECRET`、`AI_KEY_ENCRYPTION_KEY_V1`、`AI_KEY_REDIS_ID_SECRET`、`RESEND_API_KEY`、`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY`，可选 `AI_SECRET_MASTER_KEY`
-- Variables（或 Secrets）：`BOOTSTRAP_ADMIN_EMAIL`、`RESEND_FROM_EMAIL`、`RESEND_FROM_NAME`、`R2_ENDPOINT_URL`、`R2_BUCKET_NAME`，以及可选的 `APP_PORT`、`SERVICE_PORT`、`SERVICE_BIND`、`POSTGRES_DB`、`POSTGRES_USER`、`DEPLOY_ENV_FILE`、`COMPOSE_PROJECT_NAME`、`BYOK_TRUST_PROXY_HEADERS`（默认 `true`）、`ENABLE_API_DOCS`
-- 管理后台相关 Variables：`VITE_BASE_API_URL`（必填，db-service 的公网 HTTPS 地址）、`VITE_APP_TITLE`、`VITE_PLATFORM_URL`、`DEPLOY_ADMIN_PATH`（服务器上的静态目录，留空跳过部署）、`CORS_ALLOWED_ORIGINS`（必须包含管理后台域名）、`NEXT_PUBLIC_ADMIN_URL`（前台账户菜单的后台入口，留空不显示）
+- Secrets：`DEPLOY_HOST`、`DEPLOY_PORT`、`DEPLOY_USER`、`DEPLOY_PATH`、`DEPLOY_SSH_KEY`、`GHCR_READ_TOKEN`、`POSTGRES_PASSWORD`、`DATABASE_URL`、`AUTH_CODE_SECRET`、`AI_KEY_ENCRYPTION_KEY_V1`、`AI_KEY_REDIS_ID_SECRET`、`RESEND_API_KEY`、`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY`，可选 `AI_SECRET_MASTER_KEY`、`BOOTSTRAP_ADMIN_PASSWORD`（与 `BOOTSTRAP_ADMIN_ACCOUNT` 同时配置时，部署会确保该超级管理员系统账号存在；已存在的账号不会被重置密码）
+- Variables（或 Secrets）：`BOOTSTRAP_ADMIN_ACCOUNT`、`RESEND_FROM_EMAIL`、`RESEND_FROM_NAME`、`R2_ENDPOINT_URL`、`R2_BUCKET_NAME`，以及可选的 `APP_PORT`、`SERVICE_PORT`、`SERVICE_BIND`、`POSTGRES_DB`、`POSTGRES_USER`、`DEPLOY_ENV_FILE`、`COMPOSE_PROJECT_NAME`、`BYOK_TRUST_PROXY_HEADERS`（默认 `true`）、`ENABLE_API_DOCS`
+- 管理后台相关 Variables：`VITE_BASE_API_URL`（必填，db-service 的公网 HTTPS 地址）、`VITE_APP_TITLE`、`VITE_PLATFORM_URL`、`DEPLOY_ADMIN_PATH`（服务器上的静态目录，留空跳过部署）、`CORS_ALLOWED_ORIGINS`（必须包含管理后台域名）
 
 服务器地址、SSH 私钥等只存在于 GitHub Environments，仓库中不出现任何真实值。
 
@@ -251,7 +253,7 @@ vpr @ai/platform#cf:deploy:production
 详见 [`AGENTS.md`](AGENTS.md)（`CLAUDE.md` 为其软链接）。要点：
 
 - platform 请求优先复用 `apps/platform/src/api/alova.ts` 与 `apps/platform/src/api/` 业务请求模块；SSR 取数用 `apps/platform/src/api/server.ts`。
-- 新接口写在 `apps/db-service/src/modules/`，参数用 zod schema 通过 `@Body({ schema })` / `@Query({ schema })` 校验，鉴权用 `Auth` / `PermissionAuth` / `AdminAuth` 装饰器。
+- 新接口写在 `apps/db-service/src/modules/`，参数用 zod schema 通过 `@Body({ schema })` / `@Query({ schema })` 校验，鉴权用 `Auth` / `OptionalAuth`（前台）与 `AdminPermissionAuth` / `AdminAnyPermissionAuth`（管理端，权限码见 `@ai/constants/permissions`）装饰器。
 - Server Component / Client Component 按需区分，只有存在客户端交互时才添加 `"use client"`。
 - `utils` 相关文件需要保留 JSDoc `@file`、`@func`、`@desc`、`@param` 和 `@returns` 说明，工具函数使用 `function` 声明。
 - 多个异步任务并发时使用 `Promise.allSettled` 并显式处理成功和失败结果。

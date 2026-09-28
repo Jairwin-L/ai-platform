@@ -3,7 +3,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { z } from 'zod';
 import { DATA_ERROR } from '@ai/constants/error-codes';
 import { AiAuth } from '@/common/decorators/byok.decorator';
-import { CurrentUser, PermissionAuth } from '@/common/decorators/auth.decorator';
+import { Auth, CurrentUser } from '@/common/decorators/auth.decorator';
 import { ApiException } from '@/common/http/api-exception';
 import { success } from '@/common/http/api-result';
 import { getPublicAiProviderOptions } from '@/lib/ai/byok/provider-options';
@@ -27,14 +27,14 @@ type ProviderConfigUpdateInput = z.infer<typeof providerConfigUpdateSchema>;
 @Controller('platform/ai/provider-configs')
 export class AiProviderConfigsController {
   @Get()
-  @AiAuth('AI:SETTINGS:VIEW')
+  @AiAuth()
   @ApiOperation({ summary: 'List provider configs (API key only shown as last 4 characters)' })
   async list(@CurrentUser() user: AuthUser) {
     return success(await listProviderConfigs(user.userId));
   }
 
   @Post()
-  @AiAuth('AI:SETTINGS:MANAGE')
+  @AiAuth()
   @ApiOperation({ summary: 'Create a provider config' })
   async create(
     @CurrentUser() user: AuthUser,
@@ -44,7 +44,7 @@ export class AiProviderConfigsController {
   }
 
   @Patch(':id')
-  @AiAuth('AI:SETTINGS:MANAGE')
+  @AiAuth()
   @ApiOperation({ summary: 'Update a provider config' })
   async update(
     @CurrentUser() user: AuthUser,
@@ -55,7 +55,7 @@ export class AiProviderConfigsController {
   }
 
   @Delete(':id')
-  @AiAuth('AI:SETTINGS:MANAGE')
+  @AiAuth()
   @ApiOperation({ summary: 'Delete a provider config' })
   async remove(@CurrentUser() user: AuthUser, @Param('id', { schema: idSchema }) id: string) {
     await deleteProviderConfig(user.userId, id);
@@ -64,7 +64,7 @@ export class AiProviderConfigsController {
 
   @Post(':id/verify')
   @HttpCode(200)
-  @AiAuth('AI:SETTINGS:MANAGE')
+  @AiAuth()
   @ApiOperation({ summary: 'Verify a provider config by listing models upstream' })
   async verify(@CurrentUser() user: AuthUser, @Param('id', { schema: idSchema }) id: string) {
     return success(await verifyProviderConfig(user.userId, id), 'Provider 验证完成');
@@ -76,7 +76,7 @@ export class AiProviderConfigsController {
 @Controller('platform/ai/provider-options')
 export class AiProviderOptionsController {
   @Get()
-  @PermissionAuth('AI:SETTINGS:VIEW')
+  @Auth()
   @ApiOperation({ summary: 'List enabled AI providers for BYOK' })
   async list() {
     try {

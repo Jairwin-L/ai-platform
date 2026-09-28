@@ -42,15 +42,6 @@ declare namespace IAppForms {
 
   type ThirdPartyServiceOptionValues = IApiAdmin.ThirdPartyServiceOption;
 
-  interface UserFormValues {
-    bio?: string;
-    full_name?: string;
-    nick_name?: string;
-    roleIds?: number[];
-    status: IApiUsers.UserStatus;
-    user_name?: string;
-  }
-
   interface ProfileFormValues {
     bio?: string;
     nick_name?: string;
@@ -68,22 +59,5 @@ declare namespace IAppForms {
     label: string;
     serviceName: string;
     ttlOption: IApiThirdPartyServiceCredentials.CredentialTtlOption;
-  }
-
-  interface PermissionFormValues {
-    code: string;
-    description?: string;
-    name: string;
-    parent_id?: string;
-    type: IApiAdmin.PermissionType;
-  }
-
-  interface RoleFormValues {
-    code: string;
-    description?: string;
-    is_system?: boolean;
-    name: string;
-    permissions?: string[];
-    status?: IApiAdmin.AdminRole['status'];
   }
 }

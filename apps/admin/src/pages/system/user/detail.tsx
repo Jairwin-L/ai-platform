@@ -1,22 +1,25 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { Avatar, Button, Descriptions, Skeleton, Space, Tag } from 'antd';
-import { EditOutlined, SafetyCertificateOutlined, UserOutlined } from '@ant-design/icons';
-import { getUser, type UserProfile } from '@/api/methods/rbac';
+import { Button, Descriptions, Skeleton, Tag } from 'antd';
+import { EditOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import { PERMISSION_CODE } from '@ai/constants/permissions';
+import { getRbacUser, type RbacUser } from '@/api/methods/rbac';
 import { EMPTY_PLACEHOLDER } from '@/constants/biz';
+import { usePermission } from '@/hooks';
 import pageCss from '@/styles/page.module.scss';
 import { formatDateTime } from '@/utils';
 import { getDisplayName, renderStatusTag } from './columns';
 
-export default function UserDetailPage() {
+export default function SystemUserDetailPage() {
   const { id = '' } = useParams<{ id: string }>();
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const can = usePermission();
+  const [user, setUser] = useState<RbacUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
-    getUser(id)
+    getRbacUser(id)
       .then((result) => {
         if (active) setUser(result);
       })
@@ -36,9 +39,9 @@ export default function UserDetailPage() {
       <section className={pageCss.heading}>
         <div>
           <h1>用户详情</h1>
-          <p>查看用户的资料、角色和账号状态。</p>
+          <p>查看系统用户的资料、角色和账号状态。</p>
         </div>
-        {user ? (
+        {user && can(PERMISSION_CODE.OPERATION.USER.EDIT) ? (
           <Link to={`/system/user/edit/${user.id}`}>
             <Button icon={<EditOutlined />} type="primary">
               编辑用户
@@ -47,26 +50,15 @@ export default function UserDetailPage() {
         ) : null}
       </section>
       <section className={pageCss['form-panel']}>
-        {loading ? <Skeleton active avatar paragraph={{ rows: 8 }} /> : null}
+        {loading ? <Skeleton active paragraph={{ rows: 8 }} /> : null}
         {!loading && user ? (
           <Descriptions bordered column={1} size="small">
-            <Descriptions.Item label="用户">
-              <Space>
-                <Avatar icon={<UserOutlined />} src={user.picture || undefined} />
-                {getDisplayName(user)}
-              </Space>
-            </Descriptions.Item>
+            <Descriptions.Item label="用户">{getDisplayName(user)}</Descriptions.Item>
+            <Descriptions.Item label="账号">{user.account}</Descriptions.Item>
             <Descriptions.Item label="用户 ID">
               <code>{user.id}</code>
             </Descriptions.Item>
-            <Descriptions.Item label="用户名">
-              {user.user_name || EMPTY_PLACEHOLDER}
-            </Descriptions.Item>
-            <Descriptions.Item label="昵称">
-              {user.nick_name || EMPTY_PLACEHOLDER}
-            </Descriptions.Item>
-            <Descriptions.Item label="邮箱">{user.email || EMPTY_PLACEHOLDER}</Descriptions.Item>
-            <Descriptions.Item label="简介">{user.bio || EMPTY_PLACEHOLDER}</Descriptions.Item>
+            <Descriptions.Item label="昵称">{user.nickname || EMPTY_PLACEHOLDER}</Descriptions.Item>
             <Descriptions.Item label="状态">{renderStatusTag(user.status)}</Descriptions.Item>
             <Descriptions.Item label="角色">
               {user.roles.length
@@ -77,12 +69,12 @@ export default function UserDetailPage() {
                   ))
                 : EMPTY_PLACEHOLDER}
             </Descriptions.Item>
+            <Descriptions.Item label="备注">{user.remark || EMPTY_PLACEHOLDER}</Descriptions.Item>
             <Descriptions.Item label="最近登录">
-              {formatDateTime(user.last_login_at)}
+              {formatDateTime(user.lastLoginAt)}
             </Descriptions.Item>
-            <Descriptions.Item label="注册时间">
-              {formatDateTime(user.created_at)}
-            </Descriptions.Item>
+            <Descriptions.Item label="创建时间">{formatDateTime(user.createdAt)}</Descriptions.Item>
+            <Descriptions.Item label="更新时间">{formatDateTime(user.updatedAt)}</Descriptions.Item>
           </Descriptions>
         ) : null}
       </section>

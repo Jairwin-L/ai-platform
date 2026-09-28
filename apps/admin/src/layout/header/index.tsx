@@ -34,7 +34,8 @@ export default function Header() {
   const routeHandle = getCurrentRouteHandle(matches);
   const pageTitle = routeHandle?.title || SITE_NAME;
   const breadcrumbItems = (routeHandle?.breadcrumb ?? ['首页']).map((title) => ({ title }));
-  const displayName = currentUser?.user.nickName || currentUser?.user.email || '管理员';
+  const displayName =
+    currentUser?.nickname || currentUser?.username || currentUser?.account || '管理员';
 
   useEffect(() => {
     const appTitle = VITE_ENV.VITE_APP_TITLE || SITE_NAME;
@@ -61,11 +62,7 @@ export default function Header() {
         trigger={['click']}
       >
         <button type="button" className={css['header-avatar']}>
-          <Avatar
-            size="small"
-            icon={<UserOutlined />}
-            src={currentUser?.user.picture || undefined}
-          />
+          <Avatar size="small" icon={<UserOutlined />} src={currentUser?.avatar || undefined} />
           <span className={css.username}>{displayName}</span>
           <DownOutlined />
         </button>

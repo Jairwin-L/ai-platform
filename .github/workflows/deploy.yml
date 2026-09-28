@@ -10,6 +10,16 @@ on:
     types:
       - closed
   workflow_dispatch:
+    # 菜单 / 角色种子只在库未初始化时自动执行；改了 apps/db-service/prisma/data/menu 或 role 后手动触发并勾选
+    inputs:
+      run_menu_seed:
+        description: '重跑菜单种子：以 menu/data.ts 为准覆盖同步，后台手动新增的菜单连同角色关联会被删除'
+        type: boolean
+        default: false
+      run_role_seed:
+        description: '重跑角色种子：种子角色的名称与权限重置为 role/data.ts，后台新建的角色保留（新增权限码需同时勾选菜单）'
+        type: boolean
+        default: false
 
 jobs:
   validate:
@@ -102,10 +112,9 @@ jobs:
           target: runner
           platforms: linux/amd64
           push: true
-          # rewrites 目标与 NEXT_PUBLIC_* 都在 next build 时写死，只能走 build-arg
+          # rewrites 目标在 next build 时写死，只能走 build-arg
           build-args: |
             API_INTERNAL_ORIGIN=http://db-service:8072
-            NEXT_PUBLIC_ADMIN_URL=${{ vars.NEXT_PUBLIC_ADMIN_URL }}
           tags: |
             ${{ steps.image.outputs.name }}:latest
             ${{ steps.image.outputs.tag }}
@@ -256,7 +265,11 @@ jobs:
           POSTGRES_UPGRADE_MODE: ${{ vars.POSTGRES_UPGRADE_MODE || '' }}
           DATABASE_URL: ${{ secrets.DATABASE_URL || (github.event_name == 'pull_request_target' && 'postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit?schema=public' || 'postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit_dev?schema=public') }}
           BYOK_TRUST_PROXY_HEADERS: ${{ vars.BYOK_TRUST_PROXY_HEADERS || secrets.BYOK_TRUST_PROXY_HEADERS || 'true' }}
-          BOOTSTRAP_ADMIN_EMAIL: ${{ vars.BOOTSTRAP_ADMIN_EMAIL || secrets.BOOTSTRAP_ADMIN_EMAIL }}
+          BOOTSTRAP_ADMIN_ACCOUNT: ${{ vars.BOOTSTRAP_ADMIN_ACCOUNT || secrets.BOOTSTRAP_ADMIN_ACCOUNT }}
+          BOOTSTRAP_ADMIN_PASSWORD: ${{ secrets.BOOTSTRAP_ADMIN_PASSWORD }}
+          # 一次性开关，只对本次部署生效，不写进服务器 env 文件
+          FORCE_MENU_SEED: ${{ inputs.run_menu_seed == true && 'true' || 'false' }}
+          FORCE_ROLE_SEED: ${{ inputs.run_role_seed == true && 'true' || 'false' }}
           AUTH_CODE_SECRET: ${{ secrets.AUTH_CODE_SECRET }}
           AI_KEY_ENCRYPTION_KEY_V1: ${{ secrets.AI_KEY_ENCRYPTION_KEY_V1 }}
           AI_KEY_REDIS_ID_SECRET: ${{ secrets.AI_KEY_REDIS_ID_SECRET }}
@@ -330,7 +343,8 @@ jobs:
           write_env BYOK_TRUST_PROXY_HEADERS "${BYOK_TRUST_PROXY_HEADERS}"
           write_env CORS_ALLOWED_ORIGINS "${CORS_ALLOWED_ORIGINS}"
           write_env ENABLE_API_DOCS "${ENABLE_API_DOCS}"
-          write_env BOOTSTRAP_ADMIN_EMAIL "${BOOTSTRAP_ADMIN_EMAIL}"
+          write_env BOOTSTRAP_ADMIN_ACCOUNT "${BOOTSTRAP_ADMIN_ACCOUNT}"
+          write_env BOOTSTRAP_ADMIN_PASSWORD "${BOOTSTRAP_ADMIN_PASSWORD}"
           write_env AUTH_CODE_SECRET "${AUTH_CODE_SECRET}"
           write_env AI_KEY_ENCRYPTION_KEY_V1 "${AI_KEY_ENCRYPTION_KEY_V1}"
           write_env AI_KEY_REDIS_ID_SECRET "${AI_KEY_REDIS_ID_SECRET}"
@@ -352,7 +366,7 @@ jobs:
             echo 'chmod +x scripts/upgrade-postgres-compose.sh'
             echo 'if [ ! -x scripts/deploy-compose.sh ]; then echo "Missing executable script: scripts/deploy-compose.sh" && exit 1; fi'
             echo 'if [ ! -x scripts/upgrade-postgres-compose.sh ]; then echo "Missing executable script: scripts/upgrade-postgres-compose.sh" && exit 1; fi'
-            echo 'DEPLOY_ENV_FILE="${DEPLOY_ENV_FILE}" COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME}" SERVICE_IMAGE="${SERVICE_IMAGE}" MIGRATE_IMAGE="${MIGRATE_IMAGE}" scripts/deploy-compose.sh "${DEPLOY_ENVIRONMENT}" "${IMAGE_TAG}"'
+            echo 'DEPLOY_ENV_FILE="${DEPLOY_ENV_FILE}" COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME}" SERVICE_IMAGE="${SERVICE_IMAGE}" MIGRATE_IMAGE="${MIGRATE_IMAGE}" FORCE_MENU_SEED="${FORCE_MENU_SEED}" FORCE_ROLE_SEED="${FORCE_ROLE_SEED}" scripts/deploy-compose.sh "${DEPLOY_ENVIRONMENT}" "${IMAGE_TAG}"'
           } > "${remote_script}"
 
           ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT}" \
@@ -385,7 +399,7 @@ jobs:
 
           ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT}" \
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "DEPLOY_PATH='${DEPLOY_PATH}' DEPLOY_ENV_FILE='${DEPLOY_ENV_FILE}' COMPOSE_PROJECT_NAME='${COMPOSE_PROJECT_NAME}' DEPLOY_ENVIRONMENT='${DEPLOY_ENVIRONMENT}' IMAGE_TAG='${IMAGE_TAG}' SERVICE_IMAGE='${SERVICE_IMAGE}' MIGRATE_IMAGE='${MIGRATE_IMAGE}' REMOTE_ENV_TMP='${remote_env_tmp}' bash -s" < "${remote_script}"
+            "DEPLOY_PATH='${DEPLOY_PATH}' DEPLOY_ENV_FILE='${DEPLOY_ENV_FILE}' COMPOSE_PROJECT_NAME='${COMPOSE_PROJECT_NAME}' DEPLOY_ENVIRONMENT='${DEPLOY_ENVIRONMENT}' IMAGE_TAG='${IMAGE_TAG}' SERVICE_IMAGE='${SERVICE_IMAGE}' MIGRATE_IMAGE='${MIGRATE_IMAGE}' FORCE_MENU_SEED='${FORCE_MENU_SEED}' FORCE_ROLE_SEED='${FORCE_ROLE_SEED}' REMOTE_ENV_TMP='${remote_env_tmp}' bash -s" < "${remote_script}"
 
       - name: Download admin dist
         uses: actions/download-artifact@v4

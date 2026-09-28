@@ -14,8 +14,6 @@ import { RequestLoggerMiddleware } from '@/common/middlewares/logger.middleware'
 import { NoStoreMiddleware } from '@/common/middlewares/no-store.middleware';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { UsersModule } from '@/modules/users/users.module';
-import { RolesModule } from '@/modules/roles/roles.module';
-import { PermissionsAdminModule } from '@/modules/permissions/permissions.module';
 import { SystemSettingsModule } from '@/modules/system-settings/system-settings.module';
 import { SettingsOptionsModule } from '@/modules/settings-options/settings-options.module';
 import { ArticlesModule } from '@/modules/articles/articles.module';
@@ -34,8 +32,6 @@ import { DemoModule } from '@/modules/demo/demo.controller';
     MailModule,
     AuthModule,
     UsersModule,
-    RolesModule,
-    PermissionsAdminModule,
     SystemSettingsModule,
     SettingsOptionsModule,
     ArticlesModule,

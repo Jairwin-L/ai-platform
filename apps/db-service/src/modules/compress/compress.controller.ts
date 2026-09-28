@@ -11,7 +11,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { COMMON_ERROR, FILE_ERROR } from '@ai/constants/error-codes';
-import { PermissionAuth, CurrentUser } from '@/common/decorators/auth.decorator';
+import { Auth, CurrentUser } from '@/common/decorators/auth.decorator';
 import { ApiException } from '@/common/http/api-exception';
 import type { AuthenticatedRequest } from '@/common/types/request';
 import { compressWithSharp } from '@/infra/storage/image-compress';
@@ -92,7 +92,7 @@ function sendImage(response: Response, data: Buffer, mime: string): void {
 @Controller('compress')
 export class CompressController {
   @Post('sharp')
-  @PermissionAuth('UPLOAD:COMPRESS')
+  @Auth()
   @UseInterceptors(FileInterceptor('file', MULTER_OPTIONS))
   @ApiOperation({ summary: 'Compress an image with sharp, returns the image binary' })
   @ApiCompressUpload()
@@ -112,7 +112,7 @@ export class CompressController {
   }
 
   @Post('tinify')
-  @PermissionAuth('UPLOAD:COMPRESS')
+  @Auth()
   @UseInterceptors(FileInterceptor('file', MULTER_OPTIONS))
   @ApiOperation({ summary: "Compress an image with TinyPNG using the user's saved API key" })
   @ApiCompressUpload()

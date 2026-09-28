@@ -10,7 +10,11 @@ interface AuthSession {
   createdAt: number;
 }
 
-/** 经过 SessionGuard 注入到 request.user 的当前登录用户 */
+/**
+ * 经过 SessionGuard 注入到 request.user 的当前登录用户。
+ * user 会话是平台用户（users），没有角色体系，roles / permissions 恒为空；
+ * admin 会话是系统用户（system_users），roles 为角色编码，permissions 为已启用的权限码。
+ */
 interface AuthUser {
   userId: string;
   roles: string[];

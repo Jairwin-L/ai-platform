@@ -1,10 +1,12 @@
 /**
- * @file 管理后台鉴权接口，对应 apps/db-service 的 AdminAuthController。
+ * @file 管理端鉴权接口，对应 apps/db-service 的 AdminAuthController。
  */
 import { AUTH } from '../const';
 import { get, post } from '../request';
 
-export type AuthPayload = IApiAuth.AuthPayload;
+export type AuthAccount = IApiAdmin.AuthAccount;
+export type ResourceNode = IApiAdmin.ResourceNode;
+export type PermissionKind = IApiAdmin.PermissionKind;
 
 async function getLoginPublicKey(): Promise<string | null> {
   try {
@@ -60,14 +62,19 @@ async function encryptPasswordIfPossible(
   }
 }
 
-/** 管理后台登录：只下发会话 Cookie，当前账号统一以 /auth/me 为准 */
-export async function adminLogin(data: { email: string; password: string }) {
+/** 管理端登录：系统用户按账号登录，只下发会话 Cookie，当前账号统一以 /auth/me 为准 */
+export async function adminLogin(data: { account: string; password: string }) {
   const { password, encrypted } = await encryptPasswordIfPossible(data.password);
-  return post<null>(AUTH.LOGIN, { email: data.email, password, encrypted }, { silent: true });
+  return post<null>(AUTH.LOGIN, { account: data.account, password, encrypted }, { silent: true });
 }
 
 export function fetchCurrentUser() {
-  return get<AuthPayload>(AUTH.ME, undefined, { silent: true });
+  return get<AuthAccount>(AUTH.ME, undefined, { silent: true });
+}
+
+/** 当前账号可见的菜单资源树 */
+export function getCurrentMenus() {
+  return get<ResourceNode[]>(AUTH.MENUS, undefined, { silent: true });
 }
 
 export function logout() {

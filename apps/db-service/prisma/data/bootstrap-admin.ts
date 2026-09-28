@@ -1,104 +1,111 @@
-import 'dotenv/config';
-import { Pool } from 'pg';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Prisma, PrismaClient } from '../../generated/prisma/client';
+import type { PrismaClient } from '../../generated/prisma/client';
+import { assertTablesExist, runSeed } from './client';
+import { hashPassword } from './password';
 import { RoleCode } from './system-roles';
 
-const bootstrapAdminEmail = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim();
-const databaseUrl = process.env.DATABASE_URL;
+const REQUIRED_TABLES = ['roles', 'user_roles', 'system_users'];
+/** 与后台新建系统用户的账号规则一致 */
+const ACCOUNT_PATTERN = /^[a-zA-Z0-9_.@-]{1,100}$/;
+const MIN_PASSWORD_LENGTH = 12;
 
-if (!databaseUrl) {
-  throw new Error('DATABASE_URL is not configured.');
+interface BootstrapAdminConfig {
+  account: string;
+  password: string;
+  resetPassword: boolean;
 }
 
-const pool = new Pool({ connectionString: databaseUrl });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
-const requiredTables = ['users', 'roles', 'user_roles'];
+/**
+ * 读取并校验首个超级管理员的配置。账号与密码只来自环境变量，仓库里不保留任何默认值：
+ * 两者都没配置时跳过；只配了一个视为配置错误，直接失败，避免部署时误以为已经建好了管理员。
+ */
+function readConfig(): BootstrapAdminConfig | null {
+  const account = process.env.BOOTSTRAP_ADMIN_ACCOUNT?.trim() ?? '';
+  const password = process.env.BOOTSTRAP_ADMIN_PASSWORD ?? '';
 
-async function assertRequiredTablesExist(): Promise<void> {
-  const tableResults = await prisma.$queryRaw<Array<{ table_name: string }>>`
-    SELECT table_name
-    FROM information_schema.tables
-    WHERE table_schema = current_schema()
-      AND table_name IN (${Prisma.join(requiredTables)})
-  `;
-  const existingTables = new Set(tableResults.map((result) => result.table_name));
-  const missingTables = requiredTables.filter((tableName) => !existingTables.has(tableName));
-
-  if (missingTables.length > 0) {
-    throw new Error(
-      [
-        `Missing database table(s): ${missingTables.join(', ')}`,
-        'Run "vp run prisma:setup" before bootstrapping the administrator role.',
-      ].join('\n'),
-    );
+  if (!account && !password) return null;
+  if (!account || !password) {
+    throw new Error('BOOTSTRAP_ADMIN_ACCOUNT and BOOTSTRAP_ADMIN_PASSWORD must be set together.');
   }
+  if (!ACCOUNT_PATTERN.test(account)) {
+    throw new Error('BOOTSTRAP_ADMIN_ACCOUNT may only contain letters, digits, _ . @ - (max 100).');
+  }
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    throw new Error(`BOOTSTRAP_ADMIN_PASSWORD must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+  }
+
+  return {
+    account,
+    password,
+    resetPassword: process.env.BOOTSTRAP_ADMIN_RESET_PASSWORD === 'true',
+  };
 }
 
-async function main(): Promise<void> {
-  if (!bootstrapAdminEmail) {
-    console.log('BOOTSTRAP_ADMIN_EMAIL is not set. Skipping admin bootstrap.');
-    return;
-  }
-
-  await assertRequiredTablesExist();
-
-  const users = await prisma.users.findMany({
-    where: { email: bootstrapAdminEmail },
-    orderBy: { created_at: 'asc' },
-    take: 2,
-    select: { id: true },
-  });
-
-  if (users.length === 0) {
-    console.warn('Bootstrap admin user not found. Skipping admin bootstrap.');
-    return;
-  }
-
-  if (users.length > 1) {
-    throw new Error(`Multiple users found for BOOTSTRAP_ADMIN_EMAIL: ${bootstrapAdminEmail}`);
-  }
-
-  const [user] = users;
-  const adminRole = await prisma.roles.findUnique({
+/**
+ * 保证配置的账号是可用的超级管理员：
+ * - 账号不存在时创建，并只挂 SUPER_ADMIN；
+ * - 已存在时补上 SUPER_ADMIN、恢复为 active，不改其他角色；
+ * - 默认不覆盖已有账号的密码（部署每次都会执行这里），显式设置 BOOTSTRAP_ADMIN_RESET_PASSWORD=true 才重置。
+ */
+async function ensureBootstrapAdmin(prisma: PrismaClient, config: BootstrapAdminConfig) {
+  const superRole = await prisma.role.findUnique({
     where: { code: RoleCode.SUPER_ADMIN },
     select: { id: true },
   });
-
-  if (!adminRole) {
-    throw new Error(
-      'SUPER_ADMIN role not found. Run "vp run prisma:seed" before bootstrapping admin.',
-    );
+  if (!superRole) {
+    throw new Error('SUPER_ADMIN role is not initialized. Run "prisma:seed" first.');
   }
 
-  const existingRole = await prisma.userRoles.findFirst({
-    where: {
-      user_id: user.id,
-      role_id: adminRole.id,
-      revoked_at: null,
-    },
+  const existing = await prisma.systemUser.findUnique({
+    where: { account: config.account },
     select: { id: true },
   });
 
-  if (!existingRole) {
-    await prisma.userRoles.create({
+  if (!existing) {
+    await prisma.systemUser.create({
       data: {
-        user_id: user.id,
-        role_id: adminRole.id,
+        account: config.account,
+        password: await hashPassword(config.password),
+        username: config.account,
+        nickname: config.account,
+        status: 'active',
+        userRoles: { create: { roleId: superRole.id } },
       },
+      select: { id: true },
     });
+    console.log('✓ 已创建超级管理员账号');
+    return;
   }
 
-  console.log('Bootstrap SUPER_ADMIN role assigned.');
+  await prisma.$transaction(async (tx) => {
+    await tx.systemUser.update({
+      where: { id: existing.id },
+      data: {
+        status: 'active',
+        ...(config.resetPassword ? { password: await hashPassword(config.password) } : {}),
+      },
+      select: { id: true },
+    });
+    await tx.userRole.createMany({
+      data: [{ userId: existing.id, roleId: superRole.id }],
+      skipDuplicates: true,
+    });
+  });
+  console.log(
+    config.resetPassword
+      ? '✓ 超级管理员账号已存在：已确保 SUPER_ADMIN 角色并重置密码'
+      : '✓ 超级管理员账号已存在：已确保 SUPER_ADMIN 角色，密码保持不变',
+  );
 }
 
-main()
-  .catch((error) => {
-    console.error('Bootstrap admin failed:', error);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-    await pool.end();
-  });
+// 依赖 SUPER_ADMIN 角色，全新库需先执行 prisma:seed。
+// 账号与密码不会打印到日志，也不要写进仓库里的任何文件。
+runSeed('超级管理员初始化', async (prisma) => {
+  const config = readConfig();
+  if (!config) {
+    console.log('BOOTSTRAP_ADMIN_ACCOUNT / BOOTSTRAP_ADMIN_PASSWORD are not set. Skipping.');
+    return;
+  }
+
+  await assertTablesExist(prisma, REQUIRED_TABLES, 'prisma:bootstrap-admin');
+  await ensureBootstrapAdmin(prisma, config);
+});

@@ -40,9 +40,6 @@ FROM deps AS builder
 # rewrites 的转发目标在构建期写进 routes-manifest，db-service 内网地址必须是 build-arg
 ARG API_INTERNAL_ORIGIN=http://db-service:8072
 ENV API_INTERNAL_ORIGIN=${API_INTERNAL_ORIGIN}
-# NEXT_PUBLIC_ 变量在 next build 时内联进客户端代码，运行期注入无效；留空则前台不展示后台入口
-ARG NEXT_PUBLIC_ADMIN_URL=
-ENV NEXT_PUBLIC_ADMIN_URL=${NEXT_PUBLIC_ADMIN_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_OPTIONS="--max-old-space-size=3072"
 

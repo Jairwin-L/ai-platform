@@ -4,6 +4,8 @@ import type { RateLimitRule } from '@/infra/rate-limit/rate-limit.service';
 
 export const REALM_KEY = 'auth:realm';
 export const PERMISSIONS_KEY = 'auth:permissions';
+export const ANY_PERMISSIONS_KEY = 'auth:any-permissions';
+export const ALLOW_RESTRICTED_KEY = 'auth:allow-restricted';
 export const RATE_LIMIT_KEY = 'rate-limit:rule';
 export const BYOK_SECURITY_KEY = 'byok:security';
 export const AUTH_OPTIONAL_KEY = 'auth:optional';
@@ -19,6 +21,10 @@ export interface ByokSecurityOptions {
 export const Realm = (realm: SessionRealm) => SetMetadata(REALM_KEY, realm);
 export const RequirePermissions = (...permissions: string[]) =>
   SetMetadata(PERMISSIONS_KEY, permissions);
+export const RequireAnyPermissions = (...permissions: string[]) =>
+  SetMetadata(ANY_PERMISSIONS_KEY, permissions);
 export const RateLimit = (rule: RateLimitRule) => SetMetadata(RATE_LIMIT_KEY, rule);
 /** 会话可选：有有效会话时注入 request.user，没有时匿名放行 */
 export const AuthOptional = () => SetMetadata(AUTH_OPTIONAL_KEY, true);
+/** 受限的平台用户默认只能发只读请求，标注后放行该写接口（如重置密码） */
+export const AllowRestricted = () => SetMetadata(ALLOW_RESTRICTED_KEY, true);

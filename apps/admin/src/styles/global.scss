@@ -1,6 +1,7 @@
+// 挂载节点用属性选择器撑满高度：效果与 #admin 相同，但不引入 ID 选择器的高优先级
 html,
 body,
-#admin {
+[id='admin'] {
   height: 100%;
   margin: 0;
 }

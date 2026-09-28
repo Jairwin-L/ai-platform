@@ -22,6 +22,8 @@
     "prisma:push": "vp exec dotenv -e .env -- vp exec prisma db push",
     "prisma:seed:deploy": "vp exec tsx prisma/data/main.ts",
     "prisma:seed": "vp exec dotenv -e .env -- vp exec tsx prisma/data/main.ts",
+    "prisma:seed:menu": "vp exec dotenv -e .env -- vp exec tsx prisma/data/menu/seed.ts",
+    "prisma:seed:role": "vp exec dotenv -e .env -- vp exec tsx prisma/data/role/seed.ts",
     "prisma:setup": "vpr prisma:push && vpr prisma:seed",
     "prisma:bootstrap-admin:deploy": "vp exec tsx prisma/data/bootstrap-admin.ts",
     "prisma:bootstrap-admin": "vp exec dotenv -e .env -- vp exec tsx prisma/data/bootstrap-admin.ts",

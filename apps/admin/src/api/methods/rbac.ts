@@ -1,71 +1,144 @@
 /**
- * @file 用户、角色、权限接口，对应 apps/db-service 的 Users / Roles / Permissions 控制器。
+ * @file RBAC 接口，对应 apps/db-service 的 Permissions / Roles / Users / UserRoles / PlatformUsers 控制器。
  */
 import { RBAC } from '../const';
 import { del, get, post, put } from '../request';
 
-export type AdminPermission = IApiAdmin.AdminPermission;
-export type AdminRole = IApiAdmin.AdminRole & { permissionsTree?: AdminPermission[] };
+export type PermissionKind = IApiAdmin.PermissionKind;
+export type RbacPermission = IApiAdmin.ResourceNode;
+export type RbacRole = IApiAdmin.RbacRole;
+export type RbacUser = IApiAdmin.RbacUser;
+export type RoleUser = IApiAdmin.RoleUser;
+export type PlatformUser = IApiAdmin.PlatformUser;
+export type PlatformUserStatus = IApiAdmin.PlatformUserStatus;
+export type PlatformUserStatusPayload = IApiAdmin.PlatformUserStatusPayload;
 export type PermissionPayload = IApiAdmin.PermissionPayload;
 export type RolePayload = IApiAdmin.RolePayload;
-export type UserListItem = IApiUsers.UserListItem;
-export type UserProfile = IApiUsers.UserProfile;
 export type UserStatus = IApiUsers.UserStatus;
 export type PaginatedData<T> = IHttpCommon.PaginatedData<T>;
 
-export function getUsers(params: IApiUsers.UserListParams = {}) {
-  return get<PaginatedData<UserListItem>>(RBAC.USERS, params);
+/**
+ * @title 菜单资源
+ */
+export function getRbacPermissions(params: IApiAdmin.PermissionListParams = {}) {
+  return get<PaginatedData<RbacPermission>>(RBAC.PERMISSIONS, {
+    page: 1,
+    pageSize: 1000,
+    ...params,
+  });
 }
 
-export function getUser(id: string) {
-  return get<UserProfile>(`${RBAC.USERS}/${encodeURIComponent(id)}`);
+export function getRbacPermission(id: string) {
+  return get<RbacPermission>(`${RBAC.PERMISSIONS}/${encodeURIComponent(id)}`);
 }
 
-export function updateUser(id: string, payload: IApiUsers.UserUpdatePayload) {
-  return put<UserProfile>(`${RBAC.USERS}/${encodeURIComponent(id)}`, { ...payload });
+export function createRbacPermission(payload: PermissionPayload) {
+  return post<RbacPermission>(RBAC.PERMISSIONS, { ...payload });
 }
 
-export function getRoles(params: IApiAdmin.ListParams = {}) {
-  return get<PaginatedData<AdminRole>>(RBAC.ROLES, { ...params });
+export function updateRbacPermission(id: string, payload: Partial<PermissionPayload>) {
+  return put<RbacPermission>(`${RBAC.PERMISSIONS}/${encodeURIComponent(id)}`, { ...payload });
 }
 
-export function getRole(id: string) {
-  return get<AdminRole>(`${RBAC.ROLES}/${id}`);
+export function deleteRbacPermission(id: string) {
+  return del<{ id: string }>(`${RBAC.PERMISSIONS}/${encodeURIComponent(id)}`);
 }
 
-export function createRole(payload: RolePayload) {
-  return post<AdminRole>(RBAC.ROLES, { ...payload });
+/**
+ * @title 角色
+ */
+export function getRbacRoles() {
+  return get<RbacRole[]>(RBAC.ROLES);
 }
 
-export function updateRole(id: string, payload: RolePayload) {
-  return put<AdminRole>(`${RBAC.ROLES}/${id}`, { ...payload });
+export function getRbacRolePage(params: {
+  enable?: boolean;
+  page?: number;
+  pageSize?: number;
+  searchTerm?: string;
+}) {
+  return get<PaginatedData<RbacRole>>(RBAC.ROLE_PAGE, params);
 }
 
-export function deleteRole(id: string) {
-  return del<{ id: string }>(`${RBAC.ROLES}/${id}`);
+export function getRoleUsers(roleId: string) {
+  return get<RoleUser[]>(RBAC.ROLE_USER_LIST, { id: roleId });
 }
 
-export function getPermissions(params: IApiAdmin.ListParams = {}) {
-  return get<PaginatedData<AdminPermission>>(RBAC.PERMISSIONS, { ...params });
+export function setRoleUsers(roleId: string, userIds: string[]) {
+  return post<{ roleId: string; userIds: string[] }>(RBAC.ROLE_SET_USER, { roleId, userIds });
 }
 
-/** 权限树：角色授权与上级权限选择都需要整棵树 */
-export function getPermissionTree() {
-  return getPermissions({ tree: true, page: 1, pageSize: 1000 });
+export function createRbacRole(payload: RolePayload) {
+  return post<RbacRole>(RBAC.ROLES, { ...payload });
 }
 
-export function getPermission(id: string) {
-  return get<AdminPermission>(`${RBAC.PERMISSIONS}/${id}`);
+export function updateRbacRole(id: string, payload: Partial<RolePayload>) {
+  return put<RbacRole>(RBAC.ROLES, { id, ...payload });
 }
 
-export function createPermission(payload: PermissionPayload) {
-  return post<AdminPermission>(RBAC.PERMISSIONS, { ...payload });
+export function deleteRbacRole(id: string) {
+  return del<null>(RBAC.ROLES, { params: { id } });
 }
 
-export function updatePermission(id: string, payload: PermissionPayload) {
-  return put<AdminPermission>(`${RBAC.PERMISSIONS}/${id}`, { ...payload });
+/**
+ * @title 系统用户
+ */
+export function getRbacUsers(params: {
+  page?: number;
+  pageSize?: number;
+  searchTerm?: string;
+  roleId?: string;
+}) {
+  return get<PaginatedData<RbacUser>>(RBAC.USERS, params);
 }
 
-export function deletePermission(id: string) {
-  return del<{ id: string }>(`${RBAC.PERMISSIONS}/${id}`);
+export function getRbacUser(id: string) {
+  return get<RbacUser>(`${RBAC.USERS}/${encodeURIComponent(id)}`);
+}
+
+export function createRbacUser(payload: IApiAdmin.CreateUserPayload) {
+  return post<RbacUser>(RBAC.USERS, { ...payload });
+}
+
+export function updateRbacUser(id: string, payload: IApiAdmin.UpdateUserPayload) {
+  return put<RbacUser>(`${RBAC.USERS}/${encodeURIComponent(id)}`, { ...payload });
+}
+
+export function resetRbacUserPassword(id: string, password: string) {
+  return put<{ id: string }>(`${RBAC.USERS}/${encodeURIComponent(id)}`, { password });
+}
+
+export function deleteRbacUser(id: string) {
+  return del<{ id: string }>(`${RBAC.USERS}/${encodeURIComponent(id)}`);
+}
+
+export function deleteRbacUsers(ids: string[]) {
+  return del<{ ids: string[] }>(RBAC.USERS, { data: { ids } });
+}
+
+/** 编辑用户时与资料接口并发发出，成功提示交给资料接口，避免连弹两条 */
+export function updateRbacUserRoles(userId: string, roleIds: string[]) {
+  return post<{ userId: string; roles: IApiAdmin.RoleRef[] }>(
+    RBAC.USER_ROLES,
+    { userId, roleIds },
+    { silentSuccess: true },
+  );
+}
+
+/**
+ * @title 平台注册用户
+ */
+export function getPlatformUsers(params: {
+  page?: number;
+  pageSize?: number;
+  searchTerm?: string;
+  status?: PlatformUserStatus;
+}) {
+  return get<PaginatedData<PlatformUser>>(RBAC.PLATFORM_USERS, params);
+}
+
+export function updatePlatformUserStatus(id: string, payload: PlatformUserStatusPayload) {
+  return put<PlatformUser>(`${RBAC.PLATFORM_USERS}/${encodeURIComponent(id)}/status`, {
+    ...payload,
+  });
 }

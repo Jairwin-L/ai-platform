@@ -51,13 +51,13 @@ export const resetPasswordSchema = z
   .strict();
 
 /**
- * 管理后台登录。
+ * 管理端登录：系统用户只按 account 登录，没有邮箱。
  *
  * encrypted=true 时 password 是 RSA 密文，长度校验放到解密之后，这里只挡超长输入。
  */
 export const adminLoginSchema = z
   .object({
-    email: emailSchema,
+    account: z.string().trim().min(1, '请输入账号').max(100),
     password: z.string().min(1, '请输入密码').max(2000),
     encrypted: z.boolean().optional(),
   })

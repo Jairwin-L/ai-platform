@@ -7,9 +7,12 @@ enum UserStatusType {
 }
 
 enum PermissionType {
+  directory
+  menu
+  button
   system
-  page
   module
+  page
   operation
   data
 }

@@ -1,15 +1,9 @@
 declare namespace IHooks {
-  type PermissionCode = string;
-
   interface PermissionResult {
     isLoading: boolean;
     isReady: boolean;
     user: IApiAuth.AuthUser | null;
     clearSession: () => void;
-    hasPermission: (code: PermissionCode) => boolean;
-    hasAnyPermission: (codes: PermissionCode[]) => boolean;
-    hasAllPermissions: (codes: PermissionCode[]) => boolean;
-    hasRole: (role: string) => boolean;
     setCurrentUserProfile: (profile: IApiUsers.UserProfile) => void;
   }
 

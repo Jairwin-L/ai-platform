@@ -1,6 +1,6 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { PermissionAuth } from '@/common/decorators/auth.decorator';
+import { Auth } from '@/common/decorators/auth.decorator';
 import { success } from '@/common/http/api-result';
 import { presignedRequestSchema, type PresignedRequestInput } from './schemas';
 import { UploadService } from './upload.service';
@@ -13,7 +13,7 @@ export class UploadController {
 
   @Post('presigned')
   @HttpCode(200)
-  @PermissionAuth('UPLOAD:CREATE')
+  @Auth()
   @ApiOperation({ summary: 'Generate presigned upload URLs for Cloudflare R2' })
   async presigned(@Body({ schema: presignedRequestSchema }) body: PresignedRequestInput) {
     return success(await this.upload.createPresignedUrls(body), '预签名上传地址生成成功');

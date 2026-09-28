@@ -1,55 +1,158 @@
 declare namespace IApiAdmin {
-  interface AdminRole {
-    code: string;
-    created_at: string;
-    description: string | null;
+  /** 管理端权限资源类型：directory / menu 生成侧边栏，button 是按钮 / 接口级权限码 */
+  type PermissionKind =
+    | 'directory'
+    | 'menu'
+    | 'button'
+    | 'system'
+    | 'module'
+    | 'page'
+    | 'operation'
+    | 'data';
+
+  /** 管理端权限资源节点，与 db-service 的 Permission 表结构一致 */
+  interface ResourceNode {
     id: string;
-    is_system: boolean;
+    code: string;
     name: string;
-    permission_count: number;
-    permissions?: string[];
-    status: 'ENABLED' | 'DISABLED';
-    updated_at: string;
-    user_count: number;
+    description: string | null;
+    path: string | null;
+    icon: string | null;
+    isShow: boolean;
+    enable: boolean;
+    keepAlive: boolean;
+    sort: number;
+    type: PermissionKind;
+    isSystem: boolean;
+    parentId: string | null;
+    createdAt: string;
+    updatedAt: string;
+    children?: ResourceNode[];
   }
 
-  interface AdminPermission {
-    children?: AdminPermission[];
-    code: string;
-    created_at?: string;
-    description: string | null;
+  /** 当前登录的系统账号：系统用户只有登录账号，没有邮箱 */
+  interface AuthAccount {
     id: string;
-    name: string;
-    parent_id: string | null;
-    type: PermissionType;
-    updated_at?: string;
+    account: string;
+    username: string | null;
+    nickname: string | null;
+    avatar: string | null;
+    roles: string[];
+    permissions: string[];
+    createdAt: string;
+    updatedAt: string;
   }
 
-  type PermissionType = 'data' | 'module' | 'operation' | 'page' | 'system';
+  type RoleStatus = 'ENABLED' | 'DISABLED';
 
-  interface ListParams {
+  interface RoleRef {
+    id: string;
+    code: string;
+    name: string;
+  }
+
+  interface RbacRole extends RoleRef {
+    description: string | null;
+    remark: string | null;
+    enable: boolean;
+    status: RoleStatus;
+    isSystem: boolean;
+    permissions: Array<Pick<ResourceNode, 'id' | 'code' | 'name'>>;
+    userCount: number;
+    createdAt: string;
+    updatedAt: string;
+  }
+
+  interface RbacUser {
+    id: string;
+    account: string;
+    username: string | null;
+    nickname: string | null;
+    avatar: string | null;
+    remark: string | null;
+    status: IApiUsers.UserStatus;
+    lastLoginAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+    roles: RoleRef[];
+  }
+
+  type RoleUser = Pick<
+    RbacUser,
+    'id' | 'account' | 'avatar' | 'createdAt' | 'lastLoginAt' | 'nickname' | 'status' | 'username'
+  >;
+
+  /** 平台用户只有正常、受限、已封禁、已停用四种状态 */
+  type PlatformUserStatus = 'active' | 'restricted' | 'banned' | 'inactive';
+
+  interface PlatformUser {
+    id: string;
+    email: string | null;
+    nickname: string | null;
+    avatar: string | null;
+    bio: string | null;
+    status: PlatformUserStatus;
+    statusReason: string | null;
+    statusExpiresAt: string | null;
+    lastLoginAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+  }
+
+  interface PlatformUserStatusPayload {
+    status: PlatformUserStatus;
+    reason?: string | null;
+    expiresAt?: string | null;
+  }
+
+  interface PermissionListParams {
+    tree?: boolean;
+    searchTerm?: string;
+    type?: PermissionKind;
     page?: number;
     pageSize?: number;
-    searchTerm?: string;
-    tree?: boolean;
-    type?: PermissionType | 'all';
-  }
-
-  interface RolePayload {
-    code: string;
-    description?: string;
-    is_system?: boolean;
-    name: string;
-    permissions?: string[];
-    status?: AdminRole['status'];
   }
 
   interface PermissionPayload {
     code: string;
-    description?: string;
     name: string;
-    parent_id: number | null;
-    type: PermissionType;
+    description?: string | null;
+    type: PermissionKind;
+    parentId?: string | null;
+    path?: string | null;
+    icon?: string | null;
+    isShow?: boolean;
+    enable?: boolean;
+    keepAlive?: boolean;
+    sort?: number;
+  }
+
+  interface RolePayload {
+    code: string;
+    name: string;
+    description?: string;
+    remark?: string;
+    enable?: boolean;
+    permissionIds?: string[];
+  }
+
+  interface CreateUserPayload {
+    account: string;
+    password: string;
+    username: string;
+    nickname?: string | null;
+    remark?: string | null;
+    status?: IApiUsers.UserStatus;
+    roleIds: string[];
+  }
+
+  interface UpdateUserPayload {
+    account?: string;
+    username?: string | null;
+    nickname?: string | null;
+    avatar?: string | null;
+    remark?: string | null;
+    status?: IApiUsers.UserStatus;
   }
 
   interface SystemSettings {

@@ -1,30 +1,31 @@
+/// 平台注册用户：只走前台邮箱注册 / 登录，没有角色体系；管理端账号见 SystemUser。
 model Users {
-  id             String         @id
-  full_name      String?
-  nick_name      String?
-  user_name      String?        @unique
-  picture        String?
-  email          String?        @unique
-  email_verified Boolean?       @default(false)
-  password_hash  String?
-  bio            String?
-  status         UserStatusType @default(active)
-  is_deleted     Boolean        @default(false)
-  deleted_at     DateTime?      @db.Timestamptz(6)
-  last_login_at  DateTime?      @db.Timestamptz(6)
-  created_at     DateTime       @default(now()) @db.Timestamptz(6)
-  updated_at     DateTime       @default(now()) @db.Timestamptz(6)
+  id                String         @id
+  full_name         String?
+  nick_name         String?
+  user_name         String?        @unique
+  picture           String?
+  email             String?        @unique
+  email_verified    Boolean?       @default(false)
+  password_hash     String?
+  bio               String?
+  status            UserStatusType @default(active)
+  /// 后台限制 / 停用 / 封禁时填写的原因，会展示给用户本人
+  status_reason     String?        @db.VarChar(255)
+  /// 受限 / 封禁的截止时间；为空表示需要后台手动恢复，到期后自动恢复为 active
+  status_expires_at DateTime?      @db.Timestamptz(6)
+  is_deleted        Boolean        @default(false)
+  deleted_at        DateTime?      @db.Timestamptz(6)
+  last_login_at     DateTime?      @db.Timestamptz(6)
+  created_at        DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime       @default(now()) @db.Timestamptz(6)
 
-  user_roles               UserRoles[]
-  sessions                 UserSessions[]
-  roles_created            Roles[]     @relation("RoleCreatedBy")
-  roles_updated            Roles[]     @relation("RoleUpdatedBy")
-  role_assignments_made    UserRoles[] @relation("UserRoleAssignedBy")
-  role_assignments_revoked UserRoles[] @relation("UserRoleRevokedBy")
-  ai_provider_configs      AiProviderConfig[]
-  chat_conversations       ChatConversation[]
-  ai_usage                 AiUsage[]
+  sessions            UserSessions[]
+  ai_provider_configs AiProviderConfig[]
+  chat_conversations  ChatConversation[]
+  ai_usage            AiUsage[]
 
+  @@index([status])
   @@map("users")
 }
 
@@ -42,28 +43,35 @@ model UserSessions {
   @@map("user_sessions")
 }
 
-model UserRoles {
-  id               Int       @id @default(autoincrement())
-  user_id          String
-  role_id          Int
-  valid_from       DateTime? @db.Timestamptz(6)
-  valid_until      DateTime? @db.Timestamptz(6)
-  assigned_by      String?
-  assigned_at      DateTime  @default(now()) @db.Timestamptz(6)
-  revoked_by       String?
-  revoked_at       DateTime? @db.Timestamptz(6)
-  created_at       DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
-  assigned_by_user Users?    @relation("UserRoleAssignedBy", fields: [assigned_by], references: [id], onDelete: SetNull)
-  revoked_by_user  Users?    @relation("UserRoleRevokedBy", fields: [revoked_by], references: [id], onDelete: SetNull)
-  role             Roles     @relation(fields: [role_id], references: [id])
-  user             Users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+/// 后台系统用户：只按 account 登录管理端，与平台用户分表，两边账号空间互不占用。
+model SystemUser {
+  id          String         @id @default(cuid())
+  account     String         @unique @db.VarChar(100)
+  password    String
+  username    String?        @db.VarChar(100)
+  nickname    String?
+  avatar      String?
+  remark      String?        @db.VarChar(255)
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  lastLoginAt DateTime?      @map("last_login_at") @db.Timestamptz(6)
+  status      UserStatusType @default(active)
+  userRoles   UserRole[]
 
-  @@index([assigned_by])
-  @@index([revoked_by])
-  @@index([revoked_at])
-  @@index([role_id])
-  @@index([user_id])
-  @@index([valid_from, valid_until])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("system_users")
+}
+
+model UserRole {
+  id        String     @id @default(cuid())
+  userId    String     @map("user_id")
+  roleId    String     @map("role_id")
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  role      Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user      SystemUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([roleId])
   @@map("user_roles")
 }

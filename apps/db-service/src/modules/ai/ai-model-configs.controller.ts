@@ -24,14 +24,14 @@ type ModelConfigUpdateInput = z.infer<typeof modelConfigUpdateSchema>;
 @Controller('platform/ai/model-configs')
 export class AiModelConfigsController {
   @Get()
-  @AiAuth('AI:SETTINGS:VIEW')
+  @AiAuth()
   @ApiOperation({ summary: 'List available model configs derived from saved BYOK credentials' })
   async list(@CurrentUser() user: AuthUser) {
     return success(await listModelConfigs(user.userId));
   }
 
   @Post()
-  @AiAuth('AI:SETTINGS:MANAGE')
+  @AiAuth()
   @ApiOperation({ summary: 'Create a model config' })
   async create(
     @CurrentUser() user: AuthUser,
@@ -43,7 +43,7 @@ export class AiModelConfigsController {
   /** 设置默认模型：走 BYOK 安全链路（写入 Redis 中的用户偏好） */
   @Post('default')
   @HttpCode(200)
-  @ByokAuth('AI:SETTINGS:MANAGE', { requireJson: true, requireOrigin: true })
+  @ByokAuth({ requireJson: true, requireOrigin: true })
   @ApiOperation({ summary: 'Set the default model' })
   async setDefault(@CurrentUser() user: AuthUser, @Body() body: unknown) {
     const input = parseLimitedJsonBody(body, defaultModelConfigSchema);
@@ -62,7 +62,7 @@ export class AiModelConfigsController {
   }
 
   @Patch(':id')
-  @AiAuth('AI:SETTINGS:MANAGE')
+  @AiAuth()
   @ApiOperation({ summary: 'Update a model config' })
   async update(
     @CurrentUser() user: AuthUser,
@@ -73,7 +73,7 @@ export class AiModelConfigsController {
   }
 
   @Delete(':id')
-  @AiAuth('AI:SETTINGS:MANAGE')
+  @AiAuth()
   @ApiOperation({ summary: 'Delete a model config' })
   async remove(@CurrentUser() user: AuthUser, @Param('id', { schema: idSchema }) id: string) {
     await deleteModelConfig(user.userId, id);

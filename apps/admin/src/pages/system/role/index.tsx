@@ -1,109 +1,73 @@
-import { useCallback, useMemo } from 'react';
-import { Link } from 'react-router';
-import { Button, Input, Popconfirm, Space, Table, Tag, Tooltip, type TableColumnsType } from 'antd';
-import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
-import { RoleCode } from '@ai/constants/roles';
-import { deleteRole, getRoles, type AdminRole } from '@/api/methods/rbac';
-import { EMPTY_PLACEHOLDER } from '@/constants/biz';
-import { useTable, type AdminTableQuery } from '@/hooks';
+import { useCallback, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
+import { Button, Input, Select, Table } from 'antd';
+import { PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
+import { PERMISSION_CODE } from '@ai/constants/permissions';
+import { deleteRbacRole, getRbacRolePage, updateRbacRole, type RbacRole } from '@/api/methods/rbac';
+import RoleUserAssignModal from '@/components/role-user-assign-modal';
+import { usePermission, useTable, type AdminTableQuery } from '@/hooks';
 import pageCss from '@/styles/page.module.scss';
-import { formatDateTime } from '@/utils';
+import { getRoleColumns } from './columns';
 
-/** 这两个角色只能由 seed / bootstrap 维护，列表里不提供编辑入口 */
-const PROTECTED_ROLE_CODES = new Set<string>([RoleCode.SUPER_ADMIN, RoleCode.SITE_USER]);
+const ENABLE_FILTER_OPTIONS = [
+  { label: '启用', value: 'true' },
+  { label: '停用', value: 'false' },
+];
 
 export default function RoleListPage() {
-  const fetcher = useCallback(async ({ page, pageSize, searchTerm }: AdminTableQuery) => {
-    const result = await getRoles({ page, pageSize, searchTerm });
-    return { list: result.data, total: result.total };
-  }, []);
-  const table = useTable<AdminRole>({ fetcher });
-  const { runAction } = table;
+  const navigate = useNavigate();
+  const can = usePermission();
+  // 未选表示不按状态筛选
+  const [filterEnable, setFilterEnable] = useState<boolean>();
+  const [assignRole, setAssignRole] = useState<RbacRole | null>(null);
+  const filters = useMemo(() => ({ enable: filterEnable }), [filterEnable]);
 
-  const columns = useMemo<TableColumnsType<AdminRole>>(
-    () => [
-      {
-        title: '角色',
-        dataIndex: 'name',
-        width: 240,
-        render: (name: string, role) => (
-          <Space orientation="vertical" size={2}>
-            <strong>{name}</strong>
-            <Space size={4} wrap>
-              <Tag>{role.code}</Tag>
-              {role.is_system ? <Tag color="processing">系统角色</Tag> : null}
-              {role.status === 'DISABLED' ? <Tag color="warning">已停用</Tag> : null}
-            </Space>
-          </Space>
-        ),
-      },
-      {
-        title: '说明',
-        dataIndex: 'description',
-        render: (value: string | null) => (
-          <span className={pageCss.muted}>{value || EMPTY_PLACEHOLDER}</span>
-        ),
-      },
-      { title: '关联用户', dataIndex: 'user_count', width: 100, align: 'center' },
-      { title: '授权数量', dataIndex: 'permission_count', width: 100, align: 'center' },
-      {
-        title: '更新时间',
-        dataIndex: 'updated_at',
-        width: 170,
-        render: (value: string) => <span className={pageCss.muted}>{formatDateTime(value)}</span>,
-      },
-      {
-        title: '操作',
-        key: 'actions',
-        width: 110,
-        fixed: 'right',
-        render: (_, role) => (
-          <div className={pageCss.actions}>
-            <Tooltip title={PROTECTED_ROLE_CODES.has(role.code) ? '内置角色由 seed 维护' : '编辑'}>
-              <Link to={`/system/role/edit/${role.id}`}>
-                <Button
-                  disabled={PROTECTED_ROLE_CODES.has(role.code)}
-                  icon={<EditOutlined />}
-                  size="small"
-                  type="text"
-                />
-              </Link>
-            </Tooltip>
-            <Popconfirm
-              cancelText="取消"
-              description="删除后无法恢复，且会移除该角色的授权关联。"
-              disabled={role.is_system}
-              okText="删除"
-              title={`删除「${role.name}」吗？`}
-              onConfirm={() => runAction(() => deleteRole(role.id))}
-            >
-              <Button
-                danger
-                disabled={role.is_system}
-                icon={<DeleteOutlined />}
-                size="small"
-                type="text"
-              />
-            </Popconfirm>
-          </div>
-        ),
-      },
-    ],
-    [runAction],
+  const fetcher = useCallback(
+    async ({ page, pageSize, searchTerm }: AdminTableQuery) => {
+      const result = await getRbacRolePage({ page, pageSize, searchTerm, enable: filterEnable });
+      return { list: result.data, total: result.total };
+    },
+    [filterEnable],
   );
+  const table = useTable<RbacRole>({ fetcher, filters });
+  const { reload, runAction } = table;
+
+  const columns = useMemo(
+    () =>
+      getRoleColumns({
+        can,
+        onEdit: (role) => {
+          void navigate(`/system/role/edit/${role.id}`);
+        },
+        onOpenAssignUser: setAssignRole,
+        onRemove: (role) => runAction(() => deleteRbacRole(role.id)),
+        onToggleState: (role) => runAction(() => updateRbacRole(role.id, { enable: !role.enable })),
+      }),
+    [can, navigate, runAction],
+  );
+
+  const onCloseAssignModal = (saved: boolean) => {
+    setAssignRole(null);
+    // 关联用户数跟着变了
+    if (saved) reload().catch(() => undefined);
+  };
 
   return (
     <div className={pageCss.page}>
       <section className={pageCss.heading}>
         <div>
           <h1>角色管理</h1>
-          <p>维护系统职责以及每个职责可授予的权限范围。</p>
+          <p>维护系统职责、每个职责可授予的菜单与按钮权限，以及角色下的系统用户。</p>
         </div>
-        <Link to="/system/role/create">
-          <Button icon={<PlusOutlined />} type="primary">
+        {can(PERMISSION_CODE.OPERATION.ROLE.CREATE) ? (
+          <Button
+            icon={<PlusOutlined />}
+            type="primary"
+            onClick={() => navigate('/system/role/create')}
+          >
             新建角色
           </Button>
-        </Link>
+        ) : null}
       </section>
       <section className={pageCss.panel}>
         <div className={pageCss.filters}>
@@ -111,19 +75,37 @@ export default function RoleListPage() {
             allowClear
             className={pageCss.search}
             enterButton={<SearchOutlined />}
-            placeholder="按角色编码、名称或说明搜索"
+            placeholder="按角色名称、编码或说明搜索"
             value={table.searchInput}
             onChange={(event) => table.setSearchInput(event.target.value)}
             onSearch={table.submitSearch}
           />
+          <Select<string>
+            allowClear
+            options={ENABLE_FILTER_OPTIONS}
+            placeholder="全部状态"
+            style={{ width: 140 }}
+            value={filterEnable === undefined ? undefined : String(filterEnable)}
+            onChange={(value?: string) =>
+              setFilterEnable(value === undefined ? undefined : value === 'true')
+            }
+          />
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              reload().catch(() => undefined);
+            }}
+          >
+            刷新
+          </Button>
         </div>
         <div className={pageCss.table}>
-          <Table
+          <Table<RbacRole>
             columns={columns}
             dataSource={table.list}
             loading={table.loading}
             rowKey="id"
-            scroll={{ x: 960 }}
+            scroll={{ x: 1100 }}
             pagination={{
               current: table.page,
               pageSize: table.pageSize,
@@ -134,6 +116,7 @@ export default function RoleListPage() {
           />
         </div>
       </section>
+      <RoleUserAssignModal role={assignRole} onClose={onCloseAssignModal} />
     </div>
   );
 }

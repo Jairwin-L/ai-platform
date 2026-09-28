@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Button, Form, Input, Select, Skeleton, Switch, TreeSelect } from 'antd';
+import { Button, Form, Input, Skeleton, Switch, TreeSelect } from 'antd';
+import { PERMISSION_CODE } from '@ai/constants/permissions';
+import { RoleCode } from '@ai/constants/roles';
 import {
-  createRole,
-  getPermissionTree,
-  getRole,
-  updateRole,
-  type AdminPermission,
+  createRbacRole,
+  getRbacPermissions,
+  getRbacRoles,
+  updateRbacRole,
+  type RbacPermission,
+  type RbacRole,
 } from '@/api/methods/rbac';
-import { useLiteDebounced } from '@/hooks';
+import { useLiteDebounced, usePermission } from '@/hooks';
 import pageCss from '@/styles/page.module.scss';
-import { EDITABLE_ROLE_CODES, roleFormSchema, type RoleFormValues } from './schemas';
 import { getFormFieldErrors } from '@/utils/form';
+import { roleFormSchema, type RoleFormValues } from './schemas';
 
 interface PermissionTreeNode {
   title: string;
@@ -22,16 +25,15 @@ interface PermissionTreeNode {
 const DEFAULT_VALUES: RoleFormValues = {
   code: '',
   name: '',
+  enable: true,
   description: '',
-  is_system: false,
-  status: 'ENABLED',
-  permissions: [],
+  remark: '',
+  permissionIds: [],
 };
 
-const ROLE_CODE_OPTIONS = EDITABLE_ROLE_CODES.map((code) => ({ label: code, value: code }));
 const LIST_PATH = '/system/role';
 
-function toTreeNodes(nodes: AdminPermission[]): PermissionTreeNode[] {
+function toTreeNodes(nodes: RbacPermission[]): PermissionTreeNode[] {
   return nodes.map((permission) => ({
     title: `${permission.name} · ${permission.code}`,
     value: permission.id,
@@ -41,35 +43,43 @@ function toTreeNodes(nodes: AdminPermission[]): PermissionTreeNode[] {
 
 export default function RoleForm({ roleId }: { roleId?: string }) {
   const navigate = useNavigate();
+  const can = usePermission();
   const [form] = Form.useForm<RoleFormValues>();
   const [permissionTree, setPermissionTree] = useState<PermissionTreeNode[]>([]);
+  const [isSuperAdminRole, setIsSuperAdminRole] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const isEditing = Boolean(roleId);
+  // 编辑时改启停需要单独的 ROLE_SET_STATE，新建时随表单一起提交即可
+  const canToggleState = !isEditing || can(PERMISSION_CODE.OPERATION.ROLE.SET_STATE);
 
   useEffect(() => {
     let active = true;
 
     async function loadForm() {
       setLoading(true);
-      const [treeResult, roleResult] = await Promise.allSettled([
-        getPermissionTree(),
-        roleId ? getRole(roleId) : Promise.resolve(null),
+      const [treeResult, rolesResult] = await Promise.allSettled([
+        getRbacPermissions({ tree: true }),
+        roleId ? getRbacRoles() : Promise.resolve<RbacRole[]>([]),
       ]);
       if (!active) return;
 
       if (treeResult.status === 'fulfilled') {
         setPermissionTree(toTreeNodes(treeResult.value.data));
       }
-      if (roleResult.status === 'fulfilled' && roleResult.value) {
-        const role = roleResult.value;
+      const role =
+        rolesResult.status === 'fulfilled'
+          ? rolesResult.value.find((item) => item.id === roleId)
+          : undefined;
+      if (role) {
+        setIsSuperAdminRole(role.code === RoleCode.SUPER_ADMIN);
         form.setFieldsValue({
           code: role.code,
           name: role.name,
+          enable: role.enable,
           description: role.description ?? '',
-          is_system: role.is_system,
-          status: role.status,
-          permissions: role.permissions ?? [],
+          remark: role.remark ?? '',
+          permissionIds: role.permissions.map((permission) => permission.id),
         });
       } else if (!roleId) {
         form.setFieldsValue(DEFAULT_VALUES);
@@ -93,9 +103,12 @@ export default function RoleForm({ roleId }: { roleId?: string }) {
     setSaving(true);
     try {
       if (roleId) {
-        await updateRole(roleId, parsed.data);
+        // 角色编码创建后不可修改，不再提交；没有启停权限时不提交 enable，否则服务端会再要求一次 ROLE_SET_STATE
+        const { name, description, remark, permissionIds, enable } = parsed.data;
+        const profile = { name, description, remark, permissionIds };
+        await updateRbacRole(roleId, canToggleState ? { ...profile, enable } : profile);
       } else {
-        await createRole(parsed.data);
+        await createRbacRole(parsed.data);
       }
       void navigate(LIST_PATH);
     } catch {
@@ -114,7 +127,11 @@ export default function RoleForm({ roleId }: { roleId?: string }) {
       <section className={pageCss.heading}>
         <div>
           <h1>{isEditing ? '编辑角色' : '新建角色'}</h1>
-          <p>{isEditing ? '更新角色信息和授权范围。' : '创建角色并选择对应的权限范围。'}</p>
+          <p>
+            {isEditing
+              ? '更新角色信息和菜单、按钮授权范围。'
+              : '创建角色并选择可访问的菜单与按钮。'}
+          </p>
         </div>
       </section>
       <section className={pageCss['form-panel']}>
@@ -130,42 +147,50 @@ export default function RoleForm({ roleId }: { roleId?: string }) {
           <Form.Item
             label="角色编码"
             name="code"
-            rules={[{ required: true, message: '请选择角色编码' }]}
+            normalize={(value?: string) => value?.toUpperCase()}
+            rules={[{ required: true, whitespace: true, message: '请输入角色编码' }]}
+            extra={isEditing ? '角色编码参与鉴权，创建后不可修改' : undefined}
           >
-            <Select options={ROLE_CODE_OPTIONS} placeholder="选择系统定义的角色编码" />
+            <Input disabled={isEditing} maxLength={50} placeholder="例如：CONTENT_REVIEWER" />
           </Form.Item>
           <Form.Item
             label="角色名称"
             name="name"
             rules={[{ required: true, whitespace: true, message: '请输入角色名称' }]}
           >
-            <Input maxLength={80} placeholder="例如：操作员" />
+            <Input maxLength={50} placeholder="例如：内容审核员" />
           </Form.Item>
-          <Form.Item label="角色说明" name="description">
-            <Input.TextArea maxLength={240} rows={3} showCount />
-          </Form.Item>
-          <Form.Item
-            label="系统角色"
-            name="is_system"
-            valuePropName="checked"
-            extra="系统角色不可删除"
-          >
-            <Switch checkedChildren="是" unCheckedChildren="否" />
-          </Form.Item>
-          <Form.Item label="状态" name="status">
-            <Select
-              options={[
-                { label: '启用', value: 'ENABLED' },
-                { label: '停用', value: 'DISABLED' },
-              ]}
+          <Form.Item label="启用状态" name="enable" valuePropName="checked">
+            <Switch
+              checkedChildren="启用"
+              disabled={isSuperAdminRole || !canToggleState}
+              unCheckedChildren="停用"
             />
           </Form.Item>
-          <Form.Item label="权限" name="permissions">
+          <Form.Item label="角色说明" name="description">
+            <Input.TextArea maxLength={255} rows={3} showCount />
+          </Form.Item>
+          <Form.Item label="备注" name="remark">
+            <Input.TextArea maxLength={255} rows={2} showCount />
+          </Form.Item>
+          <Form.Item
+            label="资源权限"
+            name="permissionIds"
+            extra={
+              isSuperAdminRole
+                ? '超级管理员天然拥有全部已启用的权限，这里的勾选不影响鉴权。'
+                : '勾选的菜单与按钮会一并保存；非超级管理员只能授予自己已拥有的权限。'
+            }
+          >
+            {/*
+              父子节点都要提交：服务端按按钮权限码逐个鉴权，
+              只存父节点（SHOW_PARENT）会让勾满的菜单下所有按钮权限都不生效
+            */}
             <TreeSelect
               allowClear
               maxTagCount="responsive"
               multiple
-              placeholder="选择此角色可用的权限"
+              placeholder="选择此角色可用的菜单与按钮"
               showCheckedStrategy={TreeSelect.SHOW_ALL}
               treeCheckable
               treeData={permissionTree}

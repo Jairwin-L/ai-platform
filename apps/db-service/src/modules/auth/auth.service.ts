@@ -1,9 +1,8 @@
 import crypto from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { RoleCode } from '@ai/constants/roles';
-import { SITE_PERMISSION_CODES } from '@ai/constants/permissions';
-import { AUTH_ERROR, COMMON_ERROR, DATA_ERROR } from '@ai/constants/error-codes';
+import type { Prisma } from '@/generated/prisma/client';
+import { AUTH_ERROR, COMMON_ERROR, DATA_ERROR, USER_ERROR } from '@ai/constants/error-codes';
 import { PrismaService } from '@/infra/prisma/prisma.service';
 import { PermissionsService } from '@/infra/permissions/permissions.service';
 import {
@@ -27,7 +26,12 @@ import {
 } from '@/infra/crypto/password';
 import { decryptLoginPassword, getLoginRsaPublicKey } from '@/infra/crypto/login-rsa';
 import { logger } from '@/infra/logger/logger';
+import {
+  getEffectiveStatusFields,
+  recoverExpiredPlatformUsers,
+} from '@/infra/permissions/platform-user-status';
 import { ApiException } from '@/common/http/api-exception';
+import { getAccountStatusMessage } from '@/common/http/account-status-message';
 import { isUniqueConstraintError } from '@/common/utils/prisma-error';
 import type {
   AdminLoginInput,
@@ -61,20 +65,35 @@ const authUserSelect = {
   nick_name: true,
   picture: true,
   status: true,
+  status_reason: true,
+  status_expires_at: true,
   is_deleted: true,
-} as const;
+} satisfies Prisma.UsersSelect;
 
-interface AuthUserRow {
-  id: string;
-  email: string | null;
-  email_verified: boolean | null;
-  nick_name: string | null;
-  picture: string | null;
-  status: string;
-}
+type AuthUserRow = Prisma.UsersGetPayload<{ select: typeof authUserSelect }>;
 
-/** 与迁移前 /api/me、/api/sign-in 返回的 AuthPayload 结构保持一致 */
-function toAuthPayload(user: AuthUserRow, roles: string[], permissions: string[]) {
+/** 登录只做认证，账号资料由管理端随后请求 /auth/me 获取 */
+const systemLoginSelect = {
+  id: true,
+  password: true,
+  status: true,
+} satisfies Prisma.SystemUserSelect;
+
+const systemAccountSelect = {
+  id: true,
+  account: true,
+  username: true,
+  nickname: true,
+  avatar: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.SystemUserSelect;
+
+/**
+ * 平台用户的登录态：平台用户没有角色体系，不再返回角色与权限码；
+ * 受限用户能登录，前台靠状态、原因与截止时间提示「为什么不能操作」。
+ */
+function toAuthPayload(user: AuthUserRow) {
   return {
     user: {
       id: user.id,
@@ -82,10 +101,8 @@ function toAuthPayload(user: AuthUserRow, roles: string[], permissions: string[]
       emailVerified: user.email_verified,
       nickName: user.nick_name,
       picture: user.picture,
-      status: user.status,
+      ...getEffectiveStatusFields(user),
     },
-    roles,
-    permissions,
   };
 }
 
@@ -142,6 +159,33 @@ export class AuthService {
   }
 
   /**
+   * 平台用户能否登录：到期的限制 / 封禁先惰性恢复；受限用户仍可登录浏览，写操作由 SessionGuard 拦截，
+   * 其余非正常状态拒绝，并把后台填写的原因与解除时间告诉用户本人。
+   */
+  private async assertPlatformUserCanSignIn(user: AuthUserRow): Promise<void> {
+    if (user.is_deleted) {
+      throw new ApiException(AUTH_ERROR.FORBIDDEN, '账号不可用', null, 403);
+    }
+
+    const effective = getEffectiveStatusFields(user);
+    if (effective.status !== user.status) {
+      await recoverExpiredPlatformUsers(this.prisma, { id: user.id });
+      await this.permissions.invalidateUserAuthCache(user.id, 'user');
+    }
+    if (effective.status !== 'active' && effective.status !== 'restricted') {
+      throw new ApiException(
+        AUTH_ERROR.ACCOUNT_DISABLED,
+        getAccountStatusMessage(effective.status, {
+          reason: effective.statusReason,
+          expiresAt: effective.statusExpiresAt,
+        }),
+        null,
+        403,
+      );
+    }
+  }
+
+  /**
    * 登录 / 注册验证码。注册时邮箱已存在直接 409；登录时邮箱未注册 404、账号不可用 403，
    * 与迁移前 /api/code 的行为保持一致。
    */
@@ -159,9 +203,7 @@ export class AuthService {
       if (!user) {
         throw new ApiException(DATA_ERROR.NOT_FOUND, '该邮箱未注册', null, 404);
       }
-      if (user.is_deleted || user.status !== 'active') {
-        throw new ApiException(AUTH_ERROR.FORBIDDEN, '账号不可用', null, 403);
-      }
+      await this.assertPlatformUserCanSignIn(user);
     }
 
     await this.issueAndSendCode(email, body.purpose);
@@ -180,31 +222,17 @@ export class AuthService {
       throw new ApiException(COMMON_ERROR.VALIDATION_ERROR, '验证码无效或已过期', null, 422);
     }
 
-    const passwordHash = await hashPassword(body.password);
-
     try {
-      await this.prisma.$transaction(async (tx) => {
-        const siteRole = await tx.roles.upsert({
-          where: { code: RoleCode.SITE_USER },
-          update: { updated_at: new Date() },
-          create: {
-            code: RoleCode.SITE_USER,
-            name: '站点用户',
-            description: '默认拥有站点全部功能权限',
-            is_system: true,
-            status: 'ENABLED',
-          },
-        });
-        const user = await tx.users.create({
-          data: {
-            id: crypto.randomUUID(),
-            email,
-            email_verified: true,
-            password_hash: passwordHash,
-            status: 'active',
-          },
-        });
-        await tx.userRoles.create({ data: { user_id: user.id, role_id: siteRole.id } });
+      // 平台注册用户不挂角色：角色体系只属于管理端的系统用户
+      await this.prisma.users.create({
+        data: {
+          id: crypto.randomUUID(),
+          email,
+          email_verified: true,
+          password_hash: await hashPassword(body.password),
+          status: 'active',
+        },
+        select: { id: true },
       });
     } catch (error) {
       // 查重与创建之间被并发注册抢先，按邮箱已存在处理，而不是报 500
@@ -221,7 +249,8 @@ export class AuthService {
    * 前台登录：密码或邮箱验证码两种方式。
    *
    * 账号不存在返回 404「该邮箱未注册」是迁移前的既有交互（登录页据此引导注册），这里保留；
-   * 密码错误与验证码错误统一 401，并对账号维度限流。
+   * 密码错误与验证码错误统一 401，并对账号维度限流。账号状态检查放在凭证校验之后，
+   * 否则未通过认证的人也能探测出某个邮箱已被封禁。
    */
   async signIn(body: SignInInput, response: Response) {
     const email = normalizeEmail(body.email);
@@ -230,9 +259,6 @@ export class AuthService {
     const user = await this.findUserByEmail(email);
     if (!user) {
       throw new ApiException(DATA_ERROR.NOT_FOUND, '该邮箱未注册', null, 404);
-    }
-    if (user.is_deleted || user.status !== 'active') {
-      throw new ApiException(AUTH_ERROR.FORBIDDEN, '账号不可用', null, 403);
     }
 
     if (body.method === 'password') {
@@ -252,15 +278,12 @@ export class AuthService {
       throw new ApiException(AUTH_ERROR.UNAUTHORIZED, '邮箱或登录凭证错误', null, 401);
     }
 
-    // 迁移前每次鉴权都会顺手补齐站点角色，这里收敛到登录时补一次
-    if (await this.ensureSiteRoleForUser(user.id)) {
-      await this.permissions.invalidateUserAuthCache(user.id);
-    }
+    await this.assertPlatformUserCanSignIn(user);
 
-    await this.prisma.users.update({
+    const signedIn = await this.prisma.users.update({
       where: { id: user.id },
       data: { last_login_at: new Date(), updated_at: new Date() },
-      select: { id: true },
+      select: authUserSelect,
     });
 
     const sessionId = await this.session.createSession(
@@ -269,72 +292,7 @@ export class AuthService {
     );
     this.session.setSessionCookie(response, sessionId, 'user');
 
-    const { roles, permissions } = await this.permissions.getUserRolesAndPermissions(user.id);
-    return toAuthPayload(user, roles, permissions);
-  }
-
-  /**
-   * 保证用户持有 SITE_USER 角色、该角色持有全部站点权限。
-   *
-   * @returns 是否有改动（有改动时调用方要失效权限缓存）
-   */
-  private async ensureSiteRoleForUser(userId: string): Promise<boolean> {
-    let changed = false;
-    const siteRole = await this.prisma.roles.upsert({
-      where: { code: RoleCode.SITE_USER },
-      update: {},
-      create: {
-        code: RoleCode.SITE_USER,
-        name: '站点用户',
-        description: '默认拥有站点全部功能权限',
-        is_system: true,
-        status: 'ENABLED',
-      },
-      select: { id: true },
-    });
-
-    const sitePermissions = await this.prisma.permissions.findMany({
-      where: { code: { in: SITE_PERMISSION_CODES } },
-      select: { id: true },
-    });
-    if (sitePermissions.length > 0) {
-      const existing = await this.prisma.rolePermissions.findMany({
-        where: {
-          role_id: siteRole.id,
-          permission_id: { in: sitePermissions.map((permission) => permission.id) },
-        },
-        select: { permission_id: true },
-      });
-      const existingIds = new Set(existing.map((item) => item.permission_id));
-      const missing = sitePermissions.filter((permission) => !existingIds.has(permission.id));
-      if (missing.length > 0) {
-        await this.prisma.rolePermissions.createMany({
-          data: missing.map((permission) => ({
-            role_id: siteRole.id,
-            permission_id: permission.id,
-          })),
-          skipDuplicates: true,
-        });
-        // 角色权限变化影响所有站点用户
-        await this.permissions.invalidateAllAuthCache();
-        changed = true;
-      }
-    }
-
-    const assigned = await this.prisma.userRoles.findFirst({
-      where: { user_id: userId, role_id: siteRole.id, revoked_at: null },
-      select: { id: true },
-    });
-    if (!assigned) {
-      // 并发登录可能同时走到这里，由 user_roles_effective_period_no_overlap 约束兜底，冲突时跳过而不是 500
-      const { count } = await this.prisma.userRoles.createMany({
-        data: [{ user_id: userId, role_id: siteRole.id }],
-        skipDuplicates: true,
-      });
-      if (count > 0) changed = true;
-    }
-
-    return changed;
+    return toAuthPayload(signedIn);
   }
 
   async signOut(request: Request, response: Response, realm: SessionRealm): Promise<null> {
@@ -346,7 +304,7 @@ export class AuthService {
     return null;
   }
 
-  /** 当前登录用户：守卫已复核账号状态并算好角色权限，这里只补资料字段 */
+  /** 前台当前登录用户：守卫已复核账号状态，这里只补资料字段 */
   async getAuthPayload(user: AuthUser) {
     const dbUser = await this.prisma.users.findUnique({
       where: { id: user.userId },
@@ -355,7 +313,24 @@ export class AuthService {
     if (!dbUser || dbUser.is_deleted) {
       throw new ApiException(AUTH_ERROR.UNAUTHORIZED, undefined, null, 401);
     }
-    return toAuthPayload(dbUser, user.roles, user.permissions);
+    return toAuthPayload(dbUser);
+  }
+
+  /** 管理端当前登录的系统账号：守卫已解出会话并算好角色权限（走缓存），这里只补资料字段 */
+  async getCurrentSystemAccount(user: AuthUser) {
+    const systemUser = await this.prisma.systemUser.findUnique({
+      where: { id: user.userId },
+      select: systemAccountSelect,
+    });
+    if (!systemUser) {
+      throw new ApiException(USER_ERROR.NOT_FOUND, undefined, null, 404);
+    }
+
+    return {
+      ...systemUser,
+      roles: user.roles,
+      permissions: user.permissions,
+    };
   }
 
   /** 已登录用户重置密码：验证码发往账号绑定的邮箱 */
@@ -379,16 +354,10 @@ export class AuthService {
       select: { id: true },
     });
 
-    // 改密后作废该账号在两端的全部会话，与迁移前「撤销全部 session 并要求重新登录」一致；
-    // 密码已经落库，作废失败只记日志
-    const results = await Promise.allSettled([
-      this.session.destroyUserSessions(user.userId, 'user'),
-      this.session.destroyUserSessions(user.userId, 'admin'),
-    ]);
-    results.forEach((result) => {
-      if (result.status === 'rejected') {
-        logger.error({ error: result.reason, userId: user.userId }, '[auth] 改密后作废会话失败');
-      }
+    // 改密后作废该账号的全部前台会话，与迁移前「撤销全部 session 并要求重新登录」一致；
+    // 管理端是独立的系统用户账号，不受影响。密码已经落库，作废失败只记日志
+    await this.session.destroyUserSessions(user.userId, 'user').catch((error: unknown) => {
+      logger.error({ error, userId: user.userId }, '[auth] 改密后作废会话失败');
     });
     this.session.clearSessionCookie(response, 'user');
     return null;
@@ -416,37 +385,41 @@ export class AuthService {
   }
 
   /**
-   * 管理后台登录：只负责认证与下发 admin 会话 Cookie，账号信息由随后的 /auth/me 给出。
+   * 管理端登录：只负责认证与下发 admin 会话 Cookie，账号信息由随后的 /auth/me 给出。
    *
-   * 账号不存在、没有密码、密码错误统一返回同一个 401，且都消耗一次等价的 scrypt 计算，
+   * 账号不存在与密码错误统一返回同一个 401，且都消耗一次等价的 scrypt 计算，
    * 避免通过响应码或耗时枚举后台账号；状态与角色检查放在密码校验之后。
    */
   async adminLogin(body: AdminLoginInput, response: Response): Promise<null> {
-    const email = normalizeEmail(body.email);
     const password = this.resolveAdminPassword(body.password, body.encrypted);
 
-    await this.consumeAccountRateLimit(email, ADMIN_LOGIN_ACCOUNT_RATE_LIMIT);
+    await this.consumeAccountRateLimit(body.account.toLowerCase(), ADMIN_LOGIN_ACCOUNT_RATE_LIMIT);
 
-    const user = await this.findUserByEmail(email);
-    if (!user || !isSupportedPasswordHash(user.password_hash)) {
+    const user = await this.prisma.systemUser.findUnique({
+      where: { account: body.account },
+      select: systemLoginSelect,
+    });
+    if (!user) {
       await burnPasswordVerification(password);
       throw new ApiException(AUTH_ERROR.LOGIN_FAILED, '账号或密码错误', null, 401);
     }
-    if (!(await verifyPassword(password, user.password_hash))) {
+    if (!(await verifyPassword(password, user.password))) {
       throw new ApiException(AUTH_ERROR.LOGIN_FAILED, '账号或密码错误', null, 401);
     }
-    if (user.is_deleted || user.status !== 'active') {
+    if (user.status !== 'active') {
       throw new ApiException(AUTH_ERROR.ACCOUNT_DISABLED, undefined, null, 403);
     }
 
-    const { canAccessAdmin } = await this.permissions.getUserRolesAndPermissions(user.id);
+    // 持有任一已启用的系统角色即可登录；能看到哪些菜单、调用哪些接口由权限码决定。
+    // 没有角色或角色全被停用的账号进不了管理端
+    const { canAccessAdmin } = await this.permissions.getUserRolesAndPermissions(user.id, 'admin');
     if (!canAccessAdmin) {
-      throw new ApiException(AUTH_ERROR.FORBIDDEN, '当前账号没有管理后台访问权限', null, 403);
+      throw new ApiException(AUTH_ERROR.FORBIDDEN, '当前账号没有管理端访问权限', null, 403);
     }
 
-    await this.prisma.users.update({
+    await this.prisma.systemUser.update({
       where: { id: user.id },
-      data: { last_login_at: new Date() },
+      data: { lastLoginAt: new Date() },
       select: { id: true },
     });
     const sessionId = await this.session.createSession(

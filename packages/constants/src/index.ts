@@ -11,12 +11,7 @@ export {
   VERIFICATION_CODE_TTL_SECONDS,
 } from './auth';
 export { ALLOW_FILE_TYPE } from './file';
-export {
-  getMissingPermissionMessage,
-  getPermissionDisplayName,
-  PERMISSION_DISPLAY_NAMES,
-  SITE_PERMISSION_CODES,
-} from './permissions';
+export { PERMISSION_CODE } from './permissions';
 export { R2_BUCKET_URL } from './r2';
 export { ADMIN_ROLE_CODES, RoleCode, SYSTEM_ROLE_CODES } from './roles';
 export * from './error-codes';

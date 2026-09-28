@@ -45,7 +45,7 @@ export class ThirdPartyCredentialsController {
   }
 
   @Post()
-  @ByokAuth(undefined, { requireJson: true, requireOrigin: true })
+  @ByokAuth({ requireJson: true, requireOrigin: true })
   @ApiOperation({ summary: 'Save or overwrite a third-party service credential' })
   async save(
     @CurrentUser() user: AuthUser,
@@ -89,7 +89,7 @@ export class ThirdPartyCredentialsController {
   }
 
   @Delete(':credentialId')
-  @ByokAuth(undefined, { requireOrigin: true })
+  @ByokAuth({ requireOrigin: true })
   @ApiOperation({ summary: 'Delete a third-party service credential' })
   async remove(
     @CurrentUser() user: AuthUser,

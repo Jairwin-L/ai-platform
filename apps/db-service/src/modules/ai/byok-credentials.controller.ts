@@ -32,7 +32,7 @@ import {
 @Controller('platform/user/ai-credentials')
 export class ByokCredentialsController {
   @Get()
-  @ByokAuth('AI:SETTINGS:VIEW')
+  @ByokAuth()
   @ApiOperation({ summary: 'List saved AI credentials (masked)' })
   async list(@CurrentUser() user: AuthUser) {
     const result = await listUserApiCredentials(user.userId);
@@ -40,7 +40,7 @@ export class ByokCredentialsController {
   }
 
   @Post()
-  @ByokAuth('AI:SETTINGS:MANAGE', { requireJson: true, requireOrigin: true })
+  @ByokAuth({ requireJson: true, requireOrigin: true })
   @ApiOperation({ summary: 'Save or overwrite an AI credential' })
   async save(
     @CurrentUser() user: AuthUser,
@@ -77,7 +77,7 @@ export class ByokCredentialsController {
   }
 
   @Delete(':credentialId')
-  @ByokAuth('AI:SETTINGS:MANAGE', { requireOrigin: true })
+  @ByokAuth({ requireOrigin: true })
   @ApiOperation({ summary: 'Delete an AI credential' })
   async remove(
     @CurrentUser() user: AuthUser,

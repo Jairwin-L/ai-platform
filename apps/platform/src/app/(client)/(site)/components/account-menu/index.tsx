@@ -6,16 +6,9 @@ import { Dropdown, Skeleton } from 'antd';
 import type { MenuProps } from 'antd';
 import { signOut } from '@/api/modules/auth';
 import type { AuthUser } from '@/api/modules/auth';
-import { ADMIN_ROLE_CODES } from '@ai/constants';
 import { useDebounced } from '@/hooks/use-debounced';
 import { usePermission } from '@/hooks/use-permission';
 import styles from './index.module.scss';
-
-/**
- * 管理后台是独立部署的站点（apps/admin），地址在构建期注入；
- * 未配置时不显示入口。真正的访问控制在 db-service 的 admin 会话上。
- */
-const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL?.trim();
 
 function getDisplayName(user: AuthUser | null): string {
   return user?.nickName || user?.email || '我的账号';
@@ -29,7 +22,7 @@ function getAvatarText(user: AuthUser | null): string {
 export function AccountMenu() {
   const pathname = usePathname();
   const router = useRouter();
-  const { clearSession, hasRole, isReady, user } = usePermission();
+  const { clearSession, isReady, user } = usePermission();
   const [avatarFailed, setAvatarFailed] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -78,11 +71,6 @@ export function AccountMenu() {
       return;
     }
 
-    if (key === 'ADMIN_PANEL' && ADMIN_URL) {
-      window.open(ADMIN_URL, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
     if (key === 'SIGN_OUT') {
       debouncedSignOutCurrentUser();
     }
@@ -90,13 +78,10 @@ export function AccountMenu() {
 
   const displayName = getDisplayName(user);
   const shouldShowAvatarImage = Boolean(user?.picture && !avatarFailed);
-  const canOpenAdmin = Boolean(ADMIN_URL) && ADMIN_ROLE_CODES.some((role) => hasRole(role));
   const menuItems: MenuProps['items'] = [
     { key: 'ACCOUNT', label: '我的账户' },
     { key: 'AI_SETTING', label: 'AI 密钥' },
     { key: 'THIRD_PARTY_SERVICE', label: '第三方服务凭据' },
-    { type: 'divider' },
-    ...(canOpenAdmin ? [{ key: 'ADMIN_PANEL', label: '管理系统' }] : []),
     { type: 'divider' },
     {
       key: 'SIGN_OUT',

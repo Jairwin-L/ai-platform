@@ -1,7 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { DATA_ERROR } from '@ai/constants/error-codes';
-import { AdminAuth } from '@/common/decorators/auth.decorator';
+import { PERMISSION_CODE } from '@ai/constants/permissions';
+import { AdminAnyPermissionAuth, AdminPermissionAuth } from '@/common/decorators/auth.decorator';
 import { ApiException } from '@/common/http/api-exception';
 import { success } from '@/common/http/api-result';
 import {
@@ -25,14 +26,16 @@ function isStoreError(error: unknown, code: string): boolean {
   return error instanceof Error && error.message === code;
 }
 
+const { THIRD_PARTY_SERVICE } = PERMISSION_CODE.OPERATION;
+
 /**
- * 管理后台：维护用户第三方服务凭据页可选择的服务。迁移前同样没有鉴权，现在要求 admin 会话。
+ * 管理后台：维护用户第三方服务凭据页可选择的服务。迁移前同样没有鉴权，现在按 THIRD_PARTY_SERVICE_* 权限码鉴权。
  */
 @ApiTags('Third-party Services')
 @Controller('third-party-services')
-@AdminAuth()
 export class ThirdPartyServicesController {
   @Get()
+  @AdminAnyPermissionAuth(THIRD_PARTY_SERVICE.READ, THIRD_PARTY_SERVICE.WRITE)
   @ApiOperation({ summary: 'List third-party service options' })
   async list() {
     try {
@@ -48,6 +51,7 @@ export class ThirdPartyServicesController {
   }
 
   @Post()
+  @AdminPermissionAuth(THIRD_PARTY_SERVICE.WRITE)
   @ApiOperation({ summary: 'Create a third-party service option' })
   async create(
     @Body({ schema: thirdPartyServiceOptionSchema }) body: ThirdPartyServiceOptionInput,
@@ -69,6 +73,7 @@ export class ThirdPartyServicesController {
   }
 
   @Put()
+  @AdminPermissionAuth(THIRD_PARTY_SERVICE.WRITE)
   @ApiOperation({ summary: 'Replace all third-party service options' })
   async replaceAll(
     @Body({ schema: thirdPartyServiceOptionsSchema }) body: ThirdPartyServiceOptionsInput,
@@ -87,6 +92,7 @@ export class ThirdPartyServicesController {
   }
 
   @Get(':service')
+  @AdminAnyPermissionAuth(THIRD_PARTY_SERVICE.READ, THIRD_PARTY_SERVICE.WRITE)
   @ApiOperation({ summary: 'Get a third-party service option' })
   async findOne(@Param('service', { schema: serviceValueParam }) service: string) {
     let option: Awaited<ReturnType<typeof getStoredThirdPartyServiceOption>>;
@@ -107,6 +113,7 @@ export class ThirdPartyServicesController {
   }
 
   @Put(':service')
+  @AdminPermissionAuth(THIRD_PARTY_SERVICE.WRITE)
   @ApiOperation({ summary: 'Update a third-party service option' })
   async update(
     @Param('service', { schema: serviceValueParam }) service: string,
@@ -132,6 +139,7 @@ export class ThirdPartyServicesController {
   }
 
   @Delete(':service')
+  @AdminPermissionAuth(THIRD_PARTY_SERVICE.WRITE)
   @ApiOperation({ summary: 'Delete a third-party service option' })
   async remove(@Param('service', { schema: serviceValueParam }) service: string) {
     try {

@@ -42,6 +42,11 @@ export function pageSizeQuery(defaultSize = DEFAULT_PAGE_SIZE, maxSize = MAX_PAG
   );
 }
 
+/** 必填的查询参数文本：去空白后必须非空，缺失或为空返回 400 */
+export function requiredQueryText(message: string) {
+  return z.preprocess(firstQueryValue, z.string(message).trim().min(1, message));
+}
+
 /** 搜索关键字：去空白，空串按未传处理 */
 export const searchTermQuery = z.preprocess(
   firstQueryValue,

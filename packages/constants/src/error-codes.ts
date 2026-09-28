@@ -17,6 +17,24 @@ export const AUTH_ERROR = {
   ACCOUNT_DISABLED: { code: 'AUTH_ACCOUNT_DISABLED', message: '账号不可用' },
 } as const;
 
+export const USER_ERROR = {
+  NOT_FOUND: { code: 'USER_NOT_FOUND', message: '用户不存在' },
+  UPDATE_FAILED: { code: 'USER_UPDATE_FAILED', message: '用户信息更新失败' },
+  CREATE_FAILED: { code: 'USER_CREATE_FAILED', message: '用户创建失败' },
+  DELETE_FAILED: { code: 'USER_DELETE_FAILED', message: '用户删除失败' },
+} as const;
+
+export const ROLE_PERMISSION_ERROR = {
+  ROLE_NOT_FOUND: { code: 'ROLE_NOT_FOUND', message: '角色不存在' },
+  PERMISSION_NOT_FOUND: { code: 'PERMISSION_NOT_FOUND', message: '权限不存在' },
+  PERMISSION_CREATE_FAILED: { code: 'PERMISSION_CREATE_FAILED', message: '权限创建失败' },
+  PERMISSION_UPDATE_FAILED: { code: 'PERMISSION_UPDATE_FAILED', message: '权限更新失败' },
+  ROLE_NAME_DUPLICATE: { code: 'ROLE_NAME_DUPLICATE', message: '角色名称或编码已存在' },
+  PERMISSION_CODE_DUPLICATE: { code: 'PERMISSION_CODE_DUPLICATE', message: '权限编码已存在' },
+  ROLE_BUILTIN: { code: 'ROLE_BUILTIN', message: '内置角色不可修改' },
+  PERMISSION_IN_USE: { code: 'PERMISSION_IN_USE', message: '请先删除下级资源' },
+} as const;
+
 export const DATA_ERROR = {
   NOT_FOUND: { code: 'DATA_NOT_FOUND', message: '数据不存在' },
   CREATE_FAILED: { code: 'DATA_CREATE_FAILED', message: '数据创建失败' },
@@ -37,7 +55,14 @@ export const FILE_ERROR = {
   STORAGE_ERROR: { code: 'FILE_STORAGE_ERROR', message: '存储服务错误' },
 } as const;
 
-export const ERROR_CODE_GROUPS = [COMMON_ERROR, AUTH_ERROR, DATA_ERROR, FILE_ERROR] as const;
+export const ERROR_CODE_GROUPS = [
+  COMMON_ERROR,
+  AUTH_ERROR,
+  USER_ERROR,
+  ROLE_PERMISSION_ERROR,
+  DATA_ERROR,
+  FILE_ERROR,
+] as const;
 
 type ErrorCode = string;
 

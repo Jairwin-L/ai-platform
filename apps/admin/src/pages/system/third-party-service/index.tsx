@@ -23,7 +23,8 @@ import {
   updateThirdPartyServiceOption,
   type ThirdPartyServiceOption,
 } from '@/api/methods/settings';
-import { useLiteDebounced } from '@/hooks';
+import { PERMISSION_CODE } from '@ai/constants/permissions';
+import { useLiteDebounced, usePermission } from '@/hooks';
 import pageCss from '@/styles/page.module.scss';
 
 function filterOptions(
@@ -42,6 +43,9 @@ function filterOptions(
 
 export default function ThirdPartyServiceListPage() {
   const [options, setOptions] = useState<ThirdPartyServiceOption[]>([]);
+  const can = usePermission();
+  // 只读账号能看列表，但新增、编辑、启停、删除都要 THIRD_PARTY_SERVICE_WRITE
+  const canWrite = can(PERMISSION_CODE.OPERATION.THIRD_PARTY_SERVICE.WRITE);
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -112,6 +116,7 @@ export default function ThirdPartyServiceListPage() {
         render: (enabled: boolean, option) => (
           <Switch
             checked={enabled}
+            disabled={!canWrite}
             checkedChildren="启用"
             loading={updating === option.value}
             unCheckedChildren="停用"
@@ -150,7 +155,7 @@ export default function ThirdPartyServiceListPage() {
         ),
       },
     ],
-    [onRemove, onToggleEnabled, updating],
+    [canWrite, onRemove, onToggleEnabled, updating],
   );
 
   return (
@@ -160,11 +165,13 @@ export default function ThirdPartyServiceListPage() {
           <h1>第三方服务</h1>
           <p>配置用户第三方服务 API 凭据页面可选择的服务。</p>
         </div>
-        <Link to="/system/third-party-service/create">
-          <Button icon={<PlusOutlined />} type="primary">
-            新增服务
-          </Button>
-        </Link>
+        {canWrite ? (
+          <Link to="/system/third-party-service/create">
+            <Button icon={<PlusOutlined />} type="primary">
+              新增服务
+            </Button>
+          </Link>
+        ) : null}
       </section>
       <section className={pageCss.panel}>
         <div className={pageCss.filters}>
@@ -183,7 +190,7 @@ export default function ThirdPartyServiceListPage() {
         </div>
         <div className={pageCss.table}>
           <Table
-            columns={columns}
+            columns={canWrite ? columns : columns.filter((column) => column.key !== 'actions')}
             dataSource={filteredOptions}
             loading={loading}
             pagination={false}

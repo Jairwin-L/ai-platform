@@ -24,7 +24,11 @@ Optional environment variables:
   POSTGRES_UPGRADE_MODE  Set to "dump-restore" to run PostgreSQL major upgrade before migrations.
   PRISMA_SYNC_COMMAND    Override Prisma sync command. Defaults to "vp run prisma:sync:deploy".
   PRISMA_SEED_COMMAND    Override Prisma seed command. Defaults to "vp run prisma:seed:deploy".
-  BOOTSTRAP_ADMIN_EMAIL  Email address that should receive the admin role. May be provided by the env file.
+                         Menu / role (RBAC) seeds only run when RBAC data is not initialized yet.
+  FORCE_MENU_SEED        Set to "true" to re-sync menu / button resources from prisma/data/menu (one-off).
+  FORCE_ROLE_SEED        Set to "true" to reset seeded roles from prisma/data/role (one-off).
+  BOOTSTRAP_ADMIN_ACCOUNT / BOOTSTRAP_ADMIN_PASSWORD
+                         Super admin system account to create or repair. May be provided by the env file.
   BOOTSTRAP_ADMIN_COMMAND
                          Override admin bootstrap command. Defaults to "vp run prisma:bootstrap-admin:deploy".
 
@@ -330,7 +334,9 @@ postgres_image="${POSTGRES_IMAGE:-$(read_env_value POSTGRES_IMAGE)}"
 postgres_old_image="${POSTGRES_OLD_IMAGE:-$(read_env_value POSTGRES_OLD_IMAGE)}"
 postgres_old_data_target="${POSTGRES_OLD_DATA_TARGET:-$(read_env_value POSTGRES_OLD_DATA_TARGET)}"
 postgres_upgrade_mode="${POSTGRES_UPGRADE_MODE:-$(read_env_value POSTGRES_UPGRADE_MODE)}"
-bootstrap_admin_email="${BOOTSTRAP_ADMIN_EMAIL:-$(read_env_value BOOTSTRAP_ADMIN_EMAIL)}"
+bootstrap_admin_account="${BOOTSTRAP_ADMIN_ACCOUNT:-$(read_env_value BOOTSTRAP_ADMIN_ACCOUNT)}"
+bootstrap_admin_password="${BOOTSTRAP_ADMIN_PASSWORD:-$(read_env_value BOOTSTRAP_ADMIN_PASSWORD)}"
+bootstrap_admin_reset_password="${BOOTSTRAP_ADMIN_RESET_PASSWORD:-$(read_env_value BOOTSTRAP_ADMIN_RESET_PASSWORD)}"
 postgres_image="${postgres_image:-${default_postgres_image}}"
 postgres_old_image="${postgres_old_image:-postgres:16-alpine}"
 target_postgres_major="$(get_postgres_major "${postgres_image}")"
@@ -413,9 +419,17 @@ compose pull "${compose_service}" "${api_service}" migrate postgres
 compose up -d --no-build postgres
 
 compose run --rm migrate sh -lc "${prisma_sync_command}"
-compose run --rm migrate sh -lc "${prisma_seed_command}"
-compose run --rm \
-  -e "BOOTSTRAP_ADMIN_EMAIL=${bootstrap_admin_email}" \
+# 菜单 / 角色种子默认只在 RBAC 未初始化时执行，FORCE_* 是本次部署的一次性刷新开关（见 prisma/data/rbac.ts）
+FORCE_MENU_SEED="${FORCE_MENU_SEED:-false}" FORCE_ROLE_SEED="${FORCE_ROLE_SEED:-false}" \
+  compose run --rm -e FORCE_MENU_SEED -e FORCE_ROLE_SEED migrate sh -lc "${prisma_seed_command}"
+# 只传变量名、值从当前进程环境继承：密码不会出现在 docker 命令行参数（ps 可见）里
+BOOTSTRAP_ADMIN_ACCOUNT="${bootstrap_admin_account}" \
+  BOOTSTRAP_ADMIN_PASSWORD="${bootstrap_admin_password}" \
+  BOOTSTRAP_ADMIN_RESET_PASSWORD="${bootstrap_admin_reset_password}" \
+  compose run --rm \
+  -e BOOTSTRAP_ADMIN_ACCOUNT \
+  -e BOOTSTRAP_ADMIN_PASSWORD \
+  -e BOOTSTRAP_ADMIN_RESET_PASSWORD \
   migrate sh -lc "${bootstrap_admin_command}"
 
 # 先起接口服务再起前台：platform 的 SSR 与 rewrites 都依赖 db-service

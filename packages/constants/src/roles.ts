@@ -1,7 +1,7 @@
 export enum RoleCode {
   SUPER_ADMIN = 'SUPER_ADMIN',
   ADMIN = 'ADMIN',
-  SITE_USER = 'SITE_USER',
+  VISITOR = 'VISITOR',
   OPERATOR = 'OPERATOR',
   APPROVER = 'APPROVER',
   AUDITOR = 'AUDITOR',
@@ -10,4 +10,5 @@ export enum RoleCode {
 
 export const SYSTEM_ROLE_CODES = Object.values(RoleCode);
 
-export const ADMIN_ROLE_CODES = [RoleCode.SUPER_ADMIN, RoleCode.ADMIN] as const;
+/** 超级管理员：直接放行全部权限码，角色绑定只能通过 bootstrap 配置 */
+export const ADMIN_ROLE_CODES = [RoleCode.SUPER_ADMIN] as const;

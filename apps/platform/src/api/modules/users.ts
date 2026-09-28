@@ -1,7 +1,6 @@
 import { alovaGet, alovaPut } from '@/api/alova';
 
 export type UserProfile = IApiUsers.UserProfile;
-export type UserProfileRole = IApiUsers.UserProfileRole;
 export type UserStatus = IApiUsers.UserStatus;
 export type UserUpdatePayload = IApiUsers.UserUpdatePayload;
 

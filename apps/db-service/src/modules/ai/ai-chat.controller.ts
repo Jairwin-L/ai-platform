@@ -46,7 +46,7 @@ export class AiChatController {
   /** 直接用已保存的 BYOK 凭据发起一次非流式对话 */
   @Post()
   @HttpCode(200)
-  @ByokAuth('AI:CHAT:USE', { requireJson: true, requireOrigin: true })
+  @ByokAuth({ requireJson: true, requireOrigin: true })
   @ApiOperation({ summary: 'Create a chat completion with a saved BYOK credential' })
   async chat(
     @CurrentUser() user: AuthUser,

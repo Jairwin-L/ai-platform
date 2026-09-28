@@ -26,6 +26,13 @@ export function put<T>(url: string, data?: RequestBody, meta?: RequestMeta): Pro
   return alovaInstance.Put<T>(url, data, { meta }).send();
 }
 
-export function del<T>(url: string, meta?: RequestMeta): Promise<T> {
-  return alovaInstance.Delete<T>(url, undefined, { meta }).send();
+/** DELETE：按 id 删除走查询参数，批量删除的 id 列表放请求体 */
+export function del<T>(
+  url: string,
+  options: { params?: QueryParams; data?: RequestBody } = {},
+  meta?: RequestMeta,
+): Promise<T> {
+  return alovaInstance
+    .Delete<T>(url, options.data, { params: toQueryParams(options.params), meta })
+    .send();
 }

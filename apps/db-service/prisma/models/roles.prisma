@@ -1,33 +1,30 @@
-model Roles {
-  id               Int               @id @default(autoincrement())
-  code             String            @unique
-  name             String
-  description      String?
-  is_system        Boolean           @default(false)
-  status           RoleStatus        @default(ENABLED)
-  created_at       DateTime          @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime          @default(now()) @db.Timestamptz(6)
-  created_by       String?
-  updated_by       String?
-  created_by_user  Users?            @relation("RoleCreatedBy", fields: [created_by], references: [id], onDelete: SetNull)
-  updated_by_user  Users?            @relation("RoleUpdatedBy", fields: [updated_by], references: [id], onDelete: SetNull)
-  role_permissions RolePermissions[]
-  user_roles       UserRoles[]
+model Role {
+  id              String           @id @default(cuid())
+  code            String           @unique @db.VarChar(50)
+  name            String           @unique @db.VarChar(50)
+  description     String?          @db.VarChar(255)
+  remark          String?          @db.VarChar(255)
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSystem        Boolean          @default(false) @map("is_system")
+  enable          Boolean          @default(true)
+  status          RoleStatus       @default(ENABLED)
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
 
-  @@index([created_by])
   @@index([status])
-  @@index([updated_by])
   @@map("roles")
 }
 
-model RolePermissions {
-  id            Int         @id @default(autoincrement())
-  role_id       Int
-  permission_id Int
-  created_at    DateTime    @default(now()) @db.Timestamptz(6)
-  permission    Permissions @relation(fields: [permission_id], references: [id])
-  role          Roles       @relation(fields: [role_id], references: [id])
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String     @map("role_id")
+  permissionId String     @map("permission_id")
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
-  @@unique([role_id, permission_id])
+  @@unique([roleId, permissionId])
+  @@index([permissionId])
   @@map("role_permissions")
 }

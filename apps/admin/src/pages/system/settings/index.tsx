@@ -6,7 +6,8 @@ import {
   updateSystemSettings,
   type SystemSettings,
 } from '@/api/methods/settings';
-import { useLiteDebounced } from '@/hooks';
+import { PERMISSION_CODE } from '@ai/constants/permissions';
+import { useLiteDebounced, usePermission } from '@/hooks';
 import pageCss from '@/styles/page.module.scss';
 import { settingsFormSchema, type SettingsFormValues } from './schemas';
 import { getFormFieldErrors } from '@/utils/form';
@@ -25,6 +26,9 @@ function toFormValues(settings: SystemSettings): SettingsFormValues {
 
 export default function SystemSettingsPage() {
   const [form] = Form.useForm<SettingsFormValues>();
+  const can = usePermission();
+  // 只有 SETTINGS_READ 的账号只读查看，保存按钮不出现
+  const canWrite = can(PERMISSION_CODE.OPERATION.SETTINGS.WRITE);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -75,7 +79,7 @@ export default function SystemSettingsPage() {
       <Card variant="borderless" style={{ maxWidth: 760 }}>
         {/* 表单始终挂载：加载中用遮罩，setFieldsValue 才有已连接的表单实例可写 */}
         <Spin spinning={loading}>
-          <Form form={form} layout="vertical" onFinish={onSubmit}>
+          <Form disabled={!canWrite} form={form} layout="vertical" onFinish={onSubmit}>
             <Tabs
               items={[
                 {
@@ -150,12 +154,14 @@ export default function SystemSettingsPage() {
                 },
               ]}
             />
-            <div className={pageCss['form-actions']}>
-              <Button onClick={onReset}>恢复已保存值</Button>
-              <Button htmlType="submit" icon={<SaveOutlined />} loading={saving} type="primary">
-                保存设置
-              </Button>
-            </div>
+            {canWrite ? (
+              <div className={pageCss['form-actions']}>
+                <Button onClick={onReset}>恢复已保存值</Button>
+                <Button htmlType="submit" icon={<SaveOutlined />} loading={saving} type="primary">
+                  保存设置
+                </Button>
+              </div>
+            ) : null}
           </Form>
         </Spin>
       </Card>

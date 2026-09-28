@@ -25,7 +25,8 @@ import {
   type AiProviderOption,
 } from '@/api/methods/settings';
 import { PROVIDER_PROTOCOL_OPTIONS } from '@/constants/permission';
-import { useLiteDebounced } from '@/hooks';
+import { PERMISSION_CODE } from '@ai/constants/permissions';
+import { useLiteDebounced, usePermission } from '@/hooks';
 import pageCss from '@/styles/page.module.scss';
 
 function getProtocolLabel(protocol: string): string {
@@ -45,6 +46,9 @@ function filterOptions(options: AiProviderOption[], searchTerm: string): AiProvi
 
 export default function AiProviderListPage() {
   const [options, setOptions] = useState<AiProviderOption[]>([]);
+  const can = usePermission();
+  // 只读账号能看列表，但新增、编辑、启停、删除都要 AI_PROVIDER_WRITE
+  const canWrite = can(PERMISSION_CODE.OPERATION.AI_PROVIDER.WRITE);
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -115,6 +119,7 @@ export default function AiProviderListPage() {
         render: (enabled: boolean, option) => (
           <Switch
             checked={enabled}
+            disabled={!canWrite}
             checkedChildren="启用"
             loading={updating === option.value}
             unCheckedChildren="停用"
@@ -174,7 +179,7 @@ export default function AiProviderListPage() {
         ),
       },
     ],
-    [onRemove, onToggleEnabled, updating],
+    [canWrite, onRemove, onToggleEnabled, updating],
   );
 
   return (
@@ -184,11 +189,13 @@ export default function AiProviderListPage() {
           <h1>AI Provider</h1>
           <p>配置用户 AI 密钥页面可选择的 Provider。</p>
         </div>
-        <Link to="/system/ai-provider/create">
-          <Button icon={<PlusOutlined />} type="primary">
-            新增 Provider
-          </Button>
-        </Link>
+        {canWrite ? (
+          <Link to="/system/ai-provider/create">
+            <Button icon={<PlusOutlined />} type="primary">
+              新增 Provider
+            </Button>
+          </Link>
+        ) : null}
       </section>
       <section className={pageCss.panel}>
         <div className={pageCss.filters}>
@@ -207,7 +214,7 @@ export default function AiProviderListPage() {
         </div>
         <div className={pageCss.table}>
           <Table
-            columns={columns}
+            columns={canWrite ? columns : columns.filter((column) => column.key !== 'actions')}
             dataSource={filteredOptions}
             loading={loading}
             pagination={false}
