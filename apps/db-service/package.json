@@ -17,7 +17,6 @@
     "test": "vp test",
     "prisma:generate": "vp exec prisma generate",
     "prisma:deploy": "vp exec prisma migrate deploy",
-    "prisma:sync:deploy": "vp exec tsx prisma/data/sync-deploy.ts",
     "prisma:push:deploy": "vp exec prisma db push",
     "prisma:push": "vp exec dotenv -e .env -- vp exec prisma db push",
     "prisma:seed:deploy": "vp exec tsx prisma/data/main.ts",

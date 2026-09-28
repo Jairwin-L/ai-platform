@@ -188,7 +188,6 @@ prisma:seed:role          # 以 prisma/data/role/data.ts 为准重置种子角�
 prisma:bootstrap-admin    # 按 BOOTSTRAP_ADMIN_ACCOUNT / PASSWORD 创建或补齐超级管理员系统账号
 prisma:studio             # 打开 Prisma Studio
 prisma:deploy             # 部署环境执行已提交的 Prisma migrations
-prisma:sync:deploy        # 部署环境按数据库状态同步结构
 ```
 
 ## Docker

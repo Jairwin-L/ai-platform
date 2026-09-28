@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { RoleCode } from '@ai/constants/roles';
 import { ROLE_PERMISSION_ERROR, USER_ERROR } from '@ai/constants/error-codes';
 import { PrismaService } from '@/infra/prisma/prisma.service';
+import { ID_PREFIX, createId } from '@/lib/id';
 import { PermissionsService } from '@/infra/permissions/permissions.service';
 import { ApiException } from '@/common/http/api-exception';
 import { assertGrantable } from '@/common/utils/permission';
@@ -81,7 +82,9 @@ export class UserRolesService {
     await this.prisma.$transaction(async (tx) => {
       await tx.userRole.deleteMany({ where: { userId } });
       if (roleIds.length > 0) {
-        await tx.userRole.createMany({ data: roleIds.map((roleId) => ({ userId, roleId })) });
+        await tx.userRole.createMany({
+          data: roleIds.map((roleId) => ({ id: createId(ID_PREFIX.userRole), userId, roleId })),
+        });
       }
     });
 

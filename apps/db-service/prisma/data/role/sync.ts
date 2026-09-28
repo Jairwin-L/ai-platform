@@ -1,4 +1,5 @@
 import type { PrismaClient } from '../../../generated/prisma/client';
+import { ID_PREFIX, createId } from '../id';
 import { DEFAULT_ROLES } from './data';
 
 async function loadPermissionIdsByCode(prisma: PrismaClient): Promise<Map<string, string>> {
@@ -42,13 +43,20 @@ async function upsertDefaultRole(
   };
   const role = existingRole
     ? await prisma.role.update({ where: { id: existingRole.id }, data, select: { id: true } })
-    : await prisma.role.create({ data, select: { id: true } });
+    : await prisma.role.create({
+        data: { id: createId(ID_PREFIX.role), ...data },
+        select: { id: true },
+      });
   const permissionIds = roleData.permissionCodes.map((code) => permissionIdsByCode.get(code)!);
 
   await prisma.$transaction(async (tx) => {
     await tx.rolePermission.deleteMany({ where: { roleId: role.id } });
     await tx.rolePermission.createMany({
-      data: permissionIds.map((permissionId) => ({ roleId: role.id, permissionId })),
+      data: permissionIds.map((permissionId) => ({
+        id: createId(ID_PREFIX.rolePermission),
+        roleId: role.id,
+        permissionId,
+      })),
     });
   });
   console.log(`✓ 角色 [${roleData.name}] 已初始化，包含 ${roleData.permissionCodes.length} 个权限`);

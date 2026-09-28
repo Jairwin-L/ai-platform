@@ -45,7 +45,7 @@ model UserSessions {
 
 /// 后台系统用户：只按 account 登录管理端，与平台用户分表，两边账号空间互不占用。
 model SystemUser {
-  id          String         @id @default(cuid())
+  id          String         @id
   account     String         @unique @db.VarChar(100)
   password    String
   username    String?        @db.VarChar(100)
@@ -64,7 +64,7 @@ model SystemUser {
 }
 
 model UserRole {
-  id        String     @id @default(cuid())
+  id        String     @id
   userId    String     @map("user_id")
   roleId    String     @map("role_id")
   createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)

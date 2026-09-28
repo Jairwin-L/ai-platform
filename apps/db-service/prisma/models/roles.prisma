@@ -1,5 +1,5 @@
 model Role {
-  id              String           @id @default(cuid())
+  id              String           @id
   code            String           @unique @db.VarChar(50)
   name            String           @unique @db.VarChar(50)
   description     String?          @db.VarChar(255)
@@ -17,7 +17,7 @@ model Role {
 }
 
 model RolePermission {
-  id           String     @id @default(cuid())
+  id           String     @id
   roleId       String     @map("role_id")
   permissionId String     @map("permission_id")
   createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)

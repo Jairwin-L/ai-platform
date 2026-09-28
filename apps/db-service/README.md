@@ -18,6 +18,7 @@ NestJS 12 接口服务：持有 Prisma schema / 迁移 / seed、Redis 会话与�
 - 菜单与按钮资源以 `prisma/data/menu/data.ts` 为准覆盖式同步，按钮权限码与 `@ai/constants/permissions` 的 `PERMISSION_CODE` 一一对应；管理端侧边栏由 `/auth/menus` 返回的资源树生成。
 - 种子（`prisma/data`）：`menu/` 菜单资源、`role/` 内置角色（`SUPER_ADMIN` 全部权限、`VISITOR` 仅工作台）、`bootstrap-admin.ts` 首个超级管理员。`prisma:seed` 只在 RBAC 未初始化时写入菜单与角色（`rbac.ts`），之后需要刷新时执行 `prisma:seed:menu` / `prisma:seed:role`，部署时设置 `FORCE_MENU_SEED` / `FORCE_ROLE_SEED=true`。
 - 授权类操作（改角色权限、分配角色、建号）不能授出操作者自己没有的权限；`SUPER_ADMIN` 的绑定只能通过 `prisma:bootstrap-admin` 配置。
+- 平台用户与 RBAC 表（`users`、`system_users`、`user_roles`、`roles`、`role_permissions`、`permissions`）主键是 TypeID（`user_01k5y0m0v8e7tbq3s2w6h9d4xn`），由 `prisma/data/id.ts` 的 `createId` 生成，schema 里没有 `@default`，新建时必须显式传 id。
 
 ## 目录
 

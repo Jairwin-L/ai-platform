@@ -4,6 +4,7 @@ import { PERMISSION_CODE } from '@ai/constants/permissions';
 import { RoleCode } from '@ai/constants/roles';
 import { AUTH_ERROR, COMMON_ERROR, DATA_ERROR, USER_ERROR } from '@ai/constants/error-codes';
 import { PrismaService } from '@/infra/prisma/prisma.service';
+import { ID_PREFIX, createId } from '@/lib/id';
 import { PermissionsService } from '@/infra/permissions/permissions.service';
 import { SessionService } from '@/infra/session/session.service';
 import { hashPassword } from '@/infra/crypto/password';
@@ -158,6 +159,7 @@ export class UsersService {
     try {
       const created = await this.prisma.systemUser.create({
         data: {
+          id: createId(ID_PREFIX.systemUser),
           account,
           password: await hashPassword(password),
           username,
@@ -165,7 +167,9 @@ export class UsersService {
           avatar,
           remark,
           status,
-          userRoles: { create: roleIds.map((roleId) => ({ roleId })) },
+          userRoles: {
+            create: roleIds.map((roleId) => ({ id: createId(ID_PREFIX.userRole), roleId })),
+          },
         },
         select: userSelect,
       });

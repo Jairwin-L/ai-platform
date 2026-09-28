@@ -1,5 +1,6 @@
 import type { PrismaClient } from '../../generated/prisma/client';
 import { assertTablesExist, runSeed } from './client';
+import { ID_PREFIX, createId } from './id';
 import { hashPassword } from './password';
 import { RoleCode } from './system-roles';
 
@@ -63,12 +64,13 @@ async function ensureBootstrapAdmin(prisma: PrismaClient, config: BootstrapAdmin
   if (!existing) {
     await prisma.systemUser.create({
       data: {
+        id: createId(ID_PREFIX.systemUser),
         account: config.account,
         password: await hashPassword(config.password),
         username: config.account,
         nickname: config.account,
         status: 'active',
-        userRoles: { create: { roleId: superRole.id } },
+        userRoles: { create: { id: createId(ID_PREFIX.userRole), roleId: superRole.id } },
       },
       select: { id: true },
     });
@@ -86,7 +88,7 @@ async function ensureBootstrapAdmin(prisma: PrismaClient, config: BootstrapAdmin
       select: { id: true },
     });
     await tx.userRole.createMany({
-      data: [{ userId: existing.id, roleId: superRole.id }],
+      data: [{ id: createId(ID_PREFIX.userRole), userId: existing.id, roleId: superRole.id }],
       skipDuplicates: true,
     });
   });

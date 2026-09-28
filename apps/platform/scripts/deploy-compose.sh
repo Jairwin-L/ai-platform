@@ -22,7 +22,7 @@ Optional environment variables:
   POSTGRES_OLD_DATA_TARGET
                          Old PostgreSQL volume mount target. Defaults to auto-detect.
   POSTGRES_UPGRADE_MODE  Set to "dump-restore" to run PostgreSQL major upgrade before migrations.
-  PRISMA_SYNC_COMMAND    Override Prisma sync command. Defaults to "vp run prisma:sync:deploy".
+  PRISMA_SYNC_COMMAND    Override Prisma migration command. Defaults to "vp run prisma:deploy".
   PRISMA_SEED_COMMAND    Override Prisma seed command. Defaults to "vp run prisma:seed:deploy".
                          Menu / role (RBAC) seeds only run when RBAC data is not initialized yet.
   FORCE_MENU_SEED        Set to "true" to re-sync menu / button resources from prisma/data/menu (one-off).
@@ -59,7 +59,7 @@ case "${environment}" in
     default_postgres_image="postgres:18-alpine"
     default_database_url="postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit?schema=public"
     default_byok_trust_proxy_headers="true"
-    default_prisma_sync_command="vp run prisma:sync:deploy"
+    default_prisma_sync_command="vp run prisma:deploy"
     default_prisma_seed_command="vp run prisma:seed:deploy"
     default_bootstrap_admin_command="vp run prisma:bootstrap-admin:deploy"
     ;;
@@ -75,7 +75,7 @@ case "${environment}" in
     default_postgres_image="postgres:18-alpine"
     default_database_url="postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit_dev?schema=public"
     default_byok_trust_proxy_headers="true"
-    default_prisma_sync_command="vp run prisma:sync:deploy"
+    default_prisma_sync_command="vp run prisma:deploy"
     default_prisma_seed_command="vp run prisma:seed:deploy"
     default_bootstrap_admin_command="vp run prisma:bootstrap-admin:deploy"
     ;;

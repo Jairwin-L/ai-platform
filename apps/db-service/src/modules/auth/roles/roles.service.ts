@@ -4,6 +4,7 @@ import { PERMISSION_CODE } from '@ai/constants/permissions';
 import { RoleCode } from '@ai/constants/roles';
 import { COMMON_ERROR, ROLE_PERMISSION_ERROR, USER_ERROR } from '@ai/constants/error-codes';
 import { PrismaService } from '@/infra/prisma/prisma.service';
+import { ID_PREFIX, createId } from '@/lib/id';
 import { PermissionsService } from '@/infra/permissions/permissions.service';
 import { logger } from '@/infra/logger/logger';
 import { ApiException } from '@/common/http/api-exception';
@@ -173,6 +174,7 @@ export class RolesService {
 
     const role = await this.prisma.role.create({
       data: {
+        id: createId(ID_PREFIX.role),
         code,
         name,
         description: description || remark || null,
@@ -180,7 +182,12 @@ export class RolesService {
         enable,
         status: enable ? 'ENABLED' : 'DISABLED',
         rolePermissions: permissionIds.length
-          ? { create: permissionIds.map((permissionId) => ({ permissionId })) }
+          ? {
+              create: permissionIds.map((permissionId) => ({
+                id: createId(ID_PREFIX.rolePermission),
+                permissionId,
+              })),
+            }
           : undefined,
       },
       include: roleInclude,
@@ -268,7 +275,11 @@ export class RolesService {
         await tx.rolePermission.deleteMany({ where: { roleId: id } });
         if (permissionIds.length > 0) {
           await tx.rolePermission.createMany({
-            data: permissionIds.map((permissionId) => ({ roleId: id, permissionId })),
+            data: permissionIds.map((permissionId) => ({
+              id: createId(ID_PREFIX.rolePermission),
+              roleId: id,
+              permissionId,
+            })),
           });
         }
       }
@@ -380,7 +391,7 @@ export class RolesService {
       }
       if (toAdd.length > 0) {
         await tx.userRole.createMany({
-          data: toAdd.map((userId) => ({ roleId, userId })),
+          data: toAdd.map((userId) => ({ id: createId(ID_PREFIX.userRole), roleId, userId })),
           skipDuplicates: true,
         });
       }

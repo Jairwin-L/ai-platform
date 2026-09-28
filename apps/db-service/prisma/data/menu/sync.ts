@@ -1,4 +1,5 @@
 import type { PrismaClient } from '../../../generated/prisma/client';
+import { ID_PREFIX, createId } from '../id';
 import { DEFAULT_PERMISSIONS } from './data';
 
 /**
@@ -80,7 +81,7 @@ export async function seedMenus(prisma: PrismaClient): Promise<void> {
     const saved = await prisma.permission.upsert({
       where: { code: permission.code },
       update: data,
-      create: { code: permission.code, ...data },
+      create: { id: createId(ID_PREFIX.permission), code: permission.code, ...data },
       select: { id: true },
     });
     permissionIdsByCode.set(permission.code, saved.id);

@@ -1,9 +1,9 @@
-import crypto from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import type { Prisma } from '@/generated/prisma/client';
 import { AUTH_ERROR, COMMON_ERROR, DATA_ERROR, USER_ERROR } from '@ai/constants/error-codes';
 import { PrismaService } from '@/infra/prisma/prisma.service';
+import { ID_PREFIX, createId } from '@/lib/id';
 import { PermissionsService } from '@/infra/permissions/permissions.service';
 import {
   SessionService,
@@ -226,7 +226,7 @@ export class AuthService {
       // 平台注册用户不挂角色：角色体系只属于管理端的系统用户
       await this.prisma.users.create({
         data: {
-          id: crypto.randomUUID(),
+          id: createId(ID_PREFIX.user),
           email,
           email_verified: true,
           password_hash: await hashPassword(body.password),

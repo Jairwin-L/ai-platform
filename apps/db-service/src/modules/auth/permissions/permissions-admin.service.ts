@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { Permission, Prisma } from '@/generated/prisma/client';
 import { AUTH_ERROR, COMMON_ERROR, ROLE_PERMISSION_ERROR } from '@ai/constants/error-codes';
 import { PrismaService } from '@/infra/prisma/prisma.service';
+import { ID_PREFIX, createId } from '@/lib/id';
 import { PermissionsService } from '@/infra/permissions/permissions.service';
 import { ApiException } from '@/common/http/api-exception';
 import { isSuperAdmin } from '@/common/utils/permission';
@@ -91,7 +92,9 @@ export class PermissionsAdminService {
     if (body.parentId) await this.assertParentExists(body.parentId);
 
     try {
-      const permission = await this.prisma.permission.create({ data: body });
+      const permission = await this.prisma.permission.create({
+        data: { id: createId(ID_PREFIX.permission), ...body },
+      });
       // 新增权限可能立即被授予，影响面无法按角色收敛，直接清空
       await this.permissionsCache.invalidateAllAuthCache();
       return permission;
