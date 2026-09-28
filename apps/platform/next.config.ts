@@ -1,8 +1,11 @@
 import type { NextConfig } from 'next';
-import { dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = dirname(fileURLToPath(import.meta.url));
+// pnpm workspace root: dependencies are hoisted into <workspace>/node_modules/.pnpm,
+// so Turbopack and output file tracing must be able to reach it.
+const workspaceRoot = resolve(root, '../..');
 
 const REMOTE_PATTERNS = [
   {
@@ -41,6 +44,7 @@ function buildContentSecurityPolicy(): string {
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  outputFileTracingRoot: workspaceRoot,
   // OpenNext's file tracer does not include pg-cloudflare's workerd entry by default.
   outputFileTracingIncludes: {
     '**/*': ['./node_modules/pg-cloudflare/dist/**', './node_modules/pg-cloudflare/esm/**'],
@@ -58,7 +62,7 @@ const nextConfig: NextConfig = {
     remotePatterns: REMOTE_PATTERNS,
   },
   turbopack: {
-    root,
+    root: workspaceRoot,
   },
   // TODO:
   async headers() {

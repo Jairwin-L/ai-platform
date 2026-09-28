@@ -19,7 +19,9 @@ RUN curl -fsSL https://vite.plus -o /tmp/install-vp.sh && \
 
 FROM base AS deps
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Build context is the workspace root: docker build -f apps/platform/Dockerfile .
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY apps/platform/package.json ./apps/platform/
 RUN vp install --frozen-lockfile --ignore-scripts
 
 FROM deps AS builder
@@ -28,6 +30,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_OPTIONS="--max-old-space-size=3072"
 
 COPY . .
+WORKDIR /app/apps/platform
 RUN DATABASE_URL="postgresql://prisma:prisma@localhost:5432/prisma?schema=public" vp run prisma:generate
 RUN vp run build
 
@@ -36,8 +39,9 @@ FROM deps AS migrator
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY prisma ./prisma
-COPY prisma.config.ts ./
+WORKDIR /app/apps/platform
+COPY apps/platform/prisma ./prisma
+COPY apps/platform/prisma.config.ts ./
 RUN DATABASE_URL="postgresql://prisma:prisma@localhost:5432/prisma?schema=public" vp run prisma:generate
 
 CMD ["vp", "run", "prisma:deploy"]
@@ -58,12 +62,13 @@ RUN apt-get update && \
 
 RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 nextjs
 
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Standalone output mirrors the workspace layout (outputFileTracingRoot = workspace root).
+COPY --from=builder --chown=nextjs:nodejs /app/apps/platform/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/platform/public ./apps/platform/public
+COPY --from=builder --chown=nextjs:nodejs /app/apps/platform/.next/static ./apps/platform/.next/static
 
 USER nextjs
 
 EXPOSE 8062
 
-CMD ["node", "server.js"]
+CMD ["node", "apps/platform/server.js"]

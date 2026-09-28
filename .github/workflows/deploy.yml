@@ -38,11 +38,13 @@ jobs:
         run: vp install
 
       - name: Generate Prisma Client
+        working-directory: apps/platform
         env:
           DATABASE_URL: postgresql://prisma:prisma@localhost:5432/prisma?schema=public
         run: vp run prisma:generate
 
       - name: Verify
+        working-directory: apps/platform
         env:
           DATABASE_URL: postgresql://prisma:prisma@localhost:5432/prisma?schema=public
         run: vp run verify
@@ -96,6 +98,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
+          file: apps/platform/Dockerfile
           target: runner
           platforms: linux/amd64
           push: true
@@ -112,6 +115,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
+          file: apps/platform/Dockerfile
           target: migrator
           platforms: linux/amd64
           push: true
@@ -162,6 +166,7 @@ jobs:
 
       - name: Pull image and restart app
         shell: bash
+        working-directory: apps/platform
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}

@@ -1,5 +1,5 @@
 {
-  "name": "nextjs-starter-kit",
+  "name": "platform",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -28,7 +28,6 @@
     "lint": "vp lint . && stylelint --allow-empty-input \"**/*.{css,less,scss}\"",
     "lint:fix": "vp fmt . && vp lint --fix . && stylelint --allow-empty-input --fix \"**/*.{css,less,scss}\"",
     "openapi:generate": "tsx scripts/generate-openapi.ts && vp fmt public/openapi.json",
-    "prepare": "vp config",
     "prisma:generate": "prisma generate",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:sync:deploy": "tsx prisma/data/sync-deploy.ts",
@@ -89,8 +88,6 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@commitlint/cli": "^19.8.1",
-    "@commitlint/config-conventional": "^19.8.1",
     "@opennextjs/cloudflare": "1.19.11",
     "@types/node": "^24.13.2",
     "@types/pg": "^8.20.0",
@@ -108,11 +105,6 @@
     "vitest": "catalog:",
     "wrangler": "4.104.0"
   },
-  "commitlint": {
-    "extends": [
-      "@commitlint/config-conventional"
-    ]
-  },
   "stylelint": {
     "extends": [
       "stylelint-config-ali"
@@ -120,15 +112,5 @@
   },
   "engines": {
     "node": ">=22.18.0 <23"
-  },
-  "cnpm": {
-    "mode": "pnpm"
-  },
-  "npm": {
-    "mode": "pnpm"
-  },
-  "yarn": {
-    "mode": "pnpm"
-  },
-  "packageManager": "pnpm@11.6.0"
+  }
 }

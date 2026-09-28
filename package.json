@@ -1,0 +1,37 @@
+{
+  "name": "ai-platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter platform dev",
+    "build": "pnpm --filter platform build",
+    "start": "pnpm --filter platform start",
+    "lint": "pnpm -r --if-present lint",
+    "lint:fix": "pnpm -r --if-present lint:fix",
+    "verify": "pnpm --filter platform exec vp run verify",
+    "prepare": "vp config"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "engines": {
+    "node": ">=22.18.0 <23"
+  },
+  "cnpm": {
+    "mode": "pnpm"
+  },
+  "npm": {
+    "mode": "pnpm"
+  },
+  "yarn": {
+    "mode": "pnpm"
+  },
+  "packageManager": "pnpm@11.6.0"
+}
