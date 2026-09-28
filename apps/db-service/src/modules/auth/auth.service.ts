@@ -326,8 +326,12 @@ export class AuthService {
       select: { id: true },
     });
     if (!assigned) {
-      await this.prisma.userRoles.create({ data: { user_id: userId, role_id: siteRole.id } });
-      changed = true;
+      // 并发登录可能同时走到这里，由 user_roles_effective_period_no_overlap 约束兜底，冲突时跳过而不是 500
+      const { count } = await this.prisma.userRoles.createMany({
+        data: [{ user_id: userId, role_id: siteRole.id }],
+        skipDuplicates: true,
+      });
+      if (count > 0) changed = true;
     }
 
     return changed;
