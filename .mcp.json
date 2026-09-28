@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "antd": {
+      "type": "stdio",
+      "command": "antd",
+      "args": ["mcp"]
+    }
+  }
+}

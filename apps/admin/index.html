@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icon/apple-icon-180x180.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icon/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icon/favicon-16x16.png" />
+    <meta name="theme-color" content="#fff" />
+    <title>管理后台</title>
+    <!-- 首屏加载占位样式，由 Vite 编译 scss 并打包进产物 CSS -->
+    <link rel="stylesheet" href="/src/styles/entry-loading.scss" />
+  </head>
+  <body>
+    <div id="admin">
+      <div class="admin-entry-loading" role="status" aria-live="polite">
+        <span class="admin-entry-loading-dot" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <div>加载中，请稍候</div>
+      </div>
+    </div>
+    <script type="module" src="/src/root.tsx"></script>
+  </body>
+</html>

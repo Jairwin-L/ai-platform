@@ -7,7 +7,6 @@
       }
     ],
     "paths": {
-      "@/generated/*": ["./generated/*"],
       "@/*": ["./src/*"],
       "@ai/constants": ["../../packages/constants/src/index.ts"],
       "@ai/constants/*": ["../../packages/constants/src/*"],

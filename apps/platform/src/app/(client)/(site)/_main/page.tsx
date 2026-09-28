@@ -76,7 +76,7 @@ export default function Page() {
               ))}
             </div>
             <pre className={styles.terminal}>
-              <code>{`$ vp run build\n✓ routes compiled\n✓ checks passed\n✓ docker image ready`}</code>
+              <code>{`$ vpr build\n✓ routes compiled\n✓ checks passed\n✓ docker image ready`}</code>
             </pre>
           </div>
         </div>

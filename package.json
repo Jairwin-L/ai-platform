@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@12.4.2",
   "homepage": "https://github.com/Jairwin-L/ai-platform#readme",
   "bugs": {
     "url": "https://github.com/Jairwin-L/ai-platform/issues"
@@ -18,13 +19,20 @@
   },
   "scripts": {
     "dev": "vpr @ai/platform#dev",
+    "dev:service": "vpr @ai/db-service#dev",
+    "dev:admin": "vpr @ai/admin#dev",
+    "dev:all": "vpr --parallel -F @ai/platform -F @ai/db-service -F @ai/admin dev",
     "build": "vpr --cache @ai/platform#build",
+    "build:service": "vpr --cache @ai/db-service#build",
+    "build:admin": "vpr --cache @ai/admin#build",
     "start": "vpr @ai/platform#start",
+    "start:service": "vpr @ai/db-service#start",
+    "preview:admin": "vpr @ai/admin#preview",
     "test": "vpr --cache -r test",
     "check": "vpr --cache -r check",
     "lint": "vpr --cache -r lint",
     "lint:fix": "vpr -r lint:fix",
-    "prisma:generate": "vpr --cache @ai/platform#prisma:generate",
+    "prisma:generate": "vpr --cache @ai/db-service#prisma:generate",
     "fmt": "vp fmt --write .",
     "prepare": "vp config",
     "preinstall": "vp dlx only-allow pnpm"
@@ -53,6 +61,5 @@
   },
   "yarn": {
     "mode": "pnpm"
-  },
-  "packageManager": "pnpm@11.6.0"
+  }
 }

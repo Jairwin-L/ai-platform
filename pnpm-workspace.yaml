@@ -4,6 +4,8 @@ packages:
 allowBuilds:
   '@parcel/watcher': true
   '@prisma/engines': true
+  '@scarf/scarf': false
+  '@nestjs/core': false
   esbuild: true
   prisma: true
   sharp: true
@@ -14,6 +16,9 @@ catalog:
   vitest: 4.1.9
   vite-plus: 0.2.4
 minimumReleaseAgeExclude:
+  - '@nestjs/common@12.1.0'
+  - '@nestjs/core@12.1.0'
+  - '@nestjs/platform-express@12.1.0'
   - miniflare@4.20260623.0
   - wrangler@4.104.0
 overrides:

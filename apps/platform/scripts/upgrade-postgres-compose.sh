@@ -20,6 +20,8 @@ Optional environment variables:
                          Old PostgreSQL volume mount target. Defaults to auto-detect.
   POSTGRES_DATA_TARGET   Target PostgreSQL volume mount target. Defaults to /var/lib/postgresql.
   COMPOSE_SERVICE        Compose app service to stop before dump. Defaults to app.
+  API_COMPOSE_SERVICE    Compose API service to stop before dump. Defaults to db-service.
+  SERVICE_IMAGE          db-service image. Defaults to APP_IMAGE-service.
   POSTGRES_SERVICE       Compose PostgreSQL service. Defaults to postgres.
   POSTGRES_DUMP_DIR      Local dump output directory. Defaults to .postgres-upgrades.
 EOF
@@ -60,7 +62,9 @@ env_file="${DEPLOY_ENV_FILE:-${default_env_file}}"
 project_name="${COMPOSE_PROJECT_NAME:-${default_project_name}}"
 app_image="${APP_IMAGE:-}"
 migrate_image="${MIGRATE_IMAGE:-${app_image:+${app_image}-migrate}}"
+service_image="${SERVICE_IMAGE:-${app_image:+${app_image}-service}}"
 app_service="${COMPOSE_SERVICE:-app}"
+api_service="${API_COMPOSE_SERVICE:-db-service}"
 postgres_service="${POSTGRES_SERVICE:-postgres}"
 old_image="${POSTGRES_OLD_IMAGE:-postgres:16-alpine}"
 target_image="${POSTGRES_IMAGE:-postgres:18-alpine}"
@@ -157,6 +161,10 @@ compose() {
     compose_env+=("MIGRATE_IMAGE=${migrate_image}")
   fi
 
+  if [[ -n "${service_image}" ]]; then
+    compose_env+=("SERVICE_IMAGE=${service_image}")
+  fi
+
   env "${compose_env[@]}" docker compose --env-file "${env_file}" -f "${compose_file}" "$@"
 }
 
@@ -232,8 +240,9 @@ if [[ -z "${old_data_target}" ]]; then
   old_data_target="$(get_detected_old_data_target "${existing_version_file}")"
 fi
 
-echo "Stopping app service before PostgreSQL dump: ${app_service}"
-compose "${old_image}" "${old_data_target}" stop "${app_service}" || true
+# db-service 直连数据库，dump 期间与 app 一起停掉，避免导出过程中还有写入
+echo "Stopping app services before PostgreSQL dump: ${app_service} ${api_service}"
+compose "${old_image}" "${old_data_target}" stop "${app_service}" "${api_service}" || true
 
 echo "Starting old PostgreSQL image for dump: ${old_image}"
 compose "${old_image}" "${old_data_target}" up -d "${postgres_service}"

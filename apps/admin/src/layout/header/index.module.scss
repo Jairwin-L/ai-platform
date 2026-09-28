@@ -1,0 +1,35 @@
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: $header-height;
+  padding: 0 24px;
+  border-bottom: 1px solid $color-border;
+  background: $color-canvas;
+}
+
+.header-avatar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: $color-ink;
+  cursor: pointer;
+}
+
+.header-avatar:hover {
+  background: $color-bg;
+}
+
+.username {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

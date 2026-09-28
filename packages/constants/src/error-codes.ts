@@ -6,12 +6,15 @@ export const COMMON_ERROR = {
   VALIDATION_ERROR: { code: 'COMMON_VALIDATION_ERROR', message: '数据校验失败' },
   RATE_LIMIT: { code: 'COMMON_RATE_LIMIT', message: '请求过于频繁，请稍后再试' },
   SERVICE_UNAVAILABLE: { code: 'COMMON_SERVICE_UNAVAILABLE', message: '服务暂时不可用' },
+  TIMEOUT: { code: 'COMMON_TIMEOUT', message: '响应超时，请重试' },
 } as const;
 
 export const AUTH_ERROR = {
   UNAUTHORIZED: { code: 'AUTH_UNAUTHORIZED', message: '未登录或登录已失效，请先登录' },
   FORBIDDEN: { code: 'AUTH_FORBIDDEN', message: '无访问权限' },
   INVALID_TOKEN: { code: 'AUTH_INVALID_TOKEN', message: '登录状态无效' },
+  LOGIN_FAILED: { code: 'AUTH_LOGIN_FAILED', message: '邮箱或登录凭证错误' },
+  ACCOUNT_DISABLED: { code: 'AUTH_ACCOUNT_DISABLED', message: '账号不可用' },
 } as const;
 
 export const DATA_ERROR = {
@@ -56,8 +59,10 @@ export const HTTP_STATUS_TO_ERROR_CODE: Record<number, ErrorCode> = {
   403: AUTH_ERROR.FORBIDDEN.code,
   404: DATA_ERROR.NOT_FOUND.code,
   409: DATA_ERROR.DUPLICATE_ENTRY.code,
+  413: FILE_ERROR.SIZE_EXCEEDED.code,
   422: COMMON_ERROR.VALIDATION_ERROR.code,
   429: COMMON_ERROR.RATE_LIMIT.code,
   500: COMMON_ERROR.SYSTEM_ERROR.code,
   503: COMMON_ERROR.SERVICE_UNAVAILABLE.code,
+  504: COMMON_ERROR.TIMEOUT.code,
 } as const;

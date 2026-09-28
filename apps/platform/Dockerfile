@@ -1,4 +1,10 @@
 # syntax=docker/dockerfile:1
+#
+# platform（Next.js standalone）镜像。
+# 构建 context 必须是仓库根目录：pnpm workspace 需要根 lockfile 与全部包的 package.json。
+#   docker build -f apps/platform/Dockerfile --target runner .
+#
+# 数据库迁移镜像已迁到 apps/db-service/Dockerfile 的 migrator target。
 
 ARG NODE_VERSION=22
 
@@ -22,6 +28,8 @@ FROM base AS deps
 # Build context is the workspace root: docker build -f apps/platform/Dockerfile .
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/platform/package.json ./apps/platform/
+COPY apps/db-service/package.json ./apps/db-service/
+COPY apps/admin/package.json ./apps/admin/
 COPY packages/constants/package.json ./packages/constants/
 COPY packages/types/package.json ./packages/types/
 COPY packages/utils/package.json ./packages/utils/
@@ -29,25 +37,19 @@ RUN vp install --frozen-lockfile --ignore-scripts
 
 FROM deps AS builder
 
+# rewrites 的转发目标在构建期写进 routes-manifest，db-service 内网地址必须是 build-arg
+ARG API_INTERNAL_ORIGIN=http://db-service:8072
+ENV API_INTERNAL_ORIGIN=${API_INTERNAL_ORIGIN}
+# NEXT_PUBLIC_ 变量在 next build 时内联进客户端代码，运行期注入无效；留空则前台不展示后台入口
+ARG NEXT_PUBLIC_ADMIN_URL=
+ENV NEXT_PUBLIC_ADMIN_URL=${NEXT_PUBLIC_ADMIN_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_OPTIONS="--max-old-space-size=3072"
 
 COPY . .
 WORKDIR /app/apps/platform
-RUN DATABASE_URL="postgresql://prisma:prisma@localhost:5432/prisma?schema=public" vp run prisma:generate
+# 接口层已迁到 db-service，platform 构建期不需要 DATABASE_URL / Prisma Client
 RUN vp run build
-
-FROM deps AS migrator
-
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-
-WORKDIR /app/apps/platform
-COPY apps/platform/prisma ./prisma
-COPY apps/platform/prisma.config.ts ./
-RUN DATABASE_URL="postgresql://prisma:prisma@localhost:5432/prisma?schema=public" vp run prisma:generate
-
-CMD ["vp", "run", "prisma:deploy"]
 
 FROM node:${NODE_VERSION}-bookworm-slim AS runner
 

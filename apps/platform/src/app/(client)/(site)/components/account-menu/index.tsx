@@ -11,6 +11,12 @@ import { useDebounced } from '@/hooks/use-debounced';
 import { usePermission } from '@/hooks/use-permission';
 import styles from './index.module.scss';
 
+/**
+ * 管理后台是独立部署的站点（apps/admin），地址在构建期注入；
+ * 未配置时不显示入口。真正的访问控制在 db-service 的 admin 会话上。
+ */
+const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL?.trim();
+
 function getDisplayName(user: AuthUser | null): string {
   return user?.nickName || user?.email || '我的账号';
 }
@@ -72,8 +78,8 @@ export function AccountMenu() {
       return;
     }
 
-    if (key === 'ADMIN_PANEL') {
-      router.push('/admin');
+    if (key === 'ADMIN_PANEL' && ADMIN_URL) {
+      window.open(ADMIN_URL, '_blank', 'noopener,noreferrer');
       return;
     }
 
@@ -84,7 +90,7 @@ export function AccountMenu() {
 
   const displayName = getDisplayName(user);
   const shouldShowAvatarImage = Boolean(user?.picture && !avatarFailed);
-  const canOpenAdmin = ADMIN_ROLE_CODES.some((role) => hasRole(role));
+  const canOpenAdmin = Boolean(ADMIN_URL) && ADMIN_ROLE_CODES.some((role) => hasRole(role));
   const menuItems: MenuProps['items'] = [
     { key: 'ACCOUNT', label: '我的账户' },
     { key: 'AI_SETTING', label: 'AI 密钥' },

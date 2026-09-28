@@ -13,7 +13,9 @@ Optional environment variables:
   COMPOSE_PROJECT_NAME   Override Compose project. Defaults to nextjs-starter-kit-prod or nextjs-starter-kit-dev.
   COMPOSE_FILE           Override Compose file. Defaults to docker-compose.prod.yml or docker-compose.dev.yml.
   COMPOSE_SERVICE        Override Compose service. Defaults to app.
-  MIGRATE_IMAGE          Override migration image. Defaults to APP_IMAGE-migrate.
+  API_COMPOSE_SERVICE    Override db-service Compose service. Defaults to db-service.
+  SERVICE_IMAGE          Override db-service image. Defaults to APP_IMAGE-service.
+  MIGRATE_IMAGE          Override migration image (built from apps/db-service/Dockerfile). Defaults to APP_IMAGE-migrate.
   POSTGRES_IMAGE         Override PostgreSQL image. Defaults to postgres:18-alpine.
   POSTGRES_DATA_TARGET   PostgreSQL volume mount target. Defaults to /var/lib/postgresql.
   POSTGRES_OLD_IMAGE     Old PostgreSQL image for major upgrade. Defaults to postgres:16-alpine.
@@ -27,8 +29,8 @@ Optional environment variables:
                          Override admin bootstrap command. Defaults to "vp run prisma:bootstrap-admin:deploy".
 
 Examples:
-  APP_IMAGE=ghcr.io/jairwin-l/nextjs-starter-kit:latest scripts/deploy-compose.sh production
-  scripts/deploy-compose.sh development ghcr.io/jairwin-l/nextjs-starter-kit:dev
+  APP_IMAGE=ghcr.io/<owner>/<repo>:latest scripts/deploy-compose.sh production
+  scripts/deploy-compose.sh development ghcr.io/<owner>/<repo>:dev
 EOF
 }
 
@@ -46,12 +48,13 @@ case "${environment}" in
     default_project_name="nextjs-starter-kit-prod"
     default_compose_file="docker-compose.prod.yml"
     default_app_port="8062"
+    default_service_port="8072"
     default_postgres_db="nextjs_starter_kit"
     default_postgres_user="nextjs_starter_kit"
     default_postgres_password="nextjs_starter_kit"
     default_postgres_image="postgres:18-alpine"
     default_database_url="postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit?schema=public"
-    default_byok_trust_proxy_headers="false"
+    default_byok_trust_proxy_headers="true"
     default_prisma_sync_command="vp run prisma:sync:deploy"
     default_prisma_seed_command="vp run prisma:seed:deploy"
     default_bootstrap_admin_command="vp run prisma:bootstrap-admin:deploy"
@@ -61,6 +64,7 @@ case "${environment}" in
     default_project_name="nextjs-starter-kit-dev"
     default_compose_file="docker-compose.dev.yml"
     default_app_port="8060"
+    default_service_port="8070"
     default_postgres_db="nextjs_starter_kit_dev"
     default_postgres_user="nextjs_starter_kit"
     default_postgres_password="nextjs_starter_kit"
@@ -86,9 +90,11 @@ fi
 
 compose_file="${COMPOSE_FILE:-${default_compose_file}}"
 compose_service="${COMPOSE_SERVICE:-app}"
+api_service="${API_COMPOSE_SERVICE:-db-service}"
 env_file="${DEPLOY_ENV_FILE:-${default_env_file}}"
 project_name="${COMPOSE_PROJECT_NAME:-${default_project_name}}"
 migrate_image="${MIGRATE_IMAGE:-${image}-migrate}"
+service_image="${SERVICE_IMAGE:-${image}-service}"
 prisma_sync_command="${PRISMA_SYNC_COMMAND:-${default_prisma_sync_command}}"
 prisma_seed_command="${PRISMA_SEED_COMMAND:-${default_prisma_seed_command}}"
 bootstrap_admin_command="${BOOTSTRAP_ADMIN_COMMAND:-${default_bootstrap_admin_command}}"
@@ -213,8 +219,10 @@ is_image_id_in_list() {
 cleanup_old_app_images() {
   local app_repository
   local migrate_repository
+  local service_repository
   local current_app_image_id
   local current_migrate_image_id
+  local current_service_image_id
   local repositories=()
   local container_image_ids=()
   local repository
@@ -224,12 +232,17 @@ cleanup_old_app_images() {
 
   app_repository="$(get_image_repository "${image}")"
   migrate_repository="$(get_image_repository "${migrate_image}")"
+  service_repository="$(get_image_repository "${service_image}")"
   current_app_image_id="$(get_image_id "${image}")"
   current_migrate_image_id="$(get_image_id "${migrate_image}")"
+  current_service_image_id="$(get_image_id "${service_image}")"
 
   repositories+=("${app_repository}")
   if [[ "${migrate_repository}" != "${app_repository}" ]]; then
     repositories+=("${migrate_repository}")
+  fi
+  if [[ "${service_repository}" != "${app_repository}" && "${service_repository}" != "${migrate_repository}" ]]; then
+    repositories+=("${service_repository}")
   fi
 
   while read -r image_id; do
@@ -246,11 +259,11 @@ cleanup_old_app_images() {
         continue
       fi
 
-      if [[ "${image_ref}" == "${image}" || "${image_ref}" == "${migrate_image}" ]]; then
+      if [[ "${image_ref}" == "${image}" || "${image_ref}" == "${migrate_image}" || "${image_ref}" == "${service_image}" ]]; then
         continue
       fi
 
-      if [[ "${image_id}" == "${current_app_image_id}" || "${image_id}" == "${current_migrate_image_id}" ]]; then
+      if [[ "${image_id}" == "${current_app_image_id}" || "${image_id}" == "${current_migrate_image_id}" || "${image_id}" == "${current_service_image_id}" ]]; then
         continue
       fi
 
@@ -302,6 +315,8 @@ ensure_default_env() {
 }
 
 ensure_default_env APP_PORT "${default_app_port}"
+ensure_default_env SERVICE_PORT "${default_service_port}"
+ensure_default_env SERVICE_BIND "127.0.0.1"
 ensure_default_env POSTGRES_DB "${default_postgres_db}"
 ensure_default_env POSTGRES_USER "${default_postgres_user}"
 ensure_default_env POSTGRES_PASSWORD "${default_postgres_password}"
@@ -330,11 +345,13 @@ existing_postgres_major="$(get_existing_postgres_major "$(get_postgres_data_volu
 
 echo "Deploying ${environment}"
 echo "  image:   ${image}"
+echo "  service: ${service_image}"
 echo "  migrate: ${migrate_image}"
 echo "  project: ${project_name}"
 echo "  env:     ${env_file}"
 echo "  compose: ${compose_file}"
-echo "  service: ${compose_service}"
+echo "  app svc: ${compose_service}"
+echo "  api svc: ${api_service}"
 echo "  prisma:  ${prisma_sync_command}"
 echo "  seed:    ${prisma_seed_command}"
 echo "  admin:   ${bootstrap_admin_command}"
@@ -365,6 +382,8 @@ EOF
       POSTGRES_DATA_TARGET="${POSTGRES_DATA_TARGET:-$(read_env_value POSTGRES_DATA_TARGET)}" \
       APP_IMAGE="${image}" \
       MIGRATE_IMAGE="${migrate_image}" \
+      SERVICE_IMAGE="${service_image}" \
+      API_COMPOSE_SERVICE="${api_service}" \
       DEPLOY_ENV_FILE="${env_file}" \
       COMPOSE_PROJECT_NAME="${project_name}" \
       COMPOSE_FILE="${compose_file}" \
@@ -385,11 +404,11 @@ fi
 
 compose() {
   COMPOSE_PROJECT_NAME="${project_name}" APP_IMAGE="${image}" MIGRATE_IMAGE="${migrate_image}" \
+    SERVICE_IMAGE="${service_image}" \
     docker compose --env-file "${env_file}" -f "${compose_file}" "$@"
 }
 
-COMPOSE_PROJECT_NAME="${project_name}" APP_IMAGE="${image}" MIGRATE_IMAGE="${migrate_image}" \
-  docker compose --env-file "${env_file}" -f "${compose_file}" pull "${compose_service}" migrate postgres
+compose pull "${compose_service}" "${api_service}" migrate postgres
 
 compose up -d --no-build postgres
 
@@ -399,6 +418,8 @@ compose run --rm \
   -e "BOOTSTRAP_ADMIN_EMAIL=${bootstrap_admin_email}" \
   migrate sh -lc "${bootstrap_admin_command}"
 
+# 先起接口服务再起前台：platform 的 SSR 与 rewrites 都依赖 db-service
+compose up -d --no-build "${api_service}"
 compose up -d --no-build "${compose_service}"
 
 cleanup_old_app_images

@@ -5,7 +5,11 @@
  */
 
 export { APP_BLACK_LOGO, APP_NAME } from './app';
-export { AUTH_SESSION_COOKIE_NAME, VERIFICATION_CODE_TTL_SECONDS } from './auth';
+export {
+  ADMIN_SESSION_COOKIE_NAME,
+  AUTH_SESSION_COOKIE_NAME,
+  VERIFICATION_CODE_TTL_SECONDS,
+} from './auth';
 export { ALLOW_FILE_TYPE } from './file';
 export {
   getMissingPermissionMessage,

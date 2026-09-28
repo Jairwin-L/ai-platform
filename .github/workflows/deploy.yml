@@ -38,7 +38,7 @@ jobs:
         run: vp install
 
       - name: Generate Prisma Client
-        working-directory: apps/platform
+        working-directory: apps/db-service
         env:
           DATABASE_URL: postgresql://prisma:prisma@localhost:5432/prisma?schema=public
         run: vp run prisma:generate
@@ -75,6 +75,7 @@ jobs:
           echo "name=${IMAGE_NAME}" >> "${GITHUB_OUTPUT}"
           echo "sha=${COMMIT_SHA}" >> "${GITHUB_OUTPUT}"
           echo "tag=${IMAGE_NAME}:${COMMIT_SHA}" >> "${GITHUB_OUTPUT}"
+          echo "service_tag=${IMAGE_NAME}:${COMMIT_SHA}-service" >> "${GITHUB_OUTPUT}"
           echo "migrate_tag=${IMAGE_NAME}:${COMMIT_SHA}-migrate" >> "${GITHUB_OUTPUT}"
 
       - name: Set up Docker Buildx
@@ -101,6 +102,10 @@ jobs:
           target: runner
           platforms: linux/amd64
           push: true
+          # rewrites 目标与 NEXT_PUBLIC_* 都在 next build 时写死，只能走 build-arg
+          build-args: |
+            API_INTERNAL_ORIGIN=http://db-service:8072
+            NEXT_PUBLIC_ADMIN_URL=${{ vars.NEXT_PUBLIC_ADMIN_URL }}
           tags: |
             ${{ steps.image.outputs.name }}:latest
             ${{ steps.image.outputs.tag }}
@@ -110,11 +115,28 @@ jobs:
           cache-from: type=gha,scope=nextjs-starter-kit-runner
           cache-to: type=gha,scope=nextjs-starter-kit-runner,mode=max,ignore-error=true
 
+      - name: Build and push db-service image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/db-service/Dockerfile
+          target: runner
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:latest-service
+            ${{ steps.image.outputs.service_tag }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=ai-platform-db-service
+          cache-to: type=gha,scope=ai-platform-db-service,mode=max,ignore-error=true
+
       - name: Build and push migration image
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: apps/platform/Dockerfile
+          file: apps/db-service/Dockerfile
           target: migrator
           platforms: linux/amd64
           push: true
@@ -124,13 +146,56 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           provenance: mode=max
           sbom: true
-          cache-from: type=gha,scope=nextjs-starter-kit-migrator
-          cache-to: type=gha,scope=nextjs-starter-kit-migrator,mode=max,ignore-error=true
+          cache-from: type=gha,scope=ai-platform-db-service-migrator
+          cache-to: type=gha,scope=ai-platform-db-service-migrator,mode=max,ignore-error=true
+
+  build-admin:
+    name: Build admin static assets
+    runs-on: ubuntu-latest
+    needs: validate
+    environment:
+      name: ${{ github.event_name == 'pull_request_target' && 'production' || 'development' }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: '22'
+          cache: true
+
+      - name: Install dependencies
+        run: vp install --frozen-lockfile
+
+      # VITE_* 在构建期内联进产物，只能放公开信息（接口地址、标题），不能放任何密钥
+      - name: Build dist
+        env:
+          VITE_BASE_API_URL: ${{ vars.VITE_BASE_API_URL }}
+          VITE_APP_TITLE: ${{ vars.VITE_APP_TITLE || '管理后台' }}
+          VITE_PLATFORM_URL: ${{ vars.VITE_PLATFORM_URL }}
+        run: |
+          : "${VITE_BASE_API_URL:?Missing variable VITE_BASE_API_URL (public db-service URL for the admin)}"
+          vpr @ai/admin#build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-dist
+          path: apps/admin/dist
+          if-no-files-found: error
+          retention-days: 3
 
   deploy:
     name: Deploy to server
     runs-on: ubuntu-latest
-    needs: build
+    needs:
+      - build
+      - build-admin
     environment:
       name: ${{ github.event_name == 'pull_request_target' && 'production' || 'development' }}
     permissions:
@@ -177,6 +242,10 @@ jobs:
           DEPLOY_SHA: ${{ needs.build.outputs.commit_sha }}
           GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN || secrets.GITHUB_TOKEN }}
           APP_PORT: ${{ vars.APP_PORT || (github.event_name == 'pull_request_target' && '8062' || '8060') }}
+          SERVICE_PORT: ${{ vars.SERVICE_PORT || (github.event_name == 'pull_request_target' && '8072' || '8070') }}
+          SERVICE_BIND: ${{ vars.SERVICE_BIND || '127.0.0.1' }}
+          CORS_ALLOWED_ORIGINS: ${{ vars.CORS_ALLOWED_ORIGINS }}
+          ENABLE_API_DOCS: ${{ vars.ENABLE_API_DOCS || 'false' }}
           POSTGRES_DB: ${{ vars.POSTGRES_DB || (github.event_name == 'pull_request_target' && 'nextjs_starter_kit' || 'nextjs_starter_kit_dev') }}
           POSTGRES_USER: ${{ vars.POSTGRES_USER || 'nextjs_starter_kit' }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || vars.POSTGRES_PASSWORD || 'nextjs_starter_kit' }}
@@ -186,11 +255,12 @@ jobs:
           POSTGRES_OLD_DATA_TARGET: ${{ vars.POSTGRES_OLD_DATA_TARGET || '' }}
           POSTGRES_UPGRADE_MODE: ${{ vars.POSTGRES_UPGRADE_MODE || '' }}
           DATABASE_URL: ${{ secrets.DATABASE_URL || (github.event_name == 'pull_request_target' && 'postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit?schema=public' || 'postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit_dev?schema=public') }}
-          BYOK_TRUST_PROXY_HEADERS: ${{ vars.BYOK_TRUST_PROXY_HEADERS || secrets.BYOK_TRUST_PROXY_HEADERS || (github.event_name == 'pull_request_target' && 'false' || 'true') }}
+          BYOK_TRUST_PROXY_HEADERS: ${{ vars.BYOK_TRUST_PROXY_HEADERS || secrets.BYOK_TRUST_PROXY_HEADERS || 'true' }}
           BOOTSTRAP_ADMIN_EMAIL: ${{ vars.BOOTSTRAP_ADMIN_EMAIL || secrets.BOOTSTRAP_ADMIN_EMAIL }}
           AUTH_CODE_SECRET: ${{ secrets.AUTH_CODE_SECRET }}
           AI_KEY_ENCRYPTION_KEY_V1: ${{ secrets.AI_KEY_ENCRYPTION_KEY_V1 }}
           AI_KEY_REDIS_ID_SECRET: ${{ secrets.AI_KEY_REDIS_ID_SECRET }}
+          AI_SECRET_MASTER_KEY: ${{ secrets.AI_SECRET_MASTER_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RESEND_FROM_EMAIL: ${{ vars.RESEND_FROM_EMAIL || secrets.RESEND_FROM_EMAIL }}
           RESEND_FROM_NAME: ${{ vars.RESEND_FROM_NAME || secrets.RESEND_FROM_NAME }}
@@ -199,6 +269,7 @@ jobs:
           R2_ENDPOINT_URL: ${{ vars.R2_ENDPOINT_URL || secrets.R2_ENDPOINT_URL }}
           R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME || secrets.R2_BUCKET_NAME }}
           IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
+          SERVICE_IMAGE: ${{ needs.build.outputs.image_tag }}-service
           MIGRATE_IMAGE: ${{ needs.build.outputs.image_tag }}-migrate
         run: |
           : "${DEPLOY_HOST:?Missing required secret DEPLOY_HOST}"
@@ -210,6 +281,7 @@ jobs:
           : "${DEPLOY_ENVIRONMENT:?Missing DEPLOY_ENVIRONMENT}"
           : "${DEPLOY_SHA:?Missing deploy sha}"
           : "${IMAGE_TAG:?Missing image tag}"
+          : "${SERVICE_IMAGE:?Missing db-service image tag}"
           : "${MIGRATE_IMAGE:?Missing migration image tag}"
           : "${GHCR_READ_TOKEN:?Missing GHCR token}"
           : "${AUTH_CODE_SECRET:?Missing required secret AUTH_CODE_SECRET}"
@@ -242,6 +314,9 @@ jobs:
 
           write_env APP_PORT "${APP_PORT}"
           write_env APP_IMAGE "${IMAGE_TAG}"
+          write_env SERVICE_IMAGE "${SERVICE_IMAGE}"
+          write_env SERVICE_PORT "${SERVICE_PORT}"
+          write_env SERVICE_BIND "${SERVICE_BIND}"
           write_env MIGRATE_IMAGE "${MIGRATE_IMAGE}"
           write_env POSTGRES_DB "${POSTGRES_DB}"
           write_env POSTGRES_USER "${POSTGRES_USER}"
@@ -253,10 +328,13 @@ jobs:
           write_env POSTGRES_UPGRADE_MODE "${POSTGRES_UPGRADE_MODE}"
           write_env DATABASE_URL "${DATABASE_URL}"
           write_env BYOK_TRUST_PROXY_HEADERS "${BYOK_TRUST_PROXY_HEADERS}"
+          write_env CORS_ALLOWED_ORIGINS "${CORS_ALLOWED_ORIGINS}"
+          write_env ENABLE_API_DOCS "${ENABLE_API_DOCS}"
           write_env BOOTSTRAP_ADMIN_EMAIL "${BOOTSTRAP_ADMIN_EMAIL}"
           write_env AUTH_CODE_SECRET "${AUTH_CODE_SECRET}"
           write_env AI_KEY_ENCRYPTION_KEY_V1 "${AI_KEY_ENCRYPTION_KEY_V1}"
           write_env AI_KEY_REDIS_ID_SECRET "${AI_KEY_REDIS_ID_SECRET}"
+          write_env AI_SECRET_MASTER_KEY "${AI_SECRET_MASTER_KEY}"
           write_env RESEND_API_KEY "${RESEND_API_KEY}"
           write_env RESEND_FROM_EMAIL "${RESEND_FROM_EMAIL}"
           write_env RESEND_FROM_NAME "${RESEND_FROM_NAME}"
@@ -274,7 +352,7 @@ jobs:
             echo 'chmod +x scripts/upgrade-postgres-compose.sh'
             echo 'if [ ! -x scripts/deploy-compose.sh ]; then echo "Missing executable script: scripts/deploy-compose.sh" && exit 1; fi'
             echo 'if [ ! -x scripts/upgrade-postgres-compose.sh ]; then echo "Missing executable script: scripts/upgrade-postgres-compose.sh" && exit 1; fi'
-            echo 'DEPLOY_ENV_FILE="${DEPLOY_ENV_FILE}" COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME}" scripts/deploy-compose.sh "${DEPLOY_ENVIRONMENT}" "${IMAGE_TAG}"'
+            echo 'DEPLOY_ENV_FILE="${DEPLOY_ENV_FILE}" COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME}" SERVICE_IMAGE="${SERVICE_IMAGE}" MIGRATE_IMAGE="${MIGRATE_IMAGE}" scripts/deploy-compose.sh "${DEPLOY_ENVIRONMENT}" "${IMAGE_TAG}"'
           } > "${remote_script}"
 
           ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT}" \
@@ -307,4 +385,42 @@ jobs:
 
           ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT}" \
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "DEPLOY_PATH='${DEPLOY_PATH}' DEPLOY_ENV_FILE='${DEPLOY_ENV_FILE}' COMPOSE_PROJECT_NAME='${COMPOSE_PROJECT_NAME}' DEPLOY_ENVIRONMENT='${DEPLOY_ENVIRONMENT}' IMAGE_TAG='${IMAGE_TAG}' REMOTE_ENV_TMP='${remote_env_tmp}' bash -s" < "${remote_script}"
+            "DEPLOY_PATH='${DEPLOY_PATH}' DEPLOY_ENV_FILE='${DEPLOY_ENV_FILE}' COMPOSE_PROJECT_NAME='${COMPOSE_PROJECT_NAME}' DEPLOY_ENVIRONMENT='${DEPLOY_ENVIRONMENT}' IMAGE_TAG='${IMAGE_TAG}' SERVICE_IMAGE='${SERVICE_IMAGE}' MIGRATE_IMAGE='${MIGRATE_IMAGE}' REMOTE_ENV_TMP='${remote_env_tmp}' bash -s" < "${remote_script}"
+
+      - name: Download admin dist
+        uses: actions/download-artifact@v4
+        with:
+          name: admin-dist
+          path: admin-dist
+
+      # 接口先更新、后台静态资源后替换；先传临时目录再整体替换，避免中途失败留下半新半旧的目录
+      - name: Deploy admin static assets
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_ADMIN_PATH: ${{ vars.DEPLOY_ADMIN_PATH }}
+          DEPLOY_ENVIRONMENT: ${{ github.event_name == 'pull_request_target' && 'production' || 'development' }}
+          DEPLOY_SHA: ${{ needs.build.outputs.commit_sha }}
+        run: |
+          if [[ -z "${DEPLOY_ADMIN_PATH}" ]]; then
+            echo "::notice::DEPLOY_ADMIN_PATH is not set; skipping admin static deployment."
+            exit 0
+          fi
+
+          ssh_run() {
+            ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT}" "${DEPLOY_USER}@${DEPLOY_HOST}" "$@"
+          }
+
+          remote_tmp="/tmp/ai-platform-admin-${DEPLOY_ENVIRONMENT}-${DEPLOY_SHA}"
+
+          ssh_run "rm -rf '${remote_tmp}' && mkdir -p '${remote_tmp}' '${DEPLOY_ADMIN_PATH}'"
+
+          scp -i ~/.ssh/deploy_key -P "${DEPLOY_PORT}" -r \
+            admin-dist/. \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${remote_tmp}/"
+
+          ssh_run "find '${DEPLOY_ADMIN_PATH}' -mindepth 1 -maxdepth 1 -exec rm -rf {} + \
+            && cp -a '${remote_tmp}/.' '${DEPLOY_ADMIN_PATH}/' \
+            && rm -rf '${remote_tmp}'"

@@ -1,3 +1,5 @@
+# 同一个 Compose 项目承载 postgres / redis / db-service / platform：
+# 卷名与项目名沿用迁移前的配置，已有环境升级时数据库与 Redis 数据原样保留。
 services:
   postgres:
     image: ${POSTGRES_IMAGE:-postgres:18-alpine}
@@ -25,8 +27,10 @@ services:
       timeout: 5s
       retries: 5
 
-  app:
-    image: ${APP_IMAGE:?APP_IMAGE is required, for example ghcr.io/owner/nextjs-starter-kit:latest}
+  # 接口服务（NestJS）：platform 经内网 http://db-service:8072 转发，
+  # 管理后台经宿主机反向代理访问；端口默认只绑 127.0.0.1，不直接暴露公网。
+  db-service:
+    image: ${SERVICE_IMAGE:?SERVICE_IMAGE is required, for example ghcr.io/owner/ai-platform:latest-service}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -35,26 +39,44 @@ services:
         condition: service_healthy
     environment:
       NODE_ENV: production
-      NODE_OPTIONS: ${NODE_OPTIONS:---max-old-space-size=3072}
-      PORT: 8062
-      HOSTNAME: 0.0.0.0
+      PORT: 8072
       DATABASE_URL: ${DATABASE_URL:-postgresql://nextjs_starter_kit:nextjs_starter_kit@postgres:5432/nextjs_starter_kit?schema=public}
       REDIS_URL: redis://redis:6379/0
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      ENABLE_API_DOCS: ${ENABLE_API_DOCS:-false}
       AUTH_CODE_SECRET: ${AUTH_CODE_SECRET:?AUTH_CODE_SECRET is required}
       AI_KEY_ENCRYPTION_KEY_V1: ${AI_KEY_ENCRYPTION_KEY_V1:?AI_KEY_ENCRYPTION_KEY_V1 is required}
       AI_KEY_REDIS_ID_SECRET: ${AI_KEY_REDIS_ID_SECRET:?AI_KEY_REDIS_ID_SECRET is required}
+      AI_SECRET_MASTER_KEY: ${AI_SECRET_MASTER_KEY:-}
       RESEND_API_KEY: ${RESEND_API_KEY:?RESEND_API_KEY is required}
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:?RESEND_FROM_EMAIL is required}
-      BYOK_TRUST_PROXY_HEADERS: ${BYOK_TRUST_PROXY_HEADERS:-false}
+      RESEND_FROM_NAME: ${RESEND_FROM_NAME:-}
+      # db-service 始终在 platform / 反向代理之后，需要按 X-Forwarded-Proto 识别 HTTPS
+      BYOK_TRUST_PROXY_HEADERS: ${BYOK_TRUST_PROXY_HEADERS:-true}
       R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
       R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
       R2_ENDPOINT_URL: ${R2_ENDPOINT_URL:-}
       R2_BUCKET_NAME: ${R2_BUCKET_NAME:-}
     ports:
+      - '${SERVICE_BIND:-127.0.0.1}:${SERVICE_PORT:-8072}:8072'
+
+  app:
+    image: ${APP_IMAGE:?APP_IMAGE is required, for example ghcr.io/owner/ai-platform:latest}
+    restart: unless-stopped
+    depends_on:
+      - db-service
+    environment:
+      NODE_ENV: production
+      NODE_OPTIONS: ${NODE_OPTIONS:---max-old-space-size=3072}
+      PORT: 8062
+      HOSTNAME: 0.0.0.0
+      # SSR 直连 db-service；rewrites 的转发目标在镜像构建期写入，两者需保持一致
+      API_INTERNAL_ORIGIN: http://db-service:8072
+    ports:
       - '${APP_PORT:-8062}:8062'
 
   migrate:
-    image: ${MIGRATE_IMAGE:?MIGRATE_IMAGE is required, for example ghcr.io/owner/nextjs-starter-kit:latest-migrate}
+    image: ${MIGRATE_IMAGE:?MIGRATE_IMAGE is required, for example ghcr.io/owner/ai-platform:latest-migrate}
     profiles:
       - tools
     depends_on:

@@ -71,9 +71,11 @@ declare namespace IApiAdmin {
     enabled: boolean;
     label: string;
     models: string[];
-    protocol: IByok.AiProviderProtocol;
+    protocol: AiProviderProtocol;
     value: string;
   }
+
+  type AiProviderProtocol = 'chat-completions' | 'generate-content' | 'messages';
 
   interface ThirdPartyServiceOption {
     apiKeyUrl?: string;

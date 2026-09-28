@@ -1,0 +1,36 @@
+.layout-wrap {
+  min-height: 100vh;
+}
+
+.sider-container {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: auto;
+  scrollbar-width: thin;
+}
+
+.logo-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: $header-height;
+}
+
+.logo-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.logo-text {
+  margin-left: 10px;
+  color: $color-canvas;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.layout-main {
+  min-width: 0;
+  padding: 24px;
+}

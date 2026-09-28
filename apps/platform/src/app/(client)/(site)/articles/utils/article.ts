@@ -1,26 +1,10 @@
 /**
  * @file
- * 文章列表服务端数据查询与序列化工具。
+ * 文章列表与详情的服务端数据查询工具。
  */
 
-import { queryArticles } from '@/app/api/articles/query';
-import type { Article as PrismaArticle } from '@/generated/prisma/client';
-import { prisma } from '@/lib/prisma';
+import { fetchPlatformApi } from '@/api/server';
 import type { Article, ArticleListData, ArticleListParams } from '@/api/modules/articles';
-
-/**
- * @func transformArticle
- * @desc 将 Prisma 文章记录转换为可传递给客户端组件的数据。
- * @param {PrismaArticle} article Prisma 文章记录。
- * @returns {Article} 客户端文章数据。
- */
-function transformArticle(article: PrismaArticle): Article {
-  return {
-    ...article,
-    createdAt: article.createdAt.toISOString(),
-    updatedAt: article.updatedAt.toISOString(),
-  };
-}
 
 /**
  * @func createEmptyArticleList
@@ -40,44 +24,42 @@ function createEmptyArticleList(params: ArticleListParams): ArticleListData {
 }
 
 /**
- * @func fetchArticleList
- * @desc 在服务端查询文章列表首屏数据。
+ * @func buildArticleListQuery
+ * @desc 把文章列表查询参数拼成查询字符串，空值不拼进 URL。
  * @param {ArticleListParams} params 文章列表查询参数。
- * @returns {Promise<ArticleListData>} 文章列表首屏数据。
+ * @returns {string} 以 `?` 开头的查询字符串；没有参数时为空串。
+ */
+function buildArticleListQuery(params: ArticleListParams): string {
+  const search = new URLSearchParams();
+
+  if (params.cursor) search.set('cursor', params.cursor);
+  if (params.limit) search.set('limit', String(params.limit));
+  if (params.keyword) search.set('keyword', params.keyword);
+
+  const query = search.toString();
+  return query ? `?${query}` : '';
+}
+
+/**
+ * @func fetchArticleList
+ * @desc 在服务端查询文章列表首屏数据（经 db-service，沿用当前用户的文章查看权限）。
+ * @param {ArticleListParams} params 文章列表查询参数。
+ * @returns {Promise<ArticleListData>} 文章列表首屏数据；查询失败时返回空列表。
  */
 export async function fetchArticleList(params: ArticleListParams): Promise<ArticleListData> {
-  try {
-    const result = await queryArticles({
-      cursor: params.cursor,
-      limit: params.limit ?? 10,
-      keyword: params.keyword,
-    });
+  const result = await fetchPlatformApi<ArticleListData>(
+    `/articles${buildArticleListQuery(params)}`,
+  );
 
-    return {
-      data: result.data.map(transformArticle),
-      pagination: result.pagination,
-    };
-  } catch (error) {
-    console.error('文章查询失败：', error);
-
-    return createEmptyArticleList(params);
-  }
+  return result ?? createEmptyArticleList(params);
 }
 
 /**
  * @func fetchArticleById
  * @desc 在服务端查询单篇文章详情。
  * @param {string} id 文章 ID。
- * @returns {Promise<Article | null>} 文章详情数据；不存在或查询失败时返回 null。
+ * @returns {Promise<Article | null>} 文章详情数据；不存在、无权限或查询失败时返回 null。
  */
 export async function fetchArticleById(id: string): Promise<Article | null> {
-  try {
-    const article = await prisma.article.findUnique({ where: { id } });
-
-    return article ? transformArticle(article) : null;
-  } catch (error) {
-    console.error('文章详情查询失败：', error);
-
-    return null;
-  }
+  return fetchPlatformApi<Article>(`/articles/${encodeURIComponent(id)}`);
 }

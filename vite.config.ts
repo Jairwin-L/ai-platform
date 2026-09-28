@@ -13,7 +13,7 @@ export default defineConfig({
     tasks: {
       verify: {
         command: [
-          'vpr @ai/platform#prisma:generate',
+          'vpr @ai/db-service#prisma:generate',
           'vpr -r check',
           'vpr -r test',
           'vp exec stylelint --allow-empty-input --max-warnings 0 "**/*.{css,less,scss}"',
