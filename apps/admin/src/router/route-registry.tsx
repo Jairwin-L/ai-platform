@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import type { RouteObject } from 'react-router';
 import {
   ApiOutlined,
@@ -12,52 +12,52 @@ import {
   ToolOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import type { ResourceNode } from '@/api/methods/auth';
 import { DASHBOARD_PATH } from '@/constants/app';
+import type { ResourceNode } from '@/api/methods/auth';
 
 export interface RouteHandle {
-  title: string;
-  breadcrumb: string[];
+  breadcrumb?: string[];
+  title?: string;
 }
 
 export interface RouterMenu {
+  /**
+   * 服务端权限记录用的其他标识（历史 code 或 path），任一命中都映射到这条路由。
+   * 目录类资源的 path 未必是本地路由前缀，只能靠 code 命中，否则菜单 key 会退化成 `resource-<id>`。
+   */
+  aliases?: string[];
   /** 服务端权限资源的 code，见 apps/db-service/prisma/data/menu/data.ts 的 DEFAULT_PERMISSIONS */
   code: string;
-  title: string;
-  path: string;
+  handle?: RouteHandle;
   icon: ReactNode;
   /** 纯目录节点，只出现在菜单里，没有对应页面 */
   menu?: boolean;
-  route?: RouteObject;
-  /** 新增 / 编辑 / 详情等不进菜单但要注册的附属路由 */
+  /**
+   * 本地静态菜单里所属目录的 path。
+   * 缺省按 path 前缀归入目录；页面 URL 与目录不同前缀时（如系统配置下的 /system/*）需要显式声明。
+   */
+  parent?: string;
+  path: string;
+  /** 新增 / 编辑等不进菜单但要注册的附属路由 */
   relatedRoutes?: RouteObject[];
+  route?: RouteObject;
+  title: string;
 }
 
-function page(
-  path: string,
-  breadcrumb: string[],
-  load: () => Promise<{ default: ComponentType }>,
-): RouteObject {
-  const handle: RouteHandle = {
-    title: breadcrumb.at(-1) ?? '',
-    breadcrumb: ['首页', ...breadcrumb],
-  };
-  return { path, handle, lazy: async () => ({ Component: (await load()).default }) };
-}
+export { DASHBOARD_PATH };
 
-/**
- * 管理端本地页面注册表。
- *
- * 能看到哪些菜单、注册哪些路由由服务端 `/auth/menus` 返回的权限资源树决定：资源 code 或 path
- * 命中这里的记录才会注册对应页面。真正的越权拦截在 db-service 的 AdminPermissionAuth 上。
- */
 export const ROUTER_MENU: RouterMenu[] = [
   {
     code: 'ADMIN',
     title: '工作台',
     path: DASHBOARD_PATH,
     icon: <DashboardOutlined />,
-    route: page(DASHBOARD_PATH, ['工作台'], () => import('@/pages/main')),
+    handle: { title: '工作台', breadcrumb: ['首页'] },
+    route: {
+      path: DASHBOARD_PATH,
+      lazy: async () => ({ Component: (await import('@/pages/main')).default }),
+      handle: { title: '工作台', breadcrumb: ['首页'] },
+    },
   },
   {
     code: 'BUSINESS',
@@ -71,11 +71,14 @@ export const ROUTER_MENU: RouterMenu[] = [
     title: '平台用户',
     path: '/business/platform-user',
     icon: <UserOutlined />,
-    route: page(
-      '/business/platform-user',
-      ['业务管理', '平台用户'],
-      () => import('@/pages/business/platform-user'),
-    ),
+    handle: { title: '平台用户', breadcrumb: ['首页', '业务管理', '平台用户'] },
+    route: {
+      path: '/business/platform-user',
+      lazy: async () => ({
+        Component: (await import('@/pages/business/platform-user')).default,
+      }),
+      handle: { title: '平台用户', breadcrumb: ['首页', '业务管理', '平台用户'] },
+    },
   },
   {
     code: 'SYSTEM',
@@ -89,23 +92,28 @@ export const ROUTER_MENU: RouterMenu[] = [
     title: '用户管理',
     path: '/system/user',
     icon: <UserOutlined />,
-    route: page('/system/user', ['系统管理', '用户管理'], () => import('@/pages/system/user')),
+    handle: { title: '用户管理', breadcrumb: ['首页', '系统管理', '用户管理'] },
+    route: {
+      path: '/system/user',
+      lazy: async () => ({ Component: (await import('@/pages/system/user')).default }),
+      handle: { title: '用户管理', breadcrumb: ['首页', '系统管理', '用户管理'] },
+    },
     relatedRoutes: [
-      page(
-        '/system/user/create',
-        ['系统管理', '用户管理', '新增'],
-        () => import('@/pages/system/user/create'),
-      ),
-      page(
-        '/system/user/detail/:id',
-        ['系统管理', '用户管理', '详情'],
-        () => import('@/pages/system/user/detail'),
-      ),
-      page(
-        '/system/user/edit/:id',
-        ['系统管理', '用户管理', '编辑'],
-        () => import('@/pages/system/user/edit'),
-      ),
+      {
+        path: '/system/user/create',
+        lazy: async () => ({ Component: (await import('@/pages/system/user/create')).default }),
+        handle: { title: '新增用户', breadcrumb: ['首页', '系统管理', '用户管理', '新增'] },
+      },
+      {
+        path: '/system/user/detail/:id',
+        lazy: async () => ({ Component: (await import('@/pages/system/user/detail')).default }),
+        handle: { title: '用户详情', breadcrumb: ['首页', '系统管理', '用户管理', '详情'] },
+      },
+      {
+        path: '/system/user/edit/:id',
+        lazy: async () => ({ Component: (await import('@/pages/system/user/edit')).default }),
+        handle: { title: '编辑用户', breadcrumb: ['首页', '系统管理', '用户管理', '编辑'] },
+      },
     ],
   },
   {
@@ -113,18 +121,23 @@ export const ROUTER_MENU: RouterMenu[] = [
     title: '角色管理',
     path: '/system/role',
     icon: <SafetyCertificateOutlined />,
-    route: page('/system/role', ['系统管理', '角色管理'], () => import('@/pages/system/role')),
+    handle: { title: '角色管理', breadcrumb: ['首页', '系统管理', '角色管理'] },
+    route: {
+      path: '/system/role',
+      lazy: async () => ({ Component: (await import('@/pages/system/role')).default }),
+      handle: { title: '角色管理', breadcrumb: ['首页', '系统管理', '角色管理'] },
+    },
     relatedRoutes: [
-      page(
-        '/system/role/create',
-        ['系统管理', '角色管理', '新建'],
-        () => import('@/pages/system/role/create'),
-      ),
-      page(
-        '/system/role/edit/:id',
-        ['系统管理', '角色管理', '编辑'],
-        () => import('@/pages/system/role/edit'),
-      ),
+      {
+        path: '/system/role/create',
+        lazy: async () => ({ Component: (await import('@/pages/system/role/create')).default }),
+        handle: { title: '新建角色', breadcrumb: ['首页', '系统管理', '角色管理', '新建'] },
+      },
+      {
+        path: '/system/role/edit/:id',
+        lazy: async () => ({ Component: (await import('@/pages/system/role/edit')).default }),
+        handle: { title: '编辑角色', breadcrumb: ['首页', '系统管理', '角色管理', '编辑'] },
+      },
     ],
   },
   {
@@ -132,18 +145,23 @@ export const ROUTER_MENU: RouterMenu[] = [
     title: '菜单管理',
     path: '/system/menu',
     icon: <MenuOutlined />,
-    route: page('/system/menu', ['系统管理', '菜单管理'], () => import('@/pages/system/menu')),
+    handle: { title: '菜单管理', breadcrumb: ['首页', '系统管理', '菜单管理'] },
+    route: {
+      path: '/system/menu',
+      lazy: async () => ({ Component: (await import('@/pages/system/menu')).default }),
+      handle: { title: '菜单管理', breadcrumb: ['首页', '系统管理', '菜单管理'] },
+    },
     relatedRoutes: [
-      page(
-        '/system/menu/create',
-        ['系统管理', '菜单管理', '新建'],
-        () => import('@/pages/system/menu/create'),
-      ),
-      page(
-        '/system/menu/edit/:id',
-        ['系统管理', '菜单管理', '编辑'],
-        () => import('@/pages/system/menu/edit'),
-      ),
+      {
+        path: '/system/menu/create',
+        lazy: async () => ({ Component: (await import('@/pages/system/menu/create')).default }),
+        handle: { title: '新建资源', breadcrumb: ['首页', '系统管理', '菜单管理', '新建'] },
+      },
+      {
+        path: '/system/menu/edit/:id',
+        lazy: async () => ({ Component: (await import('@/pages/system/menu/edit')).default }),
+        handle: { title: '编辑资源', breadcrumb: ['首页', '系统管理', '菜单管理', '编辑'] },
+      },
     ],
   },
   {
@@ -157,65 +175,117 @@ export const ROUTER_MENU: RouterMenu[] = [
     code: 'SYSTEM_SETTINGS',
     title: '基础配置',
     path: '/system/settings',
+    parent: '/config',
     icon: <ToolOutlined />,
-    route: page(
-      '/system/settings',
-      ['系统配置', '基础配置'],
-      () => import('@/pages/system/settings'),
-    ),
+    handle: { title: '基础配置', breadcrumb: ['首页', '系统配置', '基础配置'] },
+    route: {
+      path: '/system/settings',
+      lazy: async () => ({ Component: (await import('@/pages/system/settings')).default }),
+      handle: { title: '基础配置', breadcrumb: ['首页', '系统配置', '基础配置'] },
+    },
   },
   {
     code: 'SYSTEM_AI_PROVIDERS',
     title: 'AI Provider',
     path: '/system/ai-provider',
+    parent: '/config',
     icon: <RobotOutlined />,
-    route: page(
-      '/system/ai-provider',
-      ['系统配置', 'AI Provider'],
-      () => import('@/pages/system/ai-provider'),
-    ),
+    handle: { title: 'AI Provider', breadcrumb: ['首页', '系统配置', 'AI Provider'] },
+    route: {
+      path: '/system/ai-provider',
+      lazy: async () => ({ Component: (await import('@/pages/system/ai-provider')).default }),
+      handle: { title: 'AI Provider', breadcrumb: ['首页', '系统配置', 'AI Provider'] },
+    },
     relatedRoutes: [
-      page(
-        '/system/ai-provider/create',
-        ['系统配置', 'AI Provider', '新建'],
-        () => import('@/pages/system/ai-provider/create'),
-      ),
-      page(
-        '/system/ai-provider/edit/:value',
-        ['系统配置', 'AI Provider', '编辑'],
-        () => import('@/pages/system/ai-provider/edit'),
-      ),
+      {
+        path: '/system/ai-provider/create',
+        lazy: async () => ({
+          Component: (await import('@/pages/system/ai-provider/create')).default,
+        }),
+        handle: {
+          title: '新建 AI Provider',
+          breadcrumb: ['首页', '系统配置', 'AI Provider', '新建'],
+        },
+      },
+      {
+        path: '/system/ai-provider/edit/:value',
+        lazy: async () => ({
+          Component: (await import('@/pages/system/ai-provider/edit')).default,
+        }),
+        handle: {
+          title: '编辑 AI Provider',
+          breadcrumb: ['首页', '系统配置', 'AI Provider', '编辑'],
+        },
+      },
     ],
   },
   {
     code: 'SYSTEM_THIRD_PARTY_SERVICES',
     title: '第三方服务',
     path: '/system/third-party-service',
+    parent: '/config',
     icon: <ApiOutlined />,
-    route: page(
-      '/system/third-party-service',
-      ['系统配置', '第三方服务'],
-      () => import('@/pages/system/third-party-service'),
-    ),
+    handle: { title: '第三方服务', breadcrumb: ['首页', '系统配置', '第三方服务'] },
+    route: {
+      path: '/system/third-party-service',
+      lazy: async () => ({
+        Component: (await import('@/pages/system/third-party-service')).default,
+      }),
+      handle: { title: '第三方服务', breadcrumb: ['首页', '系统配置', '第三方服务'] },
+    },
     relatedRoutes: [
-      page(
-        '/system/third-party-service/create',
-        ['系统配置', '第三方服务', '新建'],
-        () => import('@/pages/system/third-party-service/create'),
-      ),
-      page(
-        '/system/third-party-service/edit/:value',
-        ['系统配置', '第三方服务', '编辑'],
-        () => import('@/pages/system/third-party-service/edit'),
-      ),
+      {
+        path: '/system/third-party-service/create',
+        lazy: async () => ({
+          Component: (await import('@/pages/system/third-party-service/create')).default,
+        }),
+        handle: { title: '新建第三方服务', breadcrumb: ['首页', '系统配置', '第三方服务', '新建'] },
+      },
+      {
+        path: '/system/third-party-service/edit/:value',
+        lazy: async () => ({
+          Component: (await import('@/pages/system/third-party-service/edit')).default,
+        }),
+        handle: { title: '编辑第三方服务', breadcrumb: ['首页', '系统配置', '第三方服务', '编辑'] },
+      },
     ],
   },
 ];
 
-const META_BY_CODE = new Map(ROUTER_MENU.map((meta) => [meta.code, meta]));
-const META_BY_PATH = new Map(ROUTER_MENU.map((meta) => [meta.path, meta]));
+const META_BY_CODE = new Map<string, RouterMenu>();
+const META_BY_PATH = new Map<string, RouterMenu>();
 
-/** 权限记录里 icon 字段存的是图标组件名，映射不到本地路由的资源（如新增的目录）靠它拿图标 */
+ROUTER_MENU.forEach((meta) => {
+  META_BY_CODE.set(meta.code, meta);
+  META_BY_PATH.set(meta.path, meta);
+  meta.aliases?.forEach((alias) => {
+    META_BY_CODE.set(alias, meta);
+    META_BY_PATH.set(alias, meta);
+  });
+});
+
+function normalizePath(path?: string | null): string {
+  return path || '';
+}
+
+/** 把服务端的权限资源映射到本地路由：code / path（含 aliases）任一命中即可 */
+export function getRouteMeta(resource: ResourceNode): RouterMenu | undefined {
+  return META_BY_CODE.get(resource.code) || META_BY_PATH.get(normalizePath(resource.path));
+}
+
+export function getResourceRoutePath(resource: ResourceNode): string {
+  return getRouteMeta(resource)?.path || normalizePath(resource.path);
+}
+
+export function isKnownRoutePath(path?: string | null): boolean {
+  const value = normalizePath(path);
+  return Boolean(value && META_BY_PATH.get(value)?.route);
+}
+
+/**
+ * 权限记录里 icon 字段存的是图标组件名，
+ * 映射不到本地路由的资源（如新增的目录）靠它拿到图标，否则整列都是同一个兜底图标。
+ */
 const MENU_ICON_BY_NAME: Record<string, ReactNode> = {
   ApiOutlined: <ApiOutlined />,
   AppstoreOutlined: <AppstoreOutlined />,
@@ -228,19 +298,6 @@ const MENU_ICON_BY_NAME: Record<string, ReactNode> = {
   ToolOutlined: <ToolOutlined />,
   UserOutlined: <UserOutlined />,
 };
-
-/** 把服务端的权限资源映射到本地路由：code 或 path 任一命中即可 */
-export function getRouteMeta(resource: ResourceNode): RouterMenu | undefined {
-  return META_BY_CODE.get(resource.code) || META_BY_PATH.get(resource.path ?? '');
-}
-
-export function getResourceRoutePath(resource: ResourceNode): string {
-  return getRouteMeta(resource)?.path || resource.path || '';
-}
-
-export function isKnownRoutePath(path?: string | null): boolean {
-  return Boolean(path && META_BY_PATH.get(path)?.route);
-}
 
 export function getRouteIcon(resource: ResourceNode): ReactNode {
   const meta = getRouteMeta(resource);
@@ -266,12 +323,4 @@ export function collectResourceRouteMetas(resources: ResourceNode[]): RouterMenu
 
   resources.forEach(visit);
   return metas;
-}
-
-/** 展开路由记录里的全部页面路由（含附属路由） */
-export function collectRoutes(metas: RouterMenu[]): RouteObject[] {
-  return metas.flatMap((meta) => [
-    ...(meta.route ? [meta.route] : []),
-    ...(meta.relatedRoutes ?? []),
-  ]);
 }

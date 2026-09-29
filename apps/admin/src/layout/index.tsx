@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
-import { Layout, Menu, type MenuProps } from 'antd';
+import { Layout, Menu, Spin, type MenuProps } from 'antd';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { LOGIN_PATH } from '@/constants/app';
 import PageLoading from '@/components/page-loading';
@@ -18,9 +18,10 @@ const MOBILE_COLLAPSED_TOGGLE_OFFSET = 16;
 
 interface AppLayoutProps {
   menuItems: MenuItem[];
+  menuLoading?: boolean;
 }
 
-export default function AppLayout({ menuItems }: AppLayoutProps) {
+export default function AppLayout({ menuItems, menuLoading = false }: AppLayoutProps) {
   const navigate = useNavigate();
   const { pathname, search, hash } = useLocation();
   const currentPath = `${pathname}${search}${hash}`;
@@ -105,16 +106,18 @@ export default function AppLayout({ menuItems }: AppLayoutProps) {
         onCollapse={setCollapsed}
       >
         <Logo collapsed={collapsed} />
-        <Menu
-          theme="dark"
-          mode="inline"
-          triggerSubMenuAction="click"
-          openKeys={collapsed ? [] : openKeys}
-          selectedKeys={selectedKeys}
-          items={menuItems}
-          onClick={onChangeMenu}
-          onOpenChange={onOpenChange}
-        />
+        <Spin spinning={menuLoading} size="small" description="菜单加载中……">
+          <Menu
+            theme="dark"
+            mode="inline"
+            triggerSubMenuAction="click"
+            openKeys={collapsed ? [] : openKeys}
+            selectedKeys={selectedKeys}
+            items={menuItems}
+            onClick={onChangeMenu}
+            onOpenChange={onOpenChange}
+          />
+        </Spin>
       </Sider>
       <button
         type="button"

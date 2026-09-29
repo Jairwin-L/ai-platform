@@ -44,28 +44,28 @@ const METRICS: OverviewMetric[] = [
     title: '平台用户',
     description: '前台注册的用户账号',
     permission: PLATFORM_USER.READ,
-    load: async () => (await getPlatformUsers({ page: 1, pageSize: 1 })).total,
+    load: async () => (await getPlatformUsers({ page: 1, pageSize: 1 })).data?.total ?? 0,
   },
   {
     key: 'systemUsers',
     title: '系统用户',
     description: '可登录管理端的账号',
     permission: USER.READ,
-    load: async () => (await getRbacUsers({ page: 1, pageSize: 1 })).total,
+    load: async () => (await getRbacUsers({ page: 1, pageSize: 1 })).data?.total ?? 0,
   },
   {
     key: 'roles',
     title: '角色',
     description: '可分配的职责与授权集合',
     permission: ROLE.READ,
-    load: async () => (await getRbacRolePage({ page: 1, pageSize: 1 })).total,
+    load: async () => (await getRbacRolePage({ page: 1, pageSize: 1 })).data?.total ?? 0,
   },
   {
     key: 'providers',
     title: 'AI Provider',
     description: '用户密钥页可选的 Provider',
     permission: AI_PROVIDER.READ,
-    load: async () => (await getAiProviderOptions()).length,
+    load: async () => (await getAiProviderOptions()).data?.length ?? 0,
   },
 ];
 

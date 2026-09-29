@@ -51,7 +51,7 @@ export default function FormPage({ permissionId, parentId }: FormPageProps) {
     ]);
 
     if (treeResult.status === 'fulfilled') {
-      setPermissions(treeResult.value.data);
+      setPermissions(treeResult.value.data?.data ?? []);
     } else {
       setLoadFailed(true);
     }
@@ -62,8 +62,8 @@ export default function FormPage({ permissionId, parentId }: FormPageProps) {
       return;
     }
 
-    if (permissionResult.status === 'fulfilled' && permissionResult.value) {
-      const permission = permissionResult.value;
+    if (permissionResult.status === 'fulfilled' && permissionResult.value?.data) {
+      const permission = permissionResult.value.data;
       form.setFieldsValue({
         name: permission.name,
         code: permission.code,

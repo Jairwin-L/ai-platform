@@ -52,7 +52,7 @@ export default function FormPage({ roleId }: { roleId?: string }) {
     ]);
 
     if (treeResult.status === 'fulfilled') {
-      setPermissionTree(getPermissionTree(treeResult.value.data));
+      setPermissionTree(getPermissionTree(treeResult.value.data?.data ?? []));
     } else {
       setLoadFailed(true);
     }
@@ -64,7 +64,7 @@ export default function FormPage({ roleId }: { roleId?: string }) {
     }
 
     if (rolesResult.status === 'fulfilled') {
-      const role = rolesResult.value?.find((item) => item.id === roleId);
+      const role = rolesResult.value?.data?.find((item) => item.id === roleId);
       if (role) {
         setIsSuperAdmin(role.code === RoleCode.SUPER_ADMIN);
         form.setFieldsValue({

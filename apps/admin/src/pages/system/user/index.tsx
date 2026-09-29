@@ -43,8 +43,8 @@ export default function Page() {
   const filters = useMemo(() => ({ roleId: filterRole }), [filterRole]);
   const fetcher = useCallback(
     async ({ page, pageSize, searchTerm }: AdminTableQuery) => {
-      const result = await getRbacUsers({ page, pageSize, searchTerm, roleId: filterRole });
-      return { list: result.data, total: result.total };
+      const response = await getRbacUsers({ page, pageSize, searchTerm, roleId: filterRole });
+      return { list: response.data?.data ?? [], total: response.data?.total ?? 0 };
     },
     [filterRole],
   );
@@ -71,7 +71,7 @@ export default function Page() {
   // 角色下拉只用于筛选，与列表分页无关，单独拉一次即可
   useEffect(() => {
     getRbacRoles()
-      .then(setRoles)
+      .then((response) => setRoles(response.data ?? []))
       .catch(() => setRoles([]));
   }, []);
 

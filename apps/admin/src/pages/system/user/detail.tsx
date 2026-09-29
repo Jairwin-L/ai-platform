@@ -35,7 +35,8 @@ export default function Page() {
     setLoading(true);
     setLoadFailed(false);
     try {
-      setUser(await getRbacUser(id));
+      const response = await getRbacUser(id);
+      setUser(response.data ?? null);
     } catch {
       setLoadFailed(true);
     } finally {

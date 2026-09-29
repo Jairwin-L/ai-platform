@@ -2,7 +2,7 @@
  * @file RBAC 接口，对应 apps/db-service 的 Permissions / Roles / Users / UserRoles / PlatformUsers 控制器。
  */
 import { RBAC } from '../const';
-import { del, get, post, put } from '../request';
+import { del, get, post, put, request } from '../request';
 
 export type PermissionKind = IApiAdmin.PermissionKind;
 export type RbacPermission = IApiAdmin.ResourceNode;
@@ -77,7 +77,7 @@ export function updateRbacRole(id: string, payload: Partial<RolePayload>) {
 }
 
 export function deleteRbacRole(id: string) {
-  return del<null>(RBAC.ROLES, { params: { id } });
+  return del<null>(RBAC.ROLES, { id });
 }
 
 /**
@@ -113,7 +113,7 @@ export function deleteRbacUser(id: string) {
 }
 
 export function deleteRbacUsers(ids: string[]) {
-  return del<{ ids: string[] }>(RBAC.USERS, { data: { ids } });
+  return request<{ ids: string[] }>(RBAC.USERS, { method: 'DELETE', data: { ids } });
 }
 
 /** 编辑用户时与资料接口并发发出，成功提示交给资料接口，避免连弹两条 */
@@ -121,7 +121,7 @@ export function updateRbacUserRoles(userId: string, roleIds: string[]) {
   return post<{ userId: string; roles: IApiAdmin.RoleRef[] }>(
     RBAC.USER_ROLES,
     { userId, roleIds },
-    { silentSuccess: true },
+    { meta: { silentSuccess: true } },
   );
 }
 

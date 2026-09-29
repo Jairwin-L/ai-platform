@@ -44,7 +44,8 @@ export default function Page() {
     setLoading(true);
     setLoadFailed(false);
     try {
-      form.setFieldsValue(toFormValues(await getSystemSettings()));
+      const response = await getSystemSettings();
+      if (response.data) form.setFieldsValue(toFormValues(response.data));
     } catch {
       setLoadFailed(true);
     } finally {
@@ -72,7 +73,8 @@ export default function Page() {
 
     setSaving(true);
     try {
-      form.setFieldsValue(toFormValues(await updateSystemSettings(parsed.data)));
+      const response = await updateSystemSettings(parsed.data);
+      if (response.data) form.setFieldsValue(toFormValues(response.data));
     } catch {
       // 接口错误已由全局响应拦截器提示
     } finally {

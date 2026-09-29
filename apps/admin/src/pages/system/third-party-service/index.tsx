@@ -47,7 +47,8 @@ export default function Page() {
     setLoading(true);
     setLoadFailed(false);
     try {
-      setOptions(await getThirdPartyServiceOptions());
+      const response = await getThirdPartyServiceOptions();
+      setOptions(response.data ?? []);
     } catch {
       setOptions([]);
       setLoadFailed(true);
@@ -63,7 +64,8 @@ export default function Page() {
   const onToggleEnabled = async (option: ThirdPartyServiceOption, enabled: boolean) => {
     setUpdating(option.value);
     try {
-      const next = await updateThirdPartyServiceOption(option.value, { ...option, enabled });
+      const response = await updateThirdPartyServiceOption(option.value, { ...option, enabled });
+      const next = response.data ?? { ...option, enabled };
       setOptions((current) => current.map((item) => (item.value === option.value ? next : item)));
     } catch {
       // 接口错误已由全局响应拦截器提示

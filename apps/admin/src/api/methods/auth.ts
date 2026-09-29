@@ -10,10 +10,10 @@ export type PermissionKind = IApiAdmin.PermissionKind;
 
 async function getLoginPublicKey(): Promise<string | null> {
   try {
-    const data = await get<{ publicKey: string }>(AUTH.LOGIN_PUBLIC_KEY, undefined, {
-      silent: true,
+    const response = await get<{ publicKey: string }>(AUTH.LOGIN_PUBLIC_KEY, undefined, {
+      meta: { silent: true },
     });
-    return data?.publicKey ?? null;
+    return response.data?.publicKey ?? null;
   } catch {
     return null;
   }
@@ -65,18 +65,22 @@ async function encryptPasswordIfPossible(
 /** 管理端登录：系统用户按账号登录，只下发会话 Cookie，当前账号统一以 /auth/me 为准 */
 export async function adminLogin(data: { account: string; password: string }) {
   const { password, encrypted } = await encryptPasswordIfPossible(data.password);
-  return post<null>(AUTH.LOGIN, { account: data.account, password, encrypted }, { silent: true });
+  return post<null>(
+    AUTH.LOGIN,
+    { account: data.account, password, encrypted },
+    { meta: { silent: true } },
+  );
 }
 
 export function fetchCurrentUser() {
-  return get<AuthAccount>(AUTH.ME, undefined, { silent: true });
+  return get<AuthAccount>(AUTH.ME, undefined, { meta: { silent: true } });
 }
 
 /** 当前账号可见的菜单资源树 */
 export function getCurrentMenus() {
-  return get<ResourceNode[]>(AUTH.MENUS, undefined, { silent: true });
+  return get<ResourceNode[]>(AUTH.MENUS, undefined, { meta: { silent: true } });
 }
 
 export function logout() {
-  return post<null>(AUTH.LOGOUT, undefined, { silent: true });
+  return post<null>(AUTH.LOGOUT, undefined, { meta: { silent: true } });
 }

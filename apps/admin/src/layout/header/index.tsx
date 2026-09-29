@@ -20,10 +20,15 @@ const dropdownItems: MenuProps['items'] = [
 ];
 
 function getCurrentRouteHandle(matches: ReturnType<typeof useMatches>) {
-  const matched = [...matches]
+  const matchedRoute = [...matches]
     .reverse()
     .find((match) => (match.handle as RouteHandle | undefined)?.title);
-  return matched?.handle as RouteHandle | undefined;
+  return matchedRoute?.handle as RouteHandle | undefined;
+}
+
+function buildBreadcrumbItems(handle: RouteHandle | undefined, pageTitle: string) {
+  const titles = handle?.breadcrumb?.length ? handle.breadcrumb : ['首页', pageTitle];
+  return titles.map((title) => ({ title }));
 }
 
 export default function Header() {
@@ -33,7 +38,7 @@ export default function Header() {
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const routeHandle = getCurrentRouteHandle(matches);
   const pageTitle = routeHandle?.title || SITE_NAME;
-  const breadcrumbItems = (routeHandle?.breadcrumb ?? ['首页']).map((title) => ({ title }));
+  const breadcrumbItems = buildBreadcrumbItems(routeHandle, pageTitle);
   const displayName =
     currentUser?.nickname || currentUser?.username || currentUser?.account || '管理员';
 

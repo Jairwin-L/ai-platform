@@ -55,7 +55,9 @@ export default function Page() {
       await adminLogin(parsed.data);
       // 登录接口只下发会话 Cookie，当前账号统一以 /auth/me 为准。
       // 这一步拿不到账号，通常是跨域会话 Cookie 没写进浏览器（CORS / SameSite / 域名配置）
-      const account = await fetchCurrentUser().catch(() => null);
+      const account = await fetchCurrentUser()
+        .then((response) => response.data ?? null)
+        .catch(() => null);
       if (!account) {
         setErrorMessage('登录状态未生效，请检查管理后台与接口服务的域名配置');
         return;

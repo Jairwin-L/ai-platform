@@ -1,8 +1,8 @@
 import type { MenuProps } from 'antd';
 import type { ResourceNode } from '@/api/methods/auth';
-import { DASHBOARD_PATH } from '@/constants/app';
 import {
   ROUTER_MENU,
+  DASHBOARD_PATH,
   getResourceRoutePath,
   getRouteIcon,
   isKnownRoutePath,
@@ -14,18 +14,17 @@ export type MenuItem = Required<MenuProps>['items'][number];
 export const MENU_CHANGED_EVENT = 'admin-resource-menu-changed';
 
 /** 能作为菜单展示的资源类型；按钮、数据等权限不进菜单 */
-const MENU_RESOURCE_TYPES = new Set(['directory', 'menu', 'system', 'module', 'page']);
+const MENU_RESOURCE_TYPES = ['directory', 'menu', 'system', 'module', 'page'];
 
-function sortResources(resources: ResourceNode[]): ResourceNode[] {
-  return [...resources].sort((left, right) => (left.sort ?? 0) - (right.sort ?? 0));
+function isMenuResource(resource: ResourceNode): boolean {
+  return MENU_RESOURCE_TYPES.includes(resource.type);
 }
 
 function buildItem(resource: ResourceNode): MenuItem | null {
-  if (!resource.enable || !resource.isShow || !MENU_RESOURCE_TYPES.has(resource.type)) {
-    return null;
-  }
+  if (!resource.enable || !resource.isShow || !isMenuResource(resource)) return null;
 
-  const children = sortResources(resource.children ?? [])
+  const children = [...(resource.children || [])]
+    .sort((left, right) => (left.sort ?? 0) - (right.sort ?? 0))
     .map(buildItem)
     .filter(Boolean) as MenuItem[];
   const path = getResourceRoutePath(resource);
@@ -33,20 +32,26 @@ function buildItem(resource: ResourceNode): MenuItem | null {
 
   // 没有子项、又映射不到本地路由的资源直接丢弃，避免点了跳到 404
   if (!isDirectory && !isKnownRoutePath(path)) return null;
-  // 下面一个可见子项都没有的目录也不展示，否则侧边栏会出现点不开的空分组
+  // 下面一个可见子项都没有的目录也不展示，否则它会被当成叶子菜单，点了同样跳 404
   if (isDirectory && children.length === 0) return null;
 
   return {
-    key: isDirectory ? `resource-${resource.id}` : path,
+    key: path || `resource-${resource.id}`,
     label: resource.name,
     icon: getRouteIcon(resource),
-    children: isDirectory ? children : undefined,
+    // 叶子不能带空数组：antd 只要 children 存在就渲染成可展开的子菜单
+    children: children.length > 0 ? children : undefined,
   };
 }
 
-/** 由服务端权限树生成菜单 */
+/**
+ * 由服务端权限树生成菜单。
+ */
 export function buildMenuItems(resources: ResourceNode[]): MenuItem[] {
-  return sortResources(resources).map(buildItem).filter(Boolean) as MenuItem[];
+  return [...resources]
+    .sort((left, right) => (left.sort ?? 0) - (right.sort ?? 0))
+    .map(buildItem)
+    .filter(Boolean) as MenuItem[];
 }
 
 /**
@@ -62,18 +67,20 @@ export function getStaticMenuItems(): MenuItem[] {
     items.push({ key: dashboard.path, label: dashboard.title, icon: dashboard.icon });
   }
 
-  const directoryIndexes = ROUTER_MENU.map((meta, index) => (meta.menu ? index : -1)).filter(
-    (index) => index >= 0,
-  );
-  directoryIndexes.forEach((start, position) => {
-    const directory = ROUTER_MENU[start];
-    const end = directoryIndexes[position + 1] ?? ROUTER_MENU.length;
-    // 注册表按「目录 → 所属页面」顺序排列，目录之后、下一个目录之前的页面都挂在它下面
-    const children = ROUTER_MENU.slice(start + 1, end)
-      .filter((meta) => meta.route)
-      .map((meta) => ({ key: meta.path, label: meta.title, icon: meta.icon }));
+  ROUTER_MENU.filter((meta) => meta.menu).forEach((directory) => {
+    const children = ROUTER_MENU.filter((meta) => {
+      if (meta.menu || !meta.route) return false;
+      return meta.parent
+        ? meta.parent === directory.path
+        : meta.path.startsWith(`${directory.path}/`);
+    }).map((meta) => ({ key: meta.path, label: meta.title, icon: meta.icon }));
     if (children.length === 0) return;
-    items.push({ key: directory.path, label: directory.title, icon: directory.icon, children });
+    items.push({
+      key: directory.path,
+      label: directory.title,
+      icon: directory.icon,
+      children,
+    });
   });
 
   return items;

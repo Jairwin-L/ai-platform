@@ -43,8 +43,13 @@ export default function Page() {
   const filters = useMemo(() => ({ status: filterStatus }), [filterStatus]);
   const fetcher = useCallback(
     async ({ page, pageSize, searchTerm }: AdminTableQuery) => {
-      const result = await getPlatformUsers({ page, pageSize, searchTerm, status: filterStatus });
-      return { list: result.data, total: result.total };
+      const response = await getPlatformUsers({
+        page,
+        pageSize,
+        searchTerm,
+        status: filterStatus,
+      });
+      return { list: response.data?.data ?? [], total: response.data?.total ?? 0 };
     },
     [filterStatus],
   );

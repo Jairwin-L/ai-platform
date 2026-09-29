@@ -73,8 +73,8 @@ export default function Page() {
     setLoadFailed(false);
     const [userResult, rolesResult] = await Promise.allSettled([getRbacUser(id), getRbacRoles()]);
 
-    if (userResult.status === 'fulfilled') {
-      const result = userResult.value;
+    if (userResult.status === 'fulfilled' && userResult.value.data) {
+      const result = userResult.value.data;
       setUser(result);
       form.setFieldsValue({
         account: result.account,
@@ -88,7 +88,7 @@ export default function Page() {
     }
 
     if (rolesResult.status === 'fulfilled') {
-      setRoles(rolesResult.value);
+      setRoles(rolesResult.value.data ?? []);
     } else {
       setLoadFailed(true);
     }

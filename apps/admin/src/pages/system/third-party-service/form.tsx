@@ -29,8 +29,9 @@ export default function FormPage({ serviceValue }: { serviceValue?: string }) {
     setLoading(true);
     setLoadFailed(false);
     try {
-      const option = await getThirdPartyServiceOption(serviceValue);
-      form.setFieldsValue({ ...option, apiKeyUrl: option.apiKeyUrl ?? '' });
+      const response = await getThirdPartyServiceOption(serviceValue);
+      const option = response.data;
+      if (option) form.setFieldsValue({ ...option, apiKeyUrl: option.apiKeyUrl ?? '' });
     } catch {
       setLoadFailed(true);
     } finally {

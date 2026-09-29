@@ -63,7 +63,8 @@ export default function App() {
 
     let resources: ResourceNode[] = [];
     try {
-      resources = await getCurrentMenus();
+      const response = await getCurrentMenus();
+      resources = response.data ?? [];
     } catch {
       // 菜单接口失败时超级管理员退回本地静态菜单，至少保证后台能进
       resources = [];

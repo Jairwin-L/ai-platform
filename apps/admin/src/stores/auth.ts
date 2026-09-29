@@ -47,7 +47,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     set({ loading: true });
     currentUserRequest = fetchCurrentUser()
-      .then((currentUser) => {
+      .then((response) => {
+        const currentUser = response.data ?? null;
         set({ currentUser, initialized: true, loading: false });
         return currentUser;
       })

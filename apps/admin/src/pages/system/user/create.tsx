@@ -34,10 +34,10 @@ export default function Page() {
     setLoading(true);
     setLoadFailed(false);
     try {
-      const roles = await getRbacRoles();
+      const response = await getRbacRoles();
       // 超级管理员角色只能通过 bootstrap 分配，服务端也会拒绝
       setRoleOptions(
-        roles
+        (response.data ?? [])
           .filter((role) => role.enable && role.code !== RoleCode.SUPER_ADMIN)
           .map((role) => ({ label: role.name, value: role.id })),
       );

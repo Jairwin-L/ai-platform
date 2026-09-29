@@ -45,8 +45,8 @@ export default function Page() {
   // 资源以树形整体返回，不做分页
   const fetcher = useCallback(
     async ({ searchTerm }: AdminTableQuery) => {
-      const result = await getRbacPermissions({ tree: true, searchTerm, type: filterType });
-      return { list: result.data, total: result.total };
+      const response = await getRbacPermissions({ tree: true, searchTerm, type: filterType });
+      return { list: response.data?.data ?? [], total: response.data?.total ?? 0 };
     },
     [filterType],
   );

@@ -44,12 +44,12 @@ export default function RoleUserAssignModal({ role, onClose }: RoleUserAssignMod
       getRoleUsers(role.id),
     ]);
     if (usersResult.status === 'fulfilled') {
-      setUsers(usersResult.value.data);
+      setUsers(usersResult.value.data?.data ?? []);
     } else {
       setLoadFailed(true);
     }
     if (roleUsersResult.status === 'fulfilled') {
-      setSelectedIds(roleUsersResult.value.map((user) => user.id));
+      setSelectedIds(roleUsersResult.value.data?.map((user) => user.id) ?? []);
     } else {
       setLoadFailed(true);
     }

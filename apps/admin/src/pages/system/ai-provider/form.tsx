@@ -29,8 +29,9 @@ export default function FormPage({ providerValue }: { providerValue?: string }) 
     setLoading(true);
     setLoadFailed(false);
     try {
-      const option = await getAiProviderOption(providerValue);
-      form.setFieldsValue({ ...option, apiKeyUrl: option.apiKeyUrl ?? '' });
+      const response = await getAiProviderOption(providerValue);
+      const option = response.data;
+      if (option) form.setFieldsValue({ ...option, apiKeyUrl: option.apiKeyUrl ?? '' });
     } catch {
       setLoadFailed(true);
     } finally {

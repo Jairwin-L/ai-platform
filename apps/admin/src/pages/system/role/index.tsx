@@ -34,8 +34,13 @@ export default function Page() {
   const filters = useMemo(() => ({ enable: filterEnable }), [filterEnable]);
   const fetcher = useCallback(
     async ({ page, pageSize, searchTerm }: AdminTableQuery) => {
-      const result = await getRbacRolePage({ page, pageSize, searchTerm, enable: filterEnable });
-      return { list: result.data, total: result.total };
+      const response = await getRbacRolePage({
+        page,
+        pageSize,
+        searchTerm,
+        enable: filterEnable,
+      });
+      return { list: response.data?.data ?? [], total: response.data?.total ?? 0 };
     },
     [filterEnable],
   );
