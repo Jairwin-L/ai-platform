@@ -2,8 +2,8 @@
 #
 # db-service（NestJS）运行镜像 + Prisma 迁移工具镜像。
 # 构建 context 必须是仓库根目录：pnpm workspace 需要根 lockfile 与全部包的 package.json。
-#   docker build -f apps/db-service/Dockerfile --target runner -t ai-db-service:local .
-#   docker build -f apps/db-service/Dockerfile --target migrator -t ai-db-service:local-migrate .
+#   docker build -f apps/db-service/Dockerfile --target service-runner .
+#   docker build -f apps/db-service/Dockerfile --target prisma .
 
 ARG NODE_VERSION=22
 
@@ -35,10 +35,10 @@ COPY packages/utils/package.json ./packages/utils/
 RUN vp install --frozen-lockfile --ignore-scripts
 
 # ---------------------------------------------------------------------------
-# 迁移工具镜像：migrate deploy / 基线同步 / seed / bootstrap-admin 都在这里跑
+# prisma 工具镜像：migrate deploy / seed / bootstrap-admin 都在这个镜像里跑
 # ---------------------------------------------------------------------------
 
-FROM deps AS migrator
+FROM deps AS prisma
 
 ENV NODE_ENV=production
 
@@ -53,7 +53,7 @@ CMD ["vp", "run", "prisma:deploy"]
 # db-service 运行镜像
 # ---------------------------------------------------------------------------
 
-FROM deps AS builder
+FROM deps AS service-builder
 
 ENV NODE_OPTIONS="--max-old-space-size=3072"
 
@@ -63,11 +63,12 @@ WORKDIR /app/apps/db-service
 
 RUN DATABASE_URL="postgresql://prisma:prisma@localhost:5432/prisma?schema=public" vp run build
 
-FROM node:${NODE_VERSION}-bookworm-slim AS runner
+FROM node:${NODE_VERSION}-bookworm-slim AS service-runner
 
 ENV NODE_ENV=production
 ENV NODE_OPTIONS="--max-old-space-size=3072"
-ENV PORT=8072
+# 实际端口由 compose 注入 PORT（dev 8070 / prod 8072）
+ENV PORT=8070
 
 WORKDIR /app
 
@@ -79,17 +80,17 @@ RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 nodeapp
 
 # vp pack 只内联 @ai/*，其余依赖仍从 node_modules 解析；
 # pnpm 的 workspace 软链是相对路径，root 与包内 node_modules 必须成对拷贝。
-COPY --from=builder --chown=nodeapp:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nodeapp:nodejs /app/package.json ./package.json
-COPY --from=builder --chown=nodeapp:nodejs /app/apps/db-service/node_modules ./apps/db-service/node_modules
-COPY --from=builder --chown=nodeapp:nodejs /app/apps/db-service/package.json ./apps/db-service/package.json
-COPY --from=builder --chown=nodeapp:nodejs /app/apps/db-service/dist ./apps/db-service/dist
-COPY --from=builder --chown=nodeapp:nodejs /app/apps/db-service/generated ./apps/db-service/generated
+COPY --from=service-builder --chown=nodeapp:nodejs /app/node_modules ./node_modules
+COPY --from=service-builder --chown=nodeapp:nodejs /app/package.json ./package.json
+COPY --from=service-builder --chown=nodeapp:nodejs /app/apps/db-service/node_modules ./apps/db-service/node_modules
+COPY --from=service-builder --chown=nodeapp:nodejs /app/apps/db-service/package.json ./apps/db-service/package.json
+COPY --from=service-builder --chown=nodeapp:nodejs /app/apps/db-service/dist ./apps/db-service/dist
+COPY --from=service-builder --chown=nodeapp:nodejs /app/apps/db-service/generated ./apps/db-service/generated
 
 USER nodeapp
 
 WORKDIR /app/apps/db-service
 
-EXPOSE 8072
+EXPOSE 8070
 
 CMD ["node", "--enable-source-maps", "dist/main.mjs"]

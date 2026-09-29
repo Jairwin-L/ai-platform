@@ -1,0 +1,376 @@
+name: db-service
+run-name: db-service deploy ${{ github.ref_name }}
+
+# 手动触发：在 Actions 页面选择 dev 或 main 分支运行。
+# 分支决定环境：main -> production，dev -> development。
+# 只有 dev 分支会校验并打包镜像；main 分支不打包，直接复用 dev 栈
+# 当前正在运行的那个镜像重新部署（镜像 tag 从服务器上的容器读回）。
+#
+# 每次部署都会执行 prisma migrate deploy 与种子数据（菜单 / 角色只在 RBAC 未初始化时写入，
+# AI Provider 与第三方服务选项按种子值同步），随后按 BOOTSTRAP_ADMIN_* 确保超级管理员存在。
+# 种子数据输入（两个都勾时按 菜单 → 角色 的依赖顺序执行）：
+# - run_menu_seed：以 prisma/data/menu 为准覆盖同步菜单 / 按钮资源，
+#   库里多出来的菜单（含后台手动新增的）连同其角色关联会被删除。
+# - run_role_seed：以 prisma/data/role 为准重置种子角色，后台新建的角色保留。
+#   新增的权限码需要同时勾选 run_menu_seed。
+on:
+  workflow_dispatch:
+    inputs:
+      run_menu_seed:
+        description: '重跑菜单种子：以 menu/data.ts 为准覆盖同步，后台手动新增的菜单连同角色关联会被删除'
+        type: boolean
+        default: false
+      run_role_seed:
+        description: '重跑角色种子：种子角色的名称与权限重置为 role/data.ts，后台新建的角色保留（新增权限码需同时勾选菜单）'
+        type: boolean
+        default: false
+  # 供 deploy-all.yml 编排调用；输入与 workflow_dispatch 保持一致
+  workflow_call:
+    inputs:
+      run_menu_seed:
+        type: boolean
+        default: false
+      run_role_seed:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-service-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate with Vite+
+    runs-on: ubuntu-latest
+    # main 不打包，也就没有需要校验的产物；分支合法性在 deploy 里统一校验。
+    if: github.ref_name == 'dev'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: '22'
+          cache: true
+
+      - name: Install dependencies
+        run: vp install --frozen-lockfile
+
+      # check = prisma generate + vp check（类型 + oxlint + 格式），generate 不连库
+      - name: Check db-service
+        run: vpr @ai/db-service#check
+
+      - name: Test db-service
+        run: vpr @ai/db-service#test
+
+  build:
+    name: Build Docker images
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.ref_name == 'dev'
+    outputs:
+      service_image: ${{ steps.image.outputs.service_tag }}
+      prisma_tool_image: ${{ steps.image.outputs.prisma_tool_tag }}
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Resolve image name
+        id: image
+        shell: bash
+        run: |
+          IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
+          echo "name=${IMAGE_NAME}" >> "${GITHUB_OUTPUT}"
+          echo "service_tag=${IMAGE_NAME}:service-${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+          echo "prisma_tool_tag=${IMAGE_NAME}:prisma-${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Dockerfile 在 apps/db-service 下，但 context 必须是仓库根：
+      # pnpm workspace 安装需要根 lockfile 和所有包的 package.json。
+      - name: Build and push db-service image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/db-service/Dockerfile
+          target: service-runner
+          platforms: linux/amd64
+          push: true
+          # 只推不可变的 sha tag，理由同 platform.yml
+          tags: ${{ steps.image.outputs.service_tag }}
+          cache-from: |
+            type=gha,scope=db-service-runner
+            type=gha,scope=db-service-prisma
+          cache-to: type=gha,scope=db-service-runner,mode=max,ignore-error=true
+
+      - name: Build and push Prisma tool image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/db-service/Dockerfile
+          target: prisma
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.image.outputs.prisma_tool_tag }}
+          cache-from: |
+            type=gha,scope=db-service-runner
+            type=gha,scope=db-service-prisma
+          cache-to: type=gha,scope=db-service-prisma,mode=max,ignore-error=true
+
+  deploy:
+    name: Deploy to server
+    runs-on: ubuntu-latest
+    needs: [validate, build]
+    # main 上 validate / build 是 skipped，默认会连带跳过 deploy，这里显式放行。
+    if: ${{ !failure() && !cancelled() }}
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Validate deployment branch
+        shell: bash
+        run: |
+          case "${GITHUB_REF_NAME}" in
+            dev|main)
+              ;;
+            *)
+              echo "Unsupported deployment branch: ${GITHUB_REF_NAME}" >&2
+              echo "Use dev or main." >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          sparse-checkout: |
+            apps/db-service/docker-compose.yml
+            apps/db-service/docker-compose.dev.yml
+            apps/db-service/scripts/deploy.sh
+          sparse-checkout-cone-mode: false
+
+      - name: Configure SSH
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          : "${DEPLOY_HOST:?Missing required secret DEPLOY_HOST}"
+          : "${DEPLOY_PORT:?Missing required secret DEPLOY_PORT}"
+          : "${DEPLOY_SSH_KEY:?Missing required secret DEPLOY_SSH_KEY}"
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${DEPLOY_SSH_KEY}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -T 10 -p "${DEPLOY_PORT}" -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts || {
+            echo "Failed to scan SSH host key for ${DEPLOY_HOST}:${DEPLOY_PORT}."
+            echo "Check DEPLOY_HOST, DEPLOY_PORT, firewall rules, and whether SSH is reachable from GitHub Actions."
+            exit 1
+          }
+
+      - name: Pull images and restart db-service
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_DB_SERVICE_PATH: ${{ vars.DEPLOY_DB_SERVICE_PATH }}
+          # 端口 / 网络名 / Compose project / 卷名 / postgres 的镜像、库名与对外绑定等固定配置，
+          # 全部由 apps/db-service/scripts/deploy.sh 按环境提供，这里不再重复一份。
+          DEPLOY_ENV_FILE: ${{ github.ref_name == 'main' && '.env.production' || '.env.development' }}
+          DEPLOY_ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+          GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN || secrets.GITHUB_TOKEN }}
+          SERVICE_IMAGE: ${{ needs.build.outputs.service_image }}
+          PRISMA_TOOL_IMAGE: ${{ needs.build.outputs.prisma_tool_image }}
+          # main 复用 dev 栈的镜像；与 apps/db-service/scripts/deploy.sh 的
+          # default_project_name（development）保持一致。
+          DEV_COMPOSE_PROJECT: ai-platform-dev
+          # 一次性开关，只对本次部署生效
+          FORCE_MENU_SEED: ${{ inputs.run_menu_seed == true && 'true' || 'false' }}
+          FORCE_ROLE_SEED: ${{ inputs.run_role_seed == true && 'true' || 'false' }}
+          CORS_ALLOWED_ORIGINS: ${{ vars.CORS_ALLOWED_ORIGINS }}
+          ENABLE_API_DOCS: ${{ vars.ENABLE_API_DOCS }}
+          SERVICE_BIND: ${{ vars.SERVICE_BIND }}
+          BYOK_TRUST_PROXY_HEADERS: ${{ vars.BYOK_TRUST_PROXY_HEADERS }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          AUTH_CODE_SECRET: ${{ secrets.AUTH_CODE_SECRET }}
+          AI_KEY_ENCRYPTION_KEY_V1: ${{ secrets.AI_KEY_ENCRYPTION_KEY_V1 }}
+          AI_KEY_REDIS_ID_SECRET: ${{ secrets.AI_KEY_REDIS_ID_SECRET }}
+          AI_SECRET_MASTER_KEY: ${{ secrets.AI_SECRET_MASTER_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM_EMAIL: ${{ vars.RESEND_FROM_EMAIL || secrets.RESEND_FROM_EMAIL }}
+          RESEND_FROM_NAME: ${{ vars.RESEND_FROM_NAME || secrets.RESEND_FROM_NAME }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ENDPOINT_URL: ${{ vars.R2_ENDPOINT_URL || secrets.R2_ENDPOINT_URL }}
+          R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME || secrets.R2_BUCKET_NAME }}
+          BOOTSTRAP_ADMIN_ACCOUNT: ${{ vars.BOOTSTRAP_ADMIN_ACCOUNT || secrets.BOOTSTRAP_ADMIN_ACCOUNT }}
+          BOOTSTRAP_ADMIN_PASSWORD: ${{ secrets.BOOTSTRAP_ADMIN_PASSWORD }}
+        run: |
+          : "${DEPLOY_HOST:?Missing required secret DEPLOY_HOST}"
+          : "${DEPLOY_PORT:?Missing required secret DEPLOY_PORT}"
+          : "${DEPLOY_USER:?Missing required secret DEPLOY_USER}"
+          : "${DEPLOY_DB_SERVICE_PATH:?Missing required variable DEPLOY_DB_SERVICE_PATH}"
+          : "${DEPLOY_ENV_FILE:?Missing DEPLOY_ENV_FILE}"
+          : "${DEPLOY_ENVIRONMENT:?Missing DEPLOY_ENVIRONMENT}"
+          : "${GHCR_READ_TOKEN:?Missing GHCR token}"
+          : "${POSTGRES_PASSWORD:?Missing required secret POSTGRES_PASSWORD}"
+          : "${AUTH_CODE_SECRET:?Missing required secret AUTH_CODE_SECRET}"
+          : "${AI_KEY_ENCRYPTION_KEY_V1:?Missing required secret AI_KEY_ENCRYPTION_KEY_V1}"
+          : "${AI_KEY_REDIS_ID_SECRET:?Missing required secret AI_KEY_REDIS_ID_SECRET}"
+          : "${RESEND_API_KEY:?Missing required secret RESEND_API_KEY}"
+          : "${RESEND_FROM_EMAIL:?Missing required variable or secret RESEND_FROM_EMAIL}"
+          : "${R2_ACCESS_KEY_ID:?Missing required secret R2_ACCESS_KEY_ID}"
+          : "${R2_SECRET_ACCESS_KEY:?Missing required secret R2_SECRET_ACCESS_KEY}"
+          : "${R2_ENDPOINT_URL:?Missing required variable or secret R2_ENDPOINT_URL}"
+          : "${R2_BUCKET_NAME:?Missing required variable or secret R2_BUCKET_NAME}"
+
+          remote_dir="${DEPLOY_DB_SERVICE_PATH}"
+
+          ssh_run() {
+            ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT}" "${DEPLOY_USER}@${DEPLOY_HOST}" "$@"
+          }
+
+          # main 不打包，直接问服务器上 dev 栈的容器正在跑哪个镜像。
+          # 不读 env 文件，是因为 dev 的部署目录由 development 环境的
+          # DEPLOY_DB_SERVICE_PATH 决定，production 这边取不到。
+          remote_running_image() {
+            local project="$1"
+            local service="$2"
+
+            ssh_run "docker ps --filter 'label=com.docker.compose.project=${project}' --filter 'label=com.docker.compose.service=${service}' --format '{{.Image}}' | head -n 1" \
+              | tr -d '\r'
+          }
+
+          if [[ -z "${SERVICE_IMAGE}" ]]; then
+            echo "本次运行不打包，改用 dev 环境正在运行的 db-service 镜像。"
+            SERVICE_IMAGE="$(remote_running_image "${DEV_COMPOSE_PROJECT}" db-service)"
+          fi
+
+          if [[ -z "${SERVICE_IMAGE}" ]]; then
+            echo "Missing db-service image tag." >&2
+            echo "服务器上没有找到 Compose project ${DEV_COMPOSE_PROJECT} 的运行中 db-service 容器。" >&2
+            echo "请先在 dev 分支跑一次 db-service workflow，再回到 main 部署。" >&2
+            exit 1
+          fi
+
+          # Prisma 工具镜像只在部署过程中临时 pull，部署完就被 deploy.sh 删掉，
+          # 服务器上查不到运行中的容器，只能按同仓库不同前缀的约定推导。
+          if [[ -z "${PRISMA_TOOL_IMAGE}" ]]; then
+            PRISMA_TOOL_IMAGE="${SERVICE_IMAGE/:service-/:prisma-}"
+          fi
+
+          if [[ "${PRISMA_TOOL_IMAGE}" == "${SERVICE_IMAGE}" ]]; then
+            echo "Cannot derive Prisma tool image from ${SERVICE_IMAGE}." >&2
+            echo "期望的 tag 形如 <repo>:service-<sha>。" >&2
+            exit 1
+          fi
+
+          echo "Deploying db-service image: ${SERVICE_IMAGE}"
+          echo "Prisma tool image:          ${PRISMA_TOOL_IMAGE}"
+
+          runtime_env="$(mktemp)"
+          remote_env_tmp="/tmp/ai-platform-db-service-${DEPLOY_ENVIRONMENT}-${GITHUB_SHA}.env"
+          trap 'rm -f "${runtime_env}"' EXIT
+
+          write_env() {
+            local key="$1"
+            local value="$2"
+
+            if [[ "${value}" == *$'\n'* || "${value}" == *$'\r'* ]]; then
+              echo "Environment value for ${key} must be a single line." >&2
+              exit 1
+            fi
+
+            value=${value//\'/\'\\\'\'}
+            printf "%s='%s'\n" "${key}" "${value}" >> "${runtime_env}"
+          }
+
+          # 只有真正配了值才写进 env 文件；写成空串会让 deploy.sh / compose
+          # 认为"已显式配置"，从而绕过按环境推导的默认值。
+          write_env_optional() {
+            local key="$1"
+
+            if [[ -z "${!key:-}" ]]; then
+              return
+            fi
+
+            write_env "${key}" "${!key}"
+          }
+
+          write_env SERVICE_IMAGE "${SERVICE_IMAGE}"
+          write_env PRISMA_TOOL_IMAGE "${PRISMA_TOOL_IMAGE}"
+          write_env FORCE_MENU_SEED "${FORCE_MENU_SEED}"
+          write_env FORCE_ROLE_SEED "${FORCE_ROLE_SEED}"
+          write_env POSTGRES_PASSWORD "${POSTGRES_PASSWORD}"
+          write_env AUTH_CODE_SECRET "${AUTH_CODE_SECRET}"
+          write_env AI_KEY_ENCRYPTION_KEY_V1 "${AI_KEY_ENCRYPTION_KEY_V1}"
+          write_env AI_KEY_REDIS_ID_SECRET "${AI_KEY_REDIS_ID_SECRET}"
+          write_env RESEND_API_KEY "${RESEND_API_KEY}"
+          write_env RESEND_FROM_EMAIL "${RESEND_FROM_EMAIL}"
+          write_env R2_ACCESS_KEY_ID "${R2_ACCESS_KEY_ID}"
+          write_env R2_SECRET_ACCESS_KEY "${R2_SECRET_ACCESS_KEY}"
+          write_env R2_ENDPOINT_URL "${R2_ENDPOINT_URL}"
+          write_env R2_BUCKET_NAME "${R2_BUCKET_NAME}"
+          write_env_optional DATABASE_URL
+          write_env_optional REDIS_URL
+          write_env_optional CORS_ALLOWED_ORIGINS
+          write_env_optional ENABLE_API_DOCS
+          write_env_optional SERVICE_BIND
+          write_env_optional BYOK_TRUST_PROXY_HEADERS
+          write_env_optional AI_SECRET_MASTER_KEY
+          write_env_optional RESEND_FROM_NAME
+          write_env_optional BOOTSTRAP_ADMIN_ACCOUNT
+          write_env_optional BOOTSTRAP_ADMIN_PASSWORD
+
+          scp -i ~/.ssh/deploy_key -P "${DEPLOY_PORT}" \
+            "${runtime_env}" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${remote_env_tmp}"
+
+          ssh_run "mkdir -p '${remote_dir}/scripts'"
+
+          scp -i ~/.ssh/deploy_key -P "${DEPLOY_PORT}" \
+            apps/db-service/docker-compose.yml apps/db-service/docker-compose.dev.yml \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${remote_dir}/"
+
+          scp -i ~/.ssh/deploy_key -P "${DEPLOY_PORT}" \
+            apps/db-service/scripts/deploy.sh \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${remote_dir}/scripts/deploy.sh"
+
+          # token 走 stdin，不出现在服务器的进程参数里
+          printf '%s\n' "${GHCR_READ_TOKEN}" | ssh_run \
+            "docker login ghcr.io -u '${{ github.repository_owner }}' --password-stdin"
+
+          ssh_run "cd '${remote_dir}' && \
+             mv '${remote_env_tmp}' '${DEPLOY_ENV_FILE}' && \
+             chmod 600 '${DEPLOY_ENV_FILE}' && \
+             chmod +x scripts/deploy.sh && \
+             DEPLOY_ENV_FILE='${DEPLOY_ENV_FILE}' scripts/deploy.sh '${DEPLOY_ENVIRONMENT}' '${SERVICE_IMAGE}'"

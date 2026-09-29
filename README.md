@@ -192,46 +192,99 @@ prisma:deploy             # 部署环境执行已提交的 Prisma migrations
 
 ## Docker
 
-Dockerfile 的构建 context 是仓库根目录（pnpm workspace 需要根 lockfile 和所有包的 `package.json`），命令都在仓库根目录执行：
+每个 app 自带一套 Docker 文件，仓库根目录没有 Dockerfile 和 docker-compose：
+
+| 文件                                       | 说明                                                                                   |
+| ------------------------------------------ | -------------------------------------------------------------------------------------- |
+| `apps/platform/Dockerfile`                 | Next.js standalone，target `runner`                                                    |
+| `apps/platform/docker-compose.yml`         | 部署基线，只有 `app` 一个服务，接入 db-service 栈的共享网络                            |
+| `apps/platform/docker-compose.build.yml`   | 本地 override：用源码构建代替拉 GHCR 镜像                                              |
+| `apps/platform/scripts/deploy.sh`          | platform 部署脚本                                                                      |
+| `apps/db-service/Dockerfile`               | NestJS（target `service-runner`）+ Prisma 工具（target `prisma`）                      |
+| `apps/db-service/docker-compose.yml`       | 部署基线：postgres / redis / db-service / migrate，创建共享网络与数据卷                |
+| `apps/db-service/docker-compose.dev.yml`   | development **环境**部署时自动叠加：把 postgres（`5433`）、redis（`6380`）暴露到宿主机 |
+| `apps/db-service/docker-compose.build.yml` | 本地 override：用源码构建代替拉 GHCR 镜像                                              |
+| `apps/db-service/scripts/deploy.sh`        | db-service 部署脚本，含 Prisma migrate deploy、种子数据、超级管理员                    |
+
+**postgres 和 redis 只属于 db-service 栈。** platform 栈通过外部共享网络 `SHARED_NETWORK`（生产 `ai-platform-prod-net`，开发 `ai-platform-dev-net`）访问 `http://db-service:<端口>`，所以首次部署必须先部署 db-service。
+
+默认端口：platform `8062`（prod）/ `8060`（dev），db-service `8072`（prod）/ `8070`（dev，默认只绑 `127.0.0.1`，管理后台经宿主机反向代理访问）。端口由各自的 `scripts/deploy.sh` 按环境固定注入，改端口要改脚本里的 `default_app_port` / `default_service_port`，并同步 platform 的 `API_INTERNAL_ORIGIN`。
+
+本地用源码构建整套服务（命令在仓库根目录执行，Dockerfile 的构建 context 是仓库根目录）：
 
 ```bash
-docker build -f apps/platform/Dockerfile --target runner --build-arg API_INTERNAL_ORIGIN=http://db-service:8072 -t ai-platform:local .
-docker build -f apps/db-service/Dockerfile --target runner -t ai-platform:local-service .
-docker build -f apps/db-service/Dockerfile --target migrator -t ai-platform:local-migrate .
+export POSTGRES_PASSWORD=<本地密码>
+docker compose -f apps/db-service/docker-compose.yml -f apps/db-service/docker-compose.dev.yml -f apps/db-service/docker-compose.build.yml --profile tools run --rm migrate
+docker compose -f apps/db-service/docker-compose.yml -f apps/db-service/docker-compose.dev.yml -f apps/db-service/docker-compose.build.yml up -d --build
+docker compose -f apps/platform/docker-compose.yml -f apps/platform/docker-compose.build.yml up -d --build
 ```
 
-生产 Compose（同一个项目内包含 postgres / redis / db-service / platform）：
+> Compose 会自动加载 `apps/db-service/.env` 做变量插值：其中给 `vpr dev` 用的 `DATABASE_URL` / `REDIS_URL` 指向 `localhost`，在容器里连不上。本地跑 Docker 时先把这两个变量在 shell 里覆盖为 `postgresql://ai_platform:<本地密码>@postgres:5432/ai_platform?schema=public` 与 `redis://redis:6379/0`。
+
+手动构建镜像：
 
 ```bash
-APP_IMAGE=ai-platform:local \
-SERVICE_IMAGE=ai-platform:local-service \
-MIGRATE_IMAGE=ai-platform:local-migrate \
-docker compose -f apps/platform/docker-compose.prod.yml up -d
+SHA="$(git rev-parse HEAD)"
+docker build -f apps/platform/Dockerfile --target runner --build-arg API_INTERNAL_ORIGIN=http://db-service:8072 -t ghcr.io/<owner>/ai-platform:front-end-${SHA} .
+docker build -f apps/db-service/Dockerfile --target service-runner -t ghcr.io/<owner>/ai-platform:service-${SHA} .
+docker build -f apps/db-service/Dockerfile --target prisma -t ghcr.io/<owner>/ai-platform:prisma-${SHA} .
 ```
+
+platform 的 `API_INTERNAL_ORIGIN` 会被 `next.config.ts` 的 rewrites 在构建期写进 routes-manifest，必须通过 `--build-arg` 传入（缺失时构建直接失败）；dev / prod 的 db-service 端口不同，两个环境各自构建 platform 镜像。
 
 新增 `packages/*` 或 `apps/*` 时，需要同步 `apps/platform/Dockerfile` 与 `apps/db-service/Dockerfile` 中 `deps` 阶段的 `COPY <dir>/package.json`。
 
 ## 部署流程
 
-`.github/workflows/deploy.yml` 使用 Docker / GHCR / SSH 发布，会在以下场景触发：
+所有 workflow **只支持手动触发**（`Actions -> <workflow> -> Run workflow`，选 `dev` 或 `main` 分支）。分支决定环境：`main` → `production`，`dev` → `development`。
 
-- 推送到 `dev` 分支，部署 development 环境。
-- 合并到 `main` 的 Pull Request，部署 production 环境。
-- 手动执行 `workflow_dispatch`。
+| workflow                            | 构建镜像                                      | 部署内容                                                                        |
+| ----------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------- |
+| `.github/workflows/db-service.yml`  | `<repo>:service-<sha>`、`<repo>:prisma-<sha>` | postgres / redis / db-service，执行 Prisma migrate deploy、种子数据、超级管理员 |
+| `.github/workflows/platform.yml`    | `<repo>:front-end-<sha>`                      | 只重启 platform 容器                                                            |
+| `.github/workflows/admin.yml`       | 无（静态资源）                                | scp 到服务器静态目录，整体替换                                                  |
+| `.github/workflows/deploy-all.yml`  | 复用上面三个                                  | 先 db-service，成功后按 `targets` 部署 platform / admin（都选时并行）           |
+| `.github/workflows/deploy-apps.yml` | 复用 platform / admin                         | 并行发布 platform 与 admin，不动数据库                                          |
 
-流水线步骤：
+- **db-service 只在 `dev` 分支校验并打包**；`main` 分支不打包，直接复用服务器上 dev 栈（Compose project `ai-platform-dev`）正在运行的镜像，因此发布生产前先在 `dev` 跑一次 db-service。
+- 镜像只有不可变的 commit SHA tag，没有 `:latest`；platform 与 db-service 共用同一个 GHCR 仓库，只靠 tag 前缀区分，部署脚本只清理本栈前缀的旧镜像，Prisma 工具镜像用完即删（`KEEP_PRISMA_TOOL_IMAGE=true` 可保留）。
+- `deploy-all` 的 `targets` 第一项是占位符，不选择部署范围时 workflow 在第一步失败，不会部署任何应用。
+- 菜单与角色种子只在库未初始化时自动执行；改了 `apps/db-service/prisma/data/menu` 或 `role` 后，运行 db-service（或 deploy-all）并勾选 `run_menu_seed` / `run_role_seed`。
 
-1. 使用 Vite+ 安装依赖并在仓库根目录执行 `vp run verify`。
-2. 构建并推送 platform 镜像（`<sha>`）、db-service 镜像（`<sha>-service`）与迁移镜像（`<sha>-migrate`）到 GHCR；并行构建 admin 静态产物。
-3. 通过 SSH 登录服务器，同步 Compose 文件和部署脚本，按 GitHub Environment 的 secrets / vars 生成服务器 env 文件。
-4. 拉取镜像、执行 Prisma 同步 / seed / bootstrap-admin，依次重启 db-service 与 platform。菜单与角色种子只在库未初始化时自动执行；改了 `apps/db-service/prisma/data/menu` 或 `role` 后，在 Actions 页面手动触发（workflow_dispatch）并勾选 `run_menu_seed` / `run_role_seed` 重跑。
-5. 配置了 `DEPLOY_ADMIN_PATH` 时，把 admin 静态产物整体替换到服务器目录（由宿主机 Web 服务器托管）。
+服务器目录（两个栈各自一个目录，由变量直接指定，workflow 不会再往后拼子目录）：
 
-workflow 使用 GitHub Environments 区分环境（`main` → `production`，`dev` → `development`），需要在 `Settings -> Environments` 中分别配置：
+```text
+${DEPLOY_DB_SERVICE_PATH}/   # docker-compose.yml、docker-compose.dev.yml、scripts/deploy.sh、.env.<environment>
+${DEPLOY_PLATFORM_PATH}/     # docker-compose.yml、scripts/deploy.sh、.env.<environment>
+${DEPLOY_ADMIN_PATH}/        # admin 静态产物，每次部署整体清空重建，不要和其他文件混放
+```
 
-- Secrets：`DEPLOY_HOST`、`DEPLOY_PORT`、`DEPLOY_USER`、`DEPLOY_PATH`、`DEPLOY_SSH_KEY`、`GHCR_READ_TOKEN`、`POSTGRES_PASSWORD`、`DATABASE_URL`、`AUTH_CODE_SECRET`、`AI_KEY_ENCRYPTION_KEY_V1`、`AI_KEY_REDIS_ID_SECRET`、`RESEND_API_KEY`、`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY`，可选 `AI_SECRET_MASTER_KEY`、`BOOTSTRAP_ADMIN_PASSWORD`（与 `BOOTSTRAP_ADMIN_ACCOUNT` 同时配置时，部署会确保该超级管理员系统账号存在；已存在的账号不会被重置密码）
-- Variables（或 Secrets）：`BOOTSTRAP_ADMIN_ACCOUNT`、`RESEND_FROM_EMAIL`、`RESEND_FROM_NAME`、`R2_ENDPOINT_URL`、`R2_BUCKET_NAME`，以及可选的 `APP_PORT`、`SERVICE_PORT`、`SERVICE_BIND`、`POSTGRES_DB`、`POSTGRES_USER`、`DEPLOY_ENV_FILE`、`COMPOSE_PROJECT_NAME`、`BYOK_TRUST_PROXY_HEADERS`（默认 `true`）、`ENABLE_API_DOCS`
-- 管理后台相关 Variables：`VITE_BASE_API_URL`（必填，db-service 的公网 HTTPS 地址）、`VITE_APP_TITLE`、`VITE_PLATFORM_URL`、`DEPLOY_ADMIN_PATH`（服务器上的静态目录，留空跳过部署）、`CORS_ALLOWED_ORIGINS`（必须包含管理后台域名）
+服务器 env 文件由 workflow 按 GitHub Environment 的 secrets / vars 每次整体生成覆盖。Compose project（db-service `ai-platform-prod` / `ai-platform-dev`，platform `ai-platform-app-prod` / `ai-platform-app-dev`）、共享网络、端口、库名（`ai_platform` / `ai_platform_dev`）等固定配置都写在两个 `scripts/deploy.sh` 里，不需要配到 GitHub Environment。数据卷名默认 `<project>_postgres-data` / `<project>_redis-data`，**改 project 名或 `POSTGRES_DATA_VOLUME` 而不迁移旧卷，等同于换一个空库**。
+
+在 `Settings -> Environments` 中分别创建 `production` 与 `development`，各配置一份：
+
+- 必填 Secrets：`DEPLOY_HOST`、`DEPLOY_USER`、`DEPLOY_SSH_KEY`、`POSTGRES_PASSWORD`、`AUTH_CODE_SECRET`、`AI_KEY_ENCRYPTION_KEY_V1`、`AI_KEY_REDIS_ID_SECRET`、`RESEND_API_KEY`、`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY`
+- 必填 Variables（或 Secrets）：`DEPLOY_DB_SERVICE_PATH`、`DEPLOY_PLATFORM_PATH`、`DEPLOY_ADMIN_PATH`、`RESEND_FROM_EMAIL`、`R2_ENDPOINT_URL`、`R2_BUCKET_NAME`、`VITE_BASE_API_URL`（db-service 的公网 HTTPS 地址，admin 构建期写入）
+- 可选 Secrets：`DEPLOY_PORT`（默认 `22`）、`GHCR_READ_TOKEN`（默认回落 `GITHUB_TOKEN`）、`DATABASE_URL`（默认由 `POSTGRES_*` 推导）、`REDIS_URL`、`AI_SECRET_MASTER_KEY`、`BOOTSTRAP_ADMIN_PASSWORD`
+- 可选 Variables：`BOOTSTRAP_ADMIN_ACCOUNT`（与 `BOOTSTRAP_ADMIN_PASSWORD` 同时配置时，部署会确保该超级管理员系统账号存在；已存在的账号不会被重置密码）、`CORS_ALLOWED_ORIGINS`（必须包含管理后台域名）、`RESEND_FROM_NAME`、`ENABLE_API_DOCS`、`SERVICE_BIND`（默认 `127.0.0.1`）、`BYOK_TRUST_PROXY_HEADERS`（默认 `true`）、`API_INTERNAL_ORIGIN`（默认 `http://db-service:8072` / `http://db-service:8070`）、`VITE_APP_TITLE`、`VITE_PLATFORM_URL`
+
+建议在 `Settings -> Environments -> production` 开启 `Required reviewers`，避免 `main` 部署绕过人工确认。
+
+也可以在服务器上手动执行部署脚本（两个脚本都带 `--help`）：
+
+```bash
+SHA=<要部署的 commit sha>
+
+# 先部署 db-service：它创建共享网络、postgres、redis，并执行 Prisma migrate deploy 与种子
+cd ${DEPLOY_DB_SERVICE_PATH}
+SERVICE_IMAGE=ghcr.io/<owner>/ai-platform:service-${SHA} scripts/deploy.sh production
+
+# 再部署 platform
+cd ${DEPLOY_PLATFORM_PATH}
+APP_IMAGE=ghcr.io/<owner>/ai-platform:front-end-${SHA} scripts/deploy.sh production
+```
+
+development 环境的 postgres / redis 默认发布到宿主机 `0.0.0.0:5433` / `0.0.0.0:6380`，方便本机直连 dev 库；必须在服务器防火墙和云安全组中只放行可信 IP。生产环境不暴露这两个端口。
 
 服务器地址、SSH 私钥等只存在于 GitHub Environments，仓库中不出现任何真实值。
 

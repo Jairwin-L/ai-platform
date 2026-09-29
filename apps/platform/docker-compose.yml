@@ -1,0 +1,29 @@
+# platform 栈：只跑 Next.js standalone。
+# postgres / redis / db-service 由 db-service 栈拥有，这里通过外部共享网络 ${SHARED_NETWORK} 连过去，
+# 所以首次部署必须先跑 apps/db-service/scripts/deploy.sh，网络和接口服务才存在。
+#
+# 部署入口：apps/platform/scripts/deploy.sh <production|development>
+
+services:
+  app:
+    # 部署时由 scripts/deploy.sh 显式注入（脚本会校验必填）；默认值只服务于本地 build override，
+    # 因为 compose 的 `${VAR:?}` 在合并 override 之前就会求值，写成必填会让本地构建流程直接失败。
+    image: ${APP_IMAGE:-ai-platform:local}
+    restart: unless-stopped
+    networks:
+      - ai-platform
+    environment:
+      NODE_ENV: production
+      NODE_OPTIONS: ${NODE_OPTIONS:---max-old-space-size=3072}
+      PORT: ${APP_PORT:-8062}
+      HOSTNAME: 0.0.0.0
+      # SSR 直连 db-service 的内网地址。这里改动只影响 SSR；
+      # 浏览器请求走同源 /api，转发目标是构建期烘进去的，改地址要重新构建镜像。
+      API_INTERNAL_ORIGIN: ${API_INTERNAL_ORIGIN:-}
+    ports:
+      - '${APP_PORT:-8062}:${APP_PORT:-8062}'
+
+networks:
+  ai-platform:
+    name: ${SHARED_NETWORK:-ai-platform-net}
+    external: true

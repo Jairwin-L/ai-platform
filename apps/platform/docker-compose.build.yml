@@ -1,0 +1,13 @@
+# 纯本地使用的 override：不 pull GHCR 镜像，直接用仓库源码构建。
+# context 是仓库根目录，所以必须从根目录执行：
+#   docker compose -f apps/platform/docker-compose.yml \
+#                  -f apps/platform/docker-compose.build.yml up -d
+services:
+  app:
+    image: ${APP_IMAGE:-ai-platform:local}
+    build:
+      context: ../..
+      dockerfile: apps/platform/Dockerfile
+      target: runner
+      args:
+        API_INTERNAL_ORIGIN: ${API_INTERNAL_ORIGIN:-http://db-service:8072}

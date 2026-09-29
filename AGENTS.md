@@ -9,7 +9,7 @@
 - 请求层：`alova`；platform 请求封装与业务请求模块位于 `apps/platform/src/api/`（SSR 取数用 `apps/platform/src/api/server.ts`），admin 位于 `apps/admin/src/api/`
 - 接口层：全部业务接口在 `apps/db-service`；platform 浏览器端 `/api/*` 经 `next.config.ts` rewrites 转发到 db-service 的 `platform/*`（`/api/upload`、`/api/compress` 转发到根路径），admin 直连 db-service
 - 包管理与工具链：Vite+（`vp` / `vpr`）+ `pnpm` workspace（公开仓库）
-- 部署：GitHub Actions 构建 Docker 镜像并推送到 GHCR，再通过 SSH 登录服务器执行 Docker Compose 拉取镜像并重启服务。
+- 部署：GitHub Actions（全部手动触发）构建 Docker 镜像并推送到 GHCR，再通过 SSH 登录服务器执行各栈的 `scripts/deploy.sh` 拉取镜像并重启服务；db-service 栈（postgres / redis / db-service）与 platform 栈分开部署，经共享 Docker 网络互通，db-service 必须先于 platform 部署。
 - Node 版本要求：`22.x`
 - 工作区结构：
   - `apps/platform/`：Next.js 前台（`@ai/platform`），只负责页面，不直连数据库；代码目录 `src/`（`api/`、`app/`、`components/`、`hooks/`、`lib/`、`stores/`、`styles/`、`types/`、`typings/` 等）
@@ -21,7 +21,7 @@
   - 依赖 `@/lib`、`@/api`、Prisma Client 或框架/第三方模块类型的代码与类型保留在各自应用的 `src/`（如 `src/typings/`），不要下沉到 `packages/*`
 - 工具链配置统一在仓库根目录：`vite.config.ts`（lint / fmt / staged / `verify` 任务）、`vite.lint.config.ts`、`vite.fmt.config.ts`、`stylelint.config.mjs`、`tsconfig.base.json`；各包只保留自己的 `vite.config.ts`（resolve / test）与 `tsconfig.json`
 - 应用配置文件：`apps/platform/{package.json,next.config.ts,tsconfig.json}`、`apps/db-service/{package.json,vite.config.ts,tsconfig.json,prisma.config.ts}`、`apps/admin/{package.json,vite.config.ts,tsconfig*.json}`
-- 部署相关文件：`apps/platform/Dockerfile`、`apps/db-service/Dockerfile`（runner + migrator，构建 context 均为仓库根目录）、`apps/platform/docker-compose.{prod,dev}.yml`（postgres / redis / db-service / platform 同一 Compose 项目）、`.github/workflows/deploy.yml`（含 admin 静态产物发布）、`apps/platform/scripts/deploy-compose.sh`
+- 部署相关文件：`apps/platform/Dockerfile`（target `runner`）、`apps/db-service/Dockerfile`（target `service-runner` + `prisma`，构建 context 均为仓库根目录）、`apps/db-service/docker-compose{,.dev,.build}.yml`（postgres / redis / db-service / migrate，拥有共享网络与数据卷）、`apps/platform/docker-compose{,.build}.yml`（只有 app，接入共享网络）、`apps/{platform,db-service}/scripts/deploy.sh`、`.github/workflows/{db-service,platform,admin,deploy-all,deploy-apps}.yml`
 - AI 协作资源（teamai 单仓模式 `mode: self`）：`.teamai/` 就是团队仓，`teamai.yaml` 与 `skills/`、`rules/`、`docs/`、`agents/`、`env/`、`hooks/`、`mcp/`、`learnings/` 随业务代码入库；`config.yaml`、`state.json`、`search-index.json`、`reports-wt/` 等是本机状态（含本机绝对路径、用户名、token），由 `.teamai/.gitignore` 排除。根 `.gitignore` 禁止整目录忽略 `.teamai/`。
 - `.claude/skills/`、`.codex/skills/`、`**/.agents/`、`**/skills-lock.json` 是生成产物（已 gitignore，skills 唯一来源是 `.teamai/skills/`）；`.claude/settings.json`、`.codex/hooks.json` 是入库的团队 hooks；`.claude/settings.local.json` 是个人配置，不入库。
 
@@ -62,8 +62,8 @@
 
 - 本地开发：`vpr dev`（platform，8060）、`vpr dev:service`（db-service，8070）、`vpr dev:admin`（admin，8050）、`vpr dev:all`（并行）
 - 生产构建：`vpr build`（platform）、`vpr build:service`（db-service，会先生成 Prisma Client）、`vpr build:admin`
-- Docker 生产构建：`docker build -f apps/platform/Dockerfile --target runner -t ai-platform:local .`；`docker build -f apps/db-service/Dockerfile --target runner -t ai-platform:local-service .`（迁移镜像 `--target migrator`）
-- 服务器部署脚本：`APP_IMAGE=<image> apps/platform/scripts/deploy-compose.sh <production|development>`
+- Docker 生产构建：`docker build -f apps/platform/Dockerfile --target runner --build-arg API_INTERNAL_ORIGIN=http://db-service:8072 -t ai-platform:local .`；`docker build -f apps/db-service/Dockerfile --target service-runner -t ai-platform-db-service:local .`（Prisma 工具镜像 `--target prisma`）
+- 服务器部署脚本（先 db-service 后 platform）：`SERVICE_IMAGE=<image> apps/db-service/scripts/deploy.sh <production|development>`；`APP_IMAGE=<image> apps/platform/scripts/deploy.sh <production|development>`
 - 启动生产服务：`vpr start`（端口 8062）
 - 代码检查：`vpr check`（= `vpr --cache -r check`）或 `vpr lint`（额外含 Stylelint）
 - 自动修复：`vpr lint:fix`
@@ -78,13 +78,13 @@
 - TS 类型、公共工具函数、路由、`next.config.ts`、`tsconfig*.json` 等构建配置 -> 建议 `vpr check`；影响面较大时建议 `vpr build`
 - 样式文件（`*.css`、`*.less`、`*.scss`） -> 建议 `vpr lint` 或更小范围的 Stylelint 检查
 - `vite.config.ts`、`package.json`、`pnpm-workspace.yaml`、依赖与工具链配置 -> 建议 `vp install` + `vpr check`，必要时建议 `vp env doctor`
-- `apps/*/Dockerfile`、`docker-compose*.yml`、`.github/workflows/deploy.yml` 或 `apps/platform/scripts/*.sh` -> 建议检查对应 Docker / GitHub Actions / Compose 流程，必要时建议针对性构建或脚本校验；新增 `packages/*` / `apps/*` 时同步两个 Dockerfile 的 `deps` 阶段 COPY
+- `apps/*/Dockerfile`、`docker-compose*.yml`、`.github/workflows/*.yml` 或 `apps/*/scripts/*.sh` -> 建议检查对应 Docker / GitHub Actions / Compose 流程，必要时建议针对性构建或脚本校验；新增 `packages/*` / `apps/*` 时同步两个 Dockerfile 的 `deps` 阶段 COPY
 - 新增或修改测试后 -> 建议 `vpr test`
 
 ## 5. 代码修改约束
 
 - 默认不做大规模无关重构。
-- 不随意改动构建配置（`next.config.ts`、`tsconfig*.json`、`vite*.config.ts`、`package.json`、`pnpm-workspace.yaml`、`Dockerfile`、`docker-compose*.yml`、`.github/workflows/deploy.yml`、`stylelint.config.mjs`），除非需求明确要求。
+- 不随意改动构建配置（`next.config.ts`、`tsconfig*.json`、`vite*.config.ts`、`package.json`、`pnpm-workspace.yaml`、`Dockerfile`、`docker-compose*.yml`、`.github/workflows/*.yml`、`stylelint.config.mjs`），除非需求明确要求。
 - 不引入与需求无关的新依赖；如确需引入，须说明用途与体积影响。
 - 避免重复实现：已有工具函数（`packages/utils/src/`）、常量（`packages/constants/src/`）、请求封装与业务请求模块（`apps/platform/src/api/`、`apps/admin/src/api/`）、db-service 公共能力（`apps/db-service/src/common/`、`infra/`）、组件可复用时不要新增平行实现。
 - db-service 接口约定：参数用 zod schema 通过 `@Body({ schema })` / `@Query({ schema })` / `@Param(name, { schema })` 校验；鉴权统一用 `Auth` / `OptionalAuth` / `ByokAuth` / `AiAuth`（前台，平台用户没有角色体系）与 `AdminPermissionAuth` / `AdminAnyPermissionAuth` / `AdminAuth`（管理端系统用户）装饰器，管理端业务接口必须用 `AdminPermissionAuth` / `AdminAnyPermissionAuth` 按 `@ai/constants/permissions` 的权限码鉴权（`AdminAuth` 只用于当前账号、菜单树等不区分权限的会话接口），新增权限码时同步 `apps/db-service/prisma/data/menu/data.ts`；成功响应用 `success` / `paginated`，错误抛 `ApiException`。
