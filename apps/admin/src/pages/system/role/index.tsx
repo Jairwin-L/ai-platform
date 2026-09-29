@@ -1,27 +1,37 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Button, Input, Select, Table } from 'antd';
-import { PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
+import {
+  PlusOutlined,
+  ReloadOutlined,
+  SafetyCertificateOutlined,
+  SearchOutlined,
+} from '@ant-design/icons';
 import { PERMISSION_CODE } from '@ai/constants/permissions';
 import { deleteRbacRole, getRbacRolePage, updateRbacRole, type RbacRole } from '@/api/methods/rbac';
+import { SELECT_OPTION } from '@/constants/antd';
+import { usePermission, useTable, useTableScrollHeight, type AdminTableQuery } from '@/hooks';
 import RoleUserAssignModal from '@/components/role-user-assign-modal';
-import { usePermission, useTable, type AdminTableQuery } from '@/hooks';
-import pageCss from '@/styles/page.module.scss';
-import { getRoleColumns } from './columns';
+import Exception from '@/components/exception';
+import css from '@/components/resource-page/index.module.scss';
+import { getColumns } from './columns';
+
+const { ROLE } = PERMISSION_CODE.OPERATION;
 
 const ENABLE_FILTER_OPTIONS = [
   { label: '启用', value: 'true' },
   { label: '停用', value: 'false' },
 ];
 
-export default function RoleListPage() {
+export default function Page() {
   const navigate = useNavigate();
   const can = usePermission();
+  const { scrollY, tableRef } = useTableScrollHeight();
   // 未选表示不按状态筛选
   const [filterEnable, setFilterEnable] = useState<boolean>();
   const [assignRole, setAssignRole] = useState<RbacRole | null>(null);
-  const filters = useMemo(() => ({ enable: filterEnable }), [filterEnable]);
 
+  const filters = useMemo(() => ({ enable: filterEnable }), [filterEnable]);
   const fetcher = useCallback(
     async ({ page, pageSize, searchTerm }: AdminTableQuery) => {
       const result = await getRbacRolePage({ page, pageSize, searchTerm, enable: filterEnable });
@@ -29,22 +39,30 @@ export default function RoleListPage() {
     },
     [filterEnable],
   );
-  const table = useTable<RbacRole>({ fetcher, filters });
-  const { reload, runAction } = table;
 
-  const columns = useMemo(
-    () =>
-      getRoleColumns({
-        can,
-        onEdit: (role) => {
-          void navigate(`/system/role/edit/${role.id}`);
-        },
-        onOpenAssignUser: setAssignRole,
-        onRemove: (role) => runAction(() => deleteRbacRole(role.id)),
-        onToggleState: (role) => runAction(() => updateRbacRole(role.id, { enable: !role.enable })),
-      }),
-    [can, navigate, runAction],
-  );
+  const {
+    list: roles,
+    total,
+    page,
+    pageSize,
+    loading,
+    loadFailed,
+    searchInput,
+    setSearchInput,
+    submitSearch,
+    changePagination,
+    reload,
+    runAction,
+  } = useTable<RbacRole>({ fetcher, filters });
+
+  const onRemove = (role: RbacRole) => runAction(() => deleteRbacRole(role.id));
+
+  const onToggleState = (role: RbacRole) =>
+    runAction(() => updateRbacRole(role.id, { enable: !role.enable }));
+
+  const onEdit = (role: RbacRole) => {
+    void navigate(`/system/role/edit/${role.id}`);
+  };
 
   const onCloseAssignModal = (saved: boolean) => {
     setAssignRole(null);
@@ -52,14 +70,26 @@ export default function RoleListPage() {
     if (saved) reload().catch(() => undefined);
   };
 
+  const columns = getColumns({
+    can,
+    onEdit,
+    onOpenAssignUser: setAssignRole,
+    onRemove,
+    onToggleState,
+  });
+
+  if (loadFailed) return <Exception onClick={reload} />;
+
   return (
-    <div className={pageCss.page}>
-      <section className={pageCss.heading}>
+    <main className={css.page}>
+      <section className={css.heading}>
         <div>
-          <h1>角色管理</h1>
+          <h1>
+            <SafetyCertificateOutlined /> 角色管理
+          </h1>
           <p>维护系统职责、每个职责可授予的菜单与按钮权限，以及角色下的系统用户。</p>
         </div>
-        {can(PERMISSION_CODE.OPERATION.ROLE.CREATE) ? (
+        {can(ROLE.CREATE) ? (
           <Button
             icon={<PlusOutlined />}
             type="primary"
@@ -69,21 +99,22 @@ export default function RoleListPage() {
           </Button>
         ) : null}
       </section>
-      <section className={pageCss.panel}>
-        <div className={pageCss.filters}>
+
+      <section className={css.panel}>
+        <div className={css.filters}>
           <Input.Search
             allowClear
-            className={pageCss.search}
+            className={css.search}
             enterButton={<SearchOutlined />}
             placeholder="按角色名称、编码或说明搜索"
-            value={table.searchInput}
-            onChange={(event) => table.setSearchInput(event.target.value)}
-            onSearch={table.submitSearch}
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            onSearch={submitSearch}
           />
           <Select<string>
-            allowClear
+            {...SELECT_OPTION}
             options={ENABLE_FILTER_OPTIONS}
-            placeholder="全部状态"
+            placeholder="请选择状态"
             style={{ width: 140 }}
             value={filterEnable === undefined ? undefined : String(filterEnable)}
             onChange={(value?: string) =>
@@ -99,24 +130,26 @@ export default function RoleListPage() {
             刷新
           </Button>
         </div>
-        <div className={pageCss.table}>
+        <div ref={tableRef} className="table-viewport">
           <Table<RbacRole>
-            columns={columns}
-            dataSource={table.list}
-            loading={table.loading}
             rowKey="id"
-            scroll={{ x: 1100 }}
+            columns={columns}
+            dataSource={roles}
+            loading={loading}
+            scroll={{ x: 1100, y: scrollY }}
             pagination={{
-              current: table.page,
-              pageSize: table.pageSize,
-              total: table.total,
-              showTotal: (total) => `共 ${total} 个角色`,
-              onChange: table.changePagination,
+              current: page,
+              pageSize,
+              showSizeChanger: true,
+              showTotal: (value) => `共 ${value} 个角色`,
+              total,
+              onChange: changePagination,
             }}
           />
         </div>
       </section>
+
       <RoleUserAssignModal role={assignRole} onClose={onCloseAssignModal} />
-    </div>
+    </main>
   );
 }

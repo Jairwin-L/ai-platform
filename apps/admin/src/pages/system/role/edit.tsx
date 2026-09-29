@@ -1,7 +1,7 @@
 import { useParams } from 'react-router';
-import RoleForm from './form';
+import FormPage from './form';
 
-export default function RoleEditPage() {
+export default function Page() {
   const { id } = useParams<{ id: string }>();
-  return <RoleForm roleId={id} />;
+  return <FormPage roleId={id} />;
 }

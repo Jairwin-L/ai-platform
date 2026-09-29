@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { createZodFormRules } from '@/utils/zod-form-rule';
 
 /** 与 db-service updateSystemSettingsSchema 的规则保持一致（BYOK 来源的精确格式由服务端校验） */
 export const settingsFormSchema = z.object({
@@ -17,3 +18,5 @@ export const settingsFormSchema = z.object({
 });
 
 export type SettingsFormValues = z.input<typeof settingsFormSchema>;
+
+export const getSettingsRules = createZodFormRules(settingsFormSchema);

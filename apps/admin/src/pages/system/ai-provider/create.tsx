@@ -1,5 +1,5 @@
-import AiProviderForm from './form';
+import FormPage from './form';
 
-export default function AiProviderCreatePage() {
-  return <AiProviderForm />;
+export default function Page() {
+  return <FormPage />;
 }

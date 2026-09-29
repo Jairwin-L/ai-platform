@@ -1,51 +1,65 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Button, Form, Input, Select, Skeleton, Switch } from 'antd';
+import { Button, Form, Skeleton } from 'antd';
+import { ArrowLeftOutlined, SaveOutlined, UserAddOutlined } from '@ant-design/icons';
 import { RoleCode } from '@ai/constants/roles';
 import { createRbacUser, getRbacRoles } from '@/api/methods/rbac';
-import { useLiteDebounced } from '@/hooks';
-import pageCss from '@/styles/page.module.scss';
-import { getFormFieldErrors } from '@/utils/form';
+import FormItems, { type OptionItem } from '@/components/form-items';
+import Exception from '@/components/exception';
+import css from '@/components/resource-page/index.module.scss';
+import { defaultValues, getFormItems } from './form-item-config';
 import { createUserFormSchema, type CreateUserFormValues } from './schemas';
 
-const LIST_PATH = '/system/user';
+const USER_LIST_PATH = '/system/user';
 
-const DEFAULT_VALUES: CreateUserFormValues = {
-  username: '',
-  account: '',
-  password: '',
-  roleIds: [],
-  remark: '',
-  enabled: true,
-};
-
-export default function SystemUserCreatePage() {
+export default function Page() {
   const navigate = useNavigate();
   const [form] = Form.useForm<CreateUserFormValues>();
-  const [roleOptions, setRoleOptions] = useState<Array<{ label: string; value: string }>>([]);
+  const [roleOptions, setRoleOptions] = useState<OptionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
 
-  useEffect(() => {
-    getRbacRoles()
-      .then((roles) =>
-        // 超级管理员角色只能通过 bootstrap 分配，服务端也会拒绝
-        setRoleOptions(
-          roles
-            .filter((role) => role.enable && role.code !== RoleCode.SUPER_ADMIN)
-            .map((role) => ({ label: role.name, value: role.id })),
-        ),
-      )
-      .catch(() => setRoleOptions([]))
-      .finally(() => setLoading(false));
+  const formItems = useMemo(
+    () =>
+      getFormItems({
+        isEditing: false,
+        roleExtra: '分配角色等于授出该角色的全部权限，不能超出你自己拥有的权限',
+        roleOptions,
+      }),
+    [roleOptions],
+  );
+
+  const loadRoles = useCallback(async () => {
+    setLoading(true);
+    setLoadFailed(false);
+    try {
+      const roles = await getRbacRoles();
+      // 超级管理员角色只能通过 bootstrap 分配，服务端也会拒绝
+      setRoleOptions(
+        roles
+          .filter((role) => role.enable && role.code !== RoleCode.SUPER_ADMIN)
+          .map((role) => ({ label: role.name, value: role.id })),
+      );
+    } catch {
+      setLoadFailed(true);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const onSubmit = useLiteDebounced(async (values: CreateUserFormValues) => {
+  useEffect(() => {
+    loadRoles().catch(() => undefined);
+  }, [loadRoles]);
+
+  const onBackToUsers = () => {
+    void navigate(USER_LIST_PATH);
+  };
+
+  const onFinish = async (values: CreateUserFormValues) => {
+    // 字段规则已逐项校验过，这里再整体解析一次拿到 trim 后的值
     const parsed = createUserFormSchema.safeParse(values);
-    if (!parsed.success) {
-      form.setFields(getFormFieldErrors(parsed.error.issues));
-      return;
-    }
+    if (!parsed.success) return;
 
     const { enabled, remark, ...rest } = parsed.data;
     setSaving(true);
@@ -55,82 +69,51 @@ export default function SystemUserCreatePage() {
         remark: remark || null,
         status: enabled ? 'active' : 'inactive',
       });
-      void navigate(LIST_PATH);
+      onBackToUsers();
     } catch {
-      // 请求错误由全局响应拦截器提示
+      // 接口错误已由全局响应拦截器提示
     } finally {
       setSaving(false);
     }
-  });
+  };
+
+  if (loadFailed) return <Exception onClick={loadRoles} />;
 
   return (
-    <div className={pageCss.page}>
-      <section className={pageCss.heading}>
+    <main className={css.page}>
+      <section className={css.heading}>
         <div>
-          <h1>新增用户</h1>
+          <Button icon={<ArrowLeftOutlined />} type="text" onClick={onBackToUsers}>
+            返回用户列表
+          </Button>
+          <h1>
+            <UserAddOutlined /> 新增用户
+          </h1>
           <p>创建管理端系统用户并分配角色；系统用户只用账号登录管理端，与前台注册账号互不通用。</p>
         </div>
       </section>
-      <section className={pageCss['form-panel']}>
-        {loading ? <Skeleton active paragraph={{ rows: 6 }} /> : null}
+
+      <section className={css.panel}>
+        {loading ? <Skeleton active paragraph={{ rows: 8 }} /> : null}
         <Form
           autoComplete="off"
-          className={loading ? pageCss.hidden : undefined}
+          className={loading ? css.hidden : undefined}
           form={form}
-          initialValues={DEFAULT_VALUES}
+          initialValues={defaultValues}
           layout="vertical"
-          requiredMark="optional"
-          onFinish={onSubmit}
+          onFinish={onFinish}
         >
-          <Form.Item
-            label="用户名"
-            name="username"
-            rules={[{ required: true, whitespace: true, message: '请输入用户名' }]}
-          >
-            <Input maxLength={100} placeholder="请输入用户名" />
-          </Form.Item>
-          <Form.Item
-            label="账号"
-            name="account"
-            rules={[{ required: true, whitespace: true, message: '请输入账号' }]}
-            extra="用于登录管理端，创建后不建议修改"
-          >
-            <Input autoComplete="off" maxLength={100} placeholder="字母、数字、_ . @ -" />
-          </Form.Item>
-          <Form.Item
-            label="初始密码"
-            name="password"
-            rules={[{ required: true, message: '请输入初始密码' }]}
-          >
-            <Input.Password autoComplete="new-password" maxLength={12} placeholder="至少 6 位" />
-          </Form.Item>
-          <Form.Item
-            label="角色"
-            name="roleIds"
-            rules={[{ required: true, message: '请至少选择一个角色' }]}
-            extra="分配角色等于授出该角色的全部权限，不能超出你自己拥有的权限"
-          >
-            <Select
-              maxTagCount="responsive"
-              mode="multiple"
-              options={roleOptions}
-              placeholder="选择角色"
-            />
-          </Form.Item>
-          <Form.Item label="备注" name="remark">
-            <Input.TextArea maxLength={255} rows={3} showCount />
-          </Form.Item>
-          <Form.Item label="启用" name="enabled" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-          <div className={pageCss['form-actions']}>
-            <Button onClick={() => navigate(LIST_PATH)}>取消</Button>
-            <Button htmlType="submit" loading={saving} type="primary">
+          <div className={css['form-grid']}>
+            <FormItems items={formItems} />
+          </div>
+          <div className={css['form-actions']}>
+            <Button onClick={onBackToUsers}>取消</Button>
+            <Button htmlType="submit" icon={<SaveOutlined />} loading={saving} type="primary">
               创建用户
             </Button>
           </div>
         </Form>
       </section>
-    </div>
+    </main>
   );
 }

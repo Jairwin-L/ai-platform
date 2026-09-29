@@ -1,38 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router';
-import {
-  Button,
-  Input,
-  Popconfirm,
-  Space,
-  Switch,
-  Table,
-  Tag,
-  Tooltip,
-  type TableColumnsType,
-} from 'antd';
-import {
-  DeleteOutlined,
-  EditOutlined,
-  PlusOutlined,
-  ReloadOutlined,
-  SearchOutlined,
-} from '@ant-design/icons';
+import { useNavigate } from 'react-router';
+import { Button, Input, Table } from 'antd';
+import { PlusOutlined, ReloadOutlined, RobotOutlined, SearchOutlined } from '@ant-design/icons';
+import { PERMISSION_CODE } from '@ai/constants/permissions';
 import {
   deleteAiProviderOption,
   getAiProviderOptions,
   updateAiProviderOption,
   type AiProviderOption,
 } from '@/api/methods/settings';
-import { PROVIDER_PROTOCOL_OPTIONS } from '@/constants/permission';
-import { PERMISSION_CODE } from '@ai/constants/permissions';
-import { useLiteDebounced, usePermission } from '@/hooks';
-import pageCss from '@/styles/page.module.scss';
+import { usePermission, useTableScrollHeight } from '@/hooks';
+import Exception from '@/components/exception';
+import css from '@/components/resource-page/index.module.scss';
+import { getColumns } from './columns';
 
-function getProtocolLabel(protocol: string): string {
-  return PROVIDER_PROTOCOL_OPTIONS.find((item) => item.value === protocol)?.label ?? protocol;
-}
-
+/** Provider 数量有限、接口一次返回全部，搜索在前端完成 */
 function filterOptions(options: AiProviderOption[], searchTerm: string): AiProviderOption[] {
   const keyword = searchTerm.trim().toLowerCase();
   if (!keyword) return options;
@@ -44,23 +26,28 @@ function filterOptions(options: AiProviderOption[], searchTerm: string): AiProvi
   );
 }
 
-export default function AiProviderListPage() {
-  const [options, setOptions] = useState<AiProviderOption[]>([]);
+export default function Page() {
+  const navigate = useNavigate();
   const can = usePermission();
   // 只读账号能看列表，但新增、编辑、启停、删除都要 AI_PROVIDER_WRITE
   const canWrite = can(PERMISSION_CODE.OPERATION.AI_PROVIDER.WRITE);
+  const { scrollY, tableRef } = useTableScrollHeight();
+  const [options, setOptions] = useState<AiProviderOption[]>([]);
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [updating, setUpdating] = useState<string | null>(null);
   const filteredOptions = useMemo(() => filterOptions(options, searchTerm), [options, searchTerm]);
 
   const loadOptions = useCallback(async () => {
     setLoading(true);
+    setLoadFailed(false);
     try {
       setOptions(await getAiProviderOptions());
     } catch {
       setOptions([]);
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -70,159 +57,90 @@ export default function AiProviderListPage() {
     loadOptions().catch(() => undefined);
   }, [loadOptions]);
 
-  const onToggleEnabled = useCallback(async (option: AiProviderOption, enabled: boolean) => {
+  const onToggleEnabled = async (option: AiProviderOption, enabled: boolean) => {
     setUpdating(option.value);
     try {
       const next = await updateAiProviderOption(option.value, { ...option, enabled });
       setOptions((current) => current.map((item) => (item.value === option.value ? next : item)));
     } catch {
-      // 请求错误由全局响应拦截器提示
+      // 接口错误已由全局响应拦截器提示
     } finally {
       setUpdating(null);
     }
-  }, []);
+  };
 
-  const onRemove = useCallback(async (option: AiProviderOption) => {
+  const onRemove = async (option: AiProviderOption) => {
     try {
       await deleteAiProviderOption(option.value);
       setOptions((current) => current.filter((item) => item.value !== option.value));
     } catch {
-      // 请求错误由全局响应拦截器提示
+      // 接口错误已由全局响应拦截器提示
     }
-  }, []);
+  };
 
-  const onRefresh = useLiteDebounced(() => {
-    void loadOptions();
-  });
+  const onEdit = (option: AiProviderOption) => {
+    void navigate(`/system/ai-provider/edit/${encodeURIComponent(option.value)}`);
+  };
 
   const onSearch = (value: string) => {
     setSearchTerm(value.trim());
   };
 
-  const columns = useMemo<TableColumnsType<AiProviderOption>>(
-    () => [
-      {
-        title: 'Provider',
-        dataIndex: 'label',
-        width: 220,
-        render: (label: string, option) => (
-          <Space orientation="vertical" size={2}>
-            <strong>{label}</strong>
-            <code className={pageCss.code}>{option.value}</code>
-          </Space>
-        ),
-      },
-      {
-        title: '状态',
-        dataIndex: 'enabled',
-        width: 110,
-        render: (enabled: boolean, option) => (
-          <Switch
-            checked={enabled}
-            disabled={!canWrite}
-            checkedChildren="启用"
-            loading={updating === option.value}
-            unCheckedChildren="停用"
-            onChange={(checked) => onToggleEnabled(option, checked)}
-          />
-        ),
-      },
-      {
-        title: '协议',
-        dataIndex: 'protocol',
-        width: 170,
-        render: (protocol: string) => (
-          <span className={pageCss.muted}>{getProtocolLabel(protocol)}</span>
-        ),
-      },
-      {
-        title: '模型',
-        dataIndex: 'models',
-        width: 260,
-        render: (models: string[]) => (
-          <Space size={[4, 4]} wrap>
-            {models.slice(0, 4).map((model) => (
-              <Tag key={model}>{model}</Tag>
-            ))}
-            {models.length > 4 ? <Tag>+{models.length - 4}</Tag> : null}
-          </Space>
-        ),
-      },
-      {
-        title: '调用地址',
-        dataIndex: 'chatBaseUrl',
-        ellipsis: true,
-        render: (value: string) => <span className={pageCss.muted}>{value}</span>,
-      },
-      {
-        title: '操作',
-        key: 'actions',
-        width: 100,
-        fixed: 'right',
-        render: (_, option) => (
-          <div className={pageCss.actions}>
-            <Tooltip title="编辑">
-              <Link to={`/system/ai-provider/edit/${encodeURIComponent(option.value)}`}>
-                <Button icon={<EditOutlined />} size="small" type="text" />
-              </Link>
-            </Tooltip>
-            <Popconfirm
-              cancelText="取消"
-              description="删除后用户新增密钥时将无法选择该 Provider。"
-              okText="删除"
-              title={`删除「${option.label}」吗？`}
-              onConfirm={() => onRemove(option)}
-            >
-              <Button danger icon={<DeleteOutlined />} size="small" type="text" />
-            </Popconfirm>
-          </div>
-        ),
-      },
-    ],
-    [canWrite, onRemove, onToggleEnabled, updating],
-  );
+  const columns = getColumns({ canWrite, updating, onEdit, onRemove, onToggleEnabled });
+
+  if (loadFailed) return <Exception onClick={loadOptions} />;
 
   return (
-    <div className={pageCss.page}>
-      <section className={pageCss.heading}>
+    <main className={css.page}>
+      <section className={css.heading}>
         <div>
-          <h1>AI Provider</h1>
+          <h1>
+            <RobotOutlined /> AI Provider
+          </h1>
           <p>配置用户 AI 密钥页面可选择的 Provider。</p>
         </div>
         {canWrite ? (
-          <Link to="/system/ai-provider/create">
-            <Button icon={<PlusOutlined />} type="primary">
-              新增 Provider
-            </Button>
-          </Link>
+          <Button
+            icon={<PlusOutlined />}
+            type="primary"
+            onClick={() => navigate('/system/ai-provider/create')}
+          >
+            新增 Provider
+          </Button>
         ) : null}
       </section>
-      <section className={pageCss.panel}>
-        <div className={pageCss.filters}>
+
+      <section className={css.panel}>
+        <div className={css.filters}>
           <Input.Search
             allowClear
-            className={pageCss.search}
+            className={css.search}
             enterButton={<SearchOutlined />}
             placeholder="按标识、名称、协议、模型或调用地址搜索"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
             onSearch={onSearch}
           />
-          <Button icon={<ReloadOutlined />} onClick={onRefresh}>
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              loadOptions().catch(() => undefined);
+            }}
+          >
             刷新
           </Button>
         </div>
-        <div className={pageCss.table}>
-          <Table
-            columns={canWrite ? columns : columns.filter((column) => column.key !== 'actions')}
+        <div ref={tableRef} className="table-viewport">
+          <Table<AiProviderOption>
+            rowKey="value"
+            columns={columns}
             dataSource={filteredOptions}
             loading={loading}
             pagination={false}
-            rowKey="value"
-            scroll={{ x: 1100 }}
+            scroll={{ x: 1100, y: scrollY }}
           />
         </div>
       </section>
-    </div>
+    </main>
   );
 }

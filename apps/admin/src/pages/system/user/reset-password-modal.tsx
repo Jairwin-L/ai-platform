@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Form, Input, Modal } from 'antd';
+import { Form, Modal } from 'antd';
 import { resetRbacUserPassword, type RbacUser } from '@/api/methods/rbac';
-import { getFormFieldErrors } from '@/utils/form';
+import { MODAL_OPTION } from '@/constants/antd';
+import FormItems from '@/components/form-items';
 import { getDisplayName } from './columns';
-import { resetPasswordFormSchema, type ResetPasswordFormValues } from './schemas';
+import { getResetPasswordItems } from './form-item-config';
+import type { ResetPasswordFormValues } from './schemas';
 
 interface ResetPasswordModalProps {
   /** 为空时弹窗关闭 */
@@ -22,18 +24,12 @@ export default function ResetPasswordModal({ user, onClose }: ResetPasswordModal
 
   const onFinish = async (values: ResetPasswordFormValues) => {
     if (!user) return;
-    const parsed = resetPasswordFormSchema.safeParse(values);
-    if (!parsed.success) {
-      form.setFields(getFormFieldErrors(parsed.error.issues));
-      return;
-    }
-
     setSaving(true);
     try {
-      await resetRbacUserPassword(user.id, parsed.data.password);
+      await resetRbacUserPassword(user.id, values.password);
       onClose();
     } catch {
-      // 请求错误由全局响应拦截器提示
+      // 接口错误已由全局响应拦截器提示
     } finally {
       setSaving(false);
     }
@@ -42,6 +38,7 @@ export default function ResetPasswordModal({ user, onClose }: ResetPasswordModal
   return (
     <Modal
       destroyOnHidden
+      {...MODAL_OPTION}
       cancelText="取消"
       confirmLoading={saving}
       okText="确认重置"
@@ -57,21 +54,7 @@ export default function ResetPasswordModal({ user, onClose }: ResetPasswordModal
           onFinish(values).catch(() => undefined);
         }}
       >
-        <Form.Item
-          label="新密码"
-          name="password"
-          rules={[{ required: true, message: '请输入新密码' }]}
-        >
-          <Input.Password autoComplete="new-password" maxLength={128} placeholder="至少 6 位" />
-        </Form.Item>
-        <Form.Item
-          dependencies={['password']}
-          label="确认密码"
-          name="confirmPassword"
-          rules={[{ required: true, message: '请再次输入新密码' }]}
-        >
-          <Input.Password autoComplete="new-password" maxLength={128} />
-        </Form.Item>
+        <FormItems items={getResetPasswordItems()} />
       </Form>
     </Modal>
   );

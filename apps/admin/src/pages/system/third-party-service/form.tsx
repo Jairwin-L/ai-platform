@@ -1,50 +1,55 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Button, Form, Input, Skeleton, Switch } from 'antd';
+import { Button, Form, Skeleton } from 'antd';
+import { ArrowLeftOutlined, ApiOutlined, SaveOutlined } from '@ant-design/icons';
 import {
   createThirdPartyServiceOption,
   getThirdPartyServiceOption,
   updateThirdPartyServiceOption,
 } from '@/api/methods/settings';
-import { useLiteDebounced } from '@/hooks';
-import pageCss from '@/styles/page.module.scss';
+import FormItems from '@/components/form-items';
+import Exception from '@/components/exception';
+import css from '@/components/resource-page/index.module.scss';
+import { defaultValues, getFormItems } from './form-item-config';
 import { serviceFormSchema, type ServiceFormValues } from './schemas';
-import { getFormFieldErrors } from '@/utils/form';
 
-const LIST_PATH = '/system/third-party-service';
+const SERVICE_LIST_PATH = '/system/third-party-service';
 
-const DEFAULT_VALUES: ServiceFormValues = { value: '', label: '', apiKeyUrl: '', enabled: true };
-
-export default function ThirdPartyServiceForm({ serviceValue }: { serviceValue?: string }) {
+export default function FormPage({ serviceValue }: { serviceValue?: string }) {
   const navigate = useNavigate();
   const [form] = Form.useForm<ServiceFormValues>();
   const [loading, setLoading] = useState(Boolean(serviceValue));
   const [saving, setSaving] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const isEditing = Boolean(serviceValue);
+  const formItems = useMemo(() => getFormItems(), []);
 
-  useEffect(() => {
+  const loadForm = useCallback(async () => {
     if (!serviceValue) return;
-    let active = true;
-
-    getThirdPartyServiceOption(serviceValue)
-      .then((option) => {
-        if (active) form.setFieldsValue({ ...option, apiKeyUrl: option.apiKeyUrl ?? '' });
-      })
-      .catch(() => undefined)
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
+    setLoading(true);
+    setLoadFailed(false);
+    try {
+      const option = await getThirdPartyServiceOption(serviceValue);
+      form.setFieldsValue({ ...option, apiKeyUrl: option.apiKeyUrl ?? '' });
+    } catch {
+      setLoadFailed(true);
+    } finally {
+      setLoading(false);
+    }
   }, [form, serviceValue]);
 
-  const onSubmit = useLiteDebounced(async (values: ServiceFormValues) => {
+  useEffect(() => {
+    loadForm().catch(() => undefined);
+  }, [loadForm]);
+
+  const onBackToServices = () => {
+    void navigate(SERVICE_LIST_PATH);
+  };
+
+  const onFinish = async (values: ServiceFormValues) => {
+    // 字段规则已逐项校验过，这里再整体解析一次拿到归一化后的提交值（空链接转 undefined）
     const parsed = serviceFormSchema.safeParse(values);
-    if (!parsed.success) {
-      form.setFields(getFormFieldErrors(parsed.error.issues));
-      return;
-    }
+    if (!parsed.success) return;
 
     setSaving(true);
     try {
@@ -53,64 +58,50 @@ export default function ThirdPartyServiceForm({ serviceValue }: { serviceValue?:
       } else {
         await createThirdPartyServiceOption(parsed.data);
       }
-      void navigate(LIST_PATH);
+      onBackToServices();
     } catch {
-      // 请求错误由全局响应拦截器提示
+      // 接口错误已由全局响应拦截器提示
     } finally {
       setSaving(false);
     }
-  });
-
-  const onCancel = () => {
-    void navigate(LIST_PATH);
   };
 
+  if (loadFailed) return <Exception onClick={loadForm} />;
+
   return (
-    <div className={pageCss.page}>
-      <section className={pageCss.heading}>
+    <main className={css.page}>
+      <section className={css.heading}>
         <div>
-          <h1>{isEditing ? '编辑第三方服务' : '新建第三方服务'}</h1>
+          <Button icon={<ArrowLeftOutlined />} type="text" onClick={onBackToServices}>
+            返回服务列表
+          </Button>
+          <h1>
+            <ApiOutlined /> {isEditing ? '编辑第三方服务' : '新建第三方服务'}
+          </h1>
           <p>{isEditing ? '更新第三方服务展示信息和可用状态。' : '创建用户可选择的第三方服务。'}</p>
         </div>
       </section>
-      <section className={pageCss['form-panel']}>
-        {loading ? <Skeleton active paragraph={{ rows: 5 }} /> : null}
+
+      <section className={css.panel}>
+        {loading ? <Skeleton active paragraph={{ rows: 8 }} /> : null}
         <Form
-          className={loading ? pageCss.hidden : undefined}
+          className={loading ? css.hidden : undefined}
           form={form}
-          initialValues={DEFAULT_VALUES}
+          initialValues={defaultValues}
           layout="vertical"
-          requiredMark="optional"
-          onFinish={onSubmit}
+          onFinish={onFinish}
         >
-          <Form.Item
-            label="服务标识"
-            name="value"
-            rules={[{ required: true, whitespace: true, message: '请输入服务标识' }]}
-          >
-            <Input maxLength={40} placeholder="tinypng" />
-          </Form.Item>
-          <Form.Item
-            label="展示名称"
-            name="label"
-            rules={[{ required: true, whitespace: true, message: '请输入展示名称' }]}
-          >
-            <Input maxLength={40} placeholder="TinyPNG" />
-          </Form.Item>
-          <Form.Item label="API Key 链接" name="apiKeyUrl">
-            <Input maxLength={2048} placeholder="https://service.example.com/api-keys" />
-          </Form.Item>
-          <Form.Item label="启用状态" name="enabled" valuePropName="checked">
-            <Switch checkedChildren="启用" unCheckedChildren="停用" />
-          </Form.Item>
-          <div className={pageCss['form-actions']}>
-            <Button onClick={onCancel}>取消</Button>
-            <Button htmlType="submit" loading={saving} type="primary">
+          <div className={css['form-grid']}>
+            <FormItems items={formItems} />
+          </div>
+          <div className={css['form-actions']}>
+            <Button onClick={onBackToServices}>取消</Button>
+            <Button htmlType="submit" icon={<SaveOutlined />} loading={saving} type="primary">
               {isEditing ? '保存更改' : '创建服务'}
             </Button>
           </div>
         </Form>
       </section>
-    </div>
+    </main>
   );
 }

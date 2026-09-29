@@ -1,7 +1,7 @@
 import { useParams } from 'react-router';
-import ThirdPartyServiceForm from './form';
+import FormPage from './form';
 
-export default function ThirdPartyServiceEditPage() {
+export default function Page() {
   const { value } = useParams<{ value: string }>();
-  return <ThirdPartyServiceForm serviceValue={value} />;
+  return <FormPage serviceValue={value} />;
 }

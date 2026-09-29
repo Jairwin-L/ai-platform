@@ -106,6 +106,16 @@
 - 在上述 `utils` 范围内，工具函数的 JSDoc 注释必须包含：`@func` 与 `@desc`。
 - 在上述 `utils` 范围内，工具函数必须补充 JSDoc 注释，至少包含：`@param`（有入参时）与 `@returns`（有返回值时）；必要时增加 `@throws`、`@example`。
 - 对复杂逻辑可加简短注释，注释应解释“为什么”，不是“做了什么”。
+- 管理端（`apps/admin/src/**`，Vite + React Router 单页应用）内部路由跳转统一使用 `react-router` 的 `useNavigate()` 返回的 `navigate(...)`，不要使用 `a href`、`Button href`、`window.location` 等会触发整页刷新的方式（整页刷新会重新拉取会话与菜单）；外部链接新窗口打开时带 `noopener,noreferrer`。
+- 管理端页面按职责拆分为 `index.tsx`（列表）、`form.tsx`、`columns.tsx`、`form-item-config.tsx`（交给 `components/form-items` 渲染）、`schemas.ts`（zod schema 与 `utils/zod-form-rule` 的 `createZodFormRules` 派生的字段规则）；数据加载失败渲染 `components/exception` 提供重试。
+- 管理端（`apps/admin`）界面规范以 [Ant Design design.md](https://ant.design/design.md)（Ant Design v6 默认亮色主题）为准，新增或修改 admin 界面前先读该文档：
+  - antd 组件外观通过 `apps/admin/src/app.tsx` 中 `ConfigProvider` 的 `theme`（`token` / `components`）调整，不写全局 `.ant-*` 覆盖；自定义样式只用 `apps/admin/src/styles/variable.scss` 中的 token 变量与 `mixin.scss`，不手写色值、字号和不在网格上的尺寸；改主题时 `theme` 与 scss 变量同步修改。
+  - 间距落在 4px 网格（4 / 8 / 16 / 24 / 32）；圆角控件 6px、卡片 / 弹窗等容器 8px、标签 / 提示 4px，正圆只用于头像、徽标和状态点；基准字号 14px，字重只用 400 / 600。
+  - 表面分三层：页面底 `$color-bg-layout`、卡片与表格等容器 `$color-bg-container`、弹窗 / 下拉等浮层靠阴影区分；扁平优先，卡片不加阴影，阴影只给真正浮起的表面。
+  - 每屏只保留一个 `type="primary"` 按钮，其余降为默认按钮。
+  - 状态（启用 / 停用、用户状态等）用 `Badge` 状态点、`Switch` 或 `Alert` 表达，`Tag` 只用于分类标签；预设色（blue、green、purple 等）只用于标签等分类场景，不自定义强调色。
+  - 侧栏保持深色，菜单选中项通过 `Menu` 组件 token 统一为浅蓝底加主色字，不要改回主色实底。
+  - 动效只用 0.1s / 0.2s / 0.3s 三档时长和 antd 内置缓动，不自定义 `cubic-bezier`。
 
 ## 6. 输出与沟通规范
 

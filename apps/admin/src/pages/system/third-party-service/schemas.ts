@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { createZodFormRules } from '@/utils/zod-form-rule';
 
 function isHttpsUrl(value: string): boolean {
   try {
@@ -28,3 +29,5 @@ export const serviceFormSchema = z.object({
 });
 
 export type ServiceFormValues = z.input<typeof serviceFormSchema>;
+
+export const getServiceRules = createZodFormRules(serviceFormSchema);

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { createZodFormRules } from '@/utils/zod-form-rule';
 
 /** 大写常量格式：大写字母开头，单词之间用下划线连接，与 db-service createPermissionSchema 一致 */
 const PERMISSION_CODE_PATTERN = /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$/;
@@ -41,3 +42,5 @@ export const permissionFormSchema = z.object({
 });
 
 export type PermissionFormValues = z.input<typeof permissionFormSchema>;
+
+export const getPermissionRules = createZodFormRules(permissionFormSchema);

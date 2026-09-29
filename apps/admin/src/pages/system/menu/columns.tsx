@@ -3,8 +3,8 @@ import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import type { RbacPermission } from '@/api/methods/rbac';
 import { EMPTY_PLACEHOLDER } from '@/constants/biz';
 import { LEAF_PERMISSION_TYPES, getPermissionTypeMeta } from '@/constants/permission';
-import pageCss from '@/styles/page.module.scss';
-import { formatDateTime } from '@/utils';
+import css from '@/components/resource-page/index.module.scss';
+import { formatDateTime } from '@/utils/date';
 
 interface ColumnsOptions {
   /** 有 PERMISSION_ASSIGN 才出现操作列与状态开关 */
@@ -20,7 +20,7 @@ interface ColumnsOptions {
  *
  * 行内操作要用到页面的路由跳转与列表刷新，所以这里导出工厂函数而不是模块级常量。
  */
-export function getMenuColumns({
+export function getColumns({
   canManage,
   onCreateChild,
   onEdit,
@@ -36,7 +36,7 @@ export function getMenuColumns({
       render: (_, permission) => {
         const hasChildren = Boolean(permission.children?.length);
         return (
-          <div className={pageCss.actions}>
+          <div className={css.actions}>
             {LEAF_PERMISSION_TYPES.includes(permission.type) ? null : (
               <Button
                 icon={<PlusOutlined />}
@@ -88,7 +88,7 @@ export function getMenuColumns({
       render: (name: string, permission) => (
         <Space orientation="vertical" size={2}>
           <strong>{name}</strong>
-          <code className={pageCss.code}>{permission.code}</code>
+          <code className={css.code}>{permission.code}</code>
         </Space>
       ),
     },
@@ -106,7 +106,7 @@ export function getMenuColumns({
       dataIndex: 'path',
       width: 220,
       render: (path: string | null) => (
-        <span className={pageCss.muted}>{path || EMPTY_PLACEHOLDER}</span>
+        <span className={css.muted}>{path || EMPTY_PLACEHOLDER}</span>
       ),
     },
     {
@@ -137,8 +137,8 @@ export function getMenuColumns({
     {
       title: '更新时间',
       dataIndex: 'updatedAt',
-      width: 160,
-      render: (value: string) => <span className={pageCss.muted}>{formatDateTime(value)}</span>,
+      width: 180,
+      render: (value: string) => <span className={css.muted}>{formatDateTime(value)}</span>,
     },
     ...(canManage ? actionColumns : []),
   ];

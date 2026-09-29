@@ -1,6 +1,7 @@
 import { Button, Result } from 'antd';
 import { isRouteErrorResponse, useNavigate, useRouteError } from 'react-router';
 import { DASHBOARD_PATH } from '@/constants/app';
+import AutoCenter from '../auto-center';
 
 /** 路由级错误兜底：懒加载失败（发版后旧 chunk 失效）时引导刷新 */
 export default function ErrorBoundary() {
@@ -19,18 +20,20 @@ export default function ErrorBoundary() {
   };
 
   return (
-    <Result
-      status="error"
-      title="页面出错了"
-      subTitle={subTitle}
-      extra={[
-        <Button key="reload" type="primary" onClick={onReload}>
-          刷新页面
-        </Button>,
-        <Button key="home" onClick={onBackHome}>
-          返回工作台
-        </Button>,
-      ]}
-    />
+    <AutoCenter>
+      <Result
+        status="error"
+        title="页面加载失败"
+        subTitle={subTitle}
+        extra={[
+          <Button key="reload" type="primary" onClick={onReload}>
+            刷新页面
+          </Button>,
+          <Button key="home" onClick={onBackHome}>
+            返回工作台
+          </Button>,
+        ]}
+      />
+    </AutoCenter>
   );
 }

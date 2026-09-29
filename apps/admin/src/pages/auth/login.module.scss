@@ -1,34 +1,51 @@
 .login-page {
-  display: grid;
-  place-items: center;
-  min-height: 100vh;
-  padding: 24px;
-  background: linear-gradient(160deg, #0f1c3f 0%, #1f3b73 100%);
-}
-
-.login-card {
-  width: min(100%, 400px);
-  box-shadow: 0 24px 48px rgb(0 0 0 / 20%);
-}
-
-.login-brand {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  margin-bottom: 24px;
-  text-align: center;
+  width: 100%;
+  min-height: 100vh;
+  overflow: auto;
+  background: $color-bg-layout;
 }
 
-.login-logo {
-  width: 48px;
-  height: 48px;
-  margin-bottom: 12px;
-  object-fit: contain;
-  filter: invert(1);
+.login-content {
+  flex: 1;
+  padding: ($space-xl + $space-lg) $space-md $space-lg;
+}
+
+.login-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-md;
+  margin-bottom: $space-lg;
+
+  .logo-img {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+  }
+
+  // 取 design.md 的 fontSizeHeading2 / lineHeightHeading2
+  h1 {
+    color: $color-text;
+    font-weight: $font-weight-strong;
+    font-size: 30px;
+    line-height: 38px;
+  }
+}
+
+.login-main {
+  width: 328px;
+  max-width: 100%;
+  margin: 0 auto;
 }
 
 .login-error {
-  margin: -8px 0 16px;
-  color: #ff4d4f;
-  font-size: 13px;
+  margin-bottom: $space-lg;
+}
+
+.login-footer {
+  padding: $space-lg $space-md;
+  color: $color-text-tertiary;
+  text-align: center;
 }

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, type Key } from 'react';
 import { useNavigate } from 'react-router';
 import { Button, Input, Select, Table } from 'antd';
-import { PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
+import { MenuOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { PERMISSION_CODE } from '@ai/constants/permissions';
 import {
   deleteRbacPermission,
@@ -10,11 +10,13 @@ import {
   type PermissionKind,
   type RbacPermission,
 } from '@/api/methods/rbac';
+import { SELECT_OPTION } from '@/constants/antd';
 import { PERMISSION_TYPE_OPTIONS } from '@/constants/permission';
 import { usePermission, useTable, type AdminTableQuery } from '@/hooks';
 import { MENU_CHANGED_EVENT } from '@/layout/menus';
-import pageCss from '@/styles/page.module.scss';
-import { getMenuColumns } from './columns';
+import Exception from '@/components/exception';
+import css from '@/components/resource-page/index.module.scss';
+import { getColumns } from './columns';
 
 const TYPE_FILTER_OPTIONS = PERMISSION_TYPE_OPTIONS.map(({ label, value }) => ({ label, value }));
 
@@ -32,14 +34,14 @@ function notifyMenuChanged() {
   window.dispatchEvent(new Event(MENU_CHANGED_EVENT));
 }
 
-export default function MenuListPage() {
+export default function Page() {
   const navigate = useNavigate();
   const can = usePermission();
   const canManage = can(PERMISSION_CODE.OPERATION.PERMISSION.ASSIGN);
   // 未选表示不按类型筛选
   const [filterType, setFilterType] = useState<PermissionKind>();
-  const filters = useMemo(() => ({ type: filterType }), [filterType]);
 
+  const filters = useMemo(() => ({ type: filterType }), [filterType]);
   // 资源以树形整体返回，不做分页
   const fetcher = useCallback(
     async ({ searchTerm }: AdminTableQuery) => {
@@ -48,40 +50,53 @@ export default function MenuListPage() {
     },
     [filterType],
   );
-  const table = useTable<RbacPermission>({ fetcher, filters });
-  const { runAction } = table;
+
+  const {
+    list: permissions,
+    total,
+    loading,
+    loadFailed,
+    searchInput,
+    setSearchInput,
+    submitSearch,
+    reload,
+    runAction,
+  } = useTable<RbacPermission>({ fetcher, filters });
+
   // 数据是异步到的，defaultExpandAllRows 只在首次渲染生效；用户手动收起后以用户的选择为准
   const [expandedKeys, setExpandedKeys] = useState<Key[] | null>(null);
-  const defaultExpandedKeys = useMemo(() => collectExpandableKeys(table.list), [table.list]);
+  const defaultExpandedKeys = useMemo(() => collectExpandableKeys(permissions), [permissions]);
 
-  const columns = useMemo(
-    () =>
-      getMenuColumns({
-        canManage,
-        onCreateChild: (permission) => {
-          void navigate(`/system/menu/create?parentId=${permission.id}`);
-        },
-        onEdit: (permission) => {
-          void navigate(`/system/menu/edit/${permission.id}`);
-        },
-        onRemove: async (permission) => {
-          if (await runAction(() => deleteRbacPermission(permission.id))) notifyMenuChanged();
-        },
-        onToggleState: async (permission) => {
-          const updated = await runAction(() =>
-            updateRbacPermission(permission.id, { enable: !permission.enable }),
-          );
-          if (updated) notifyMenuChanged();
-        },
-      }),
-    [canManage, navigate, runAction],
-  );
+  const onRemove = async (permission: RbacPermission) => {
+    if (await runAction(() => deleteRbacPermission(permission.id))) notifyMenuChanged();
+  };
+
+  const onToggleState = async (permission: RbacPermission) => {
+    const updated = await runAction(() =>
+      updateRbacPermission(permission.id, { enable: !permission.enable }),
+    );
+    if (updated) notifyMenuChanged();
+  };
+
+  const onEdit = (permission: RbacPermission) => {
+    void navigate(`/system/menu/edit/${permission.id}`);
+  };
+
+  const onCreateChild = (permission: RbacPermission) => {
+    void navigate(`/system/menu/create?parentId=${permission.id}`);
+  };
+
+  const columns = getColumns({ canManage, onCreateChild, onEdit, onRemove, onToggleState });
+
+  if (loadFailed) return <Exception onClick={reload} />;
 
   return (
-    <div className={pageCss.page}>
-      <section className={pageCss.heading}>
+    <main className={css.page}>
+      <section className={css.heading}>
         <div>
-          <h1>菜单管理</h1>
+          <h1>
+            <MenuOutlined /> 菜单管理
+          </h1>
           <p>按目录、菜单和按钮层级维护管理端的侧边栏菜单与接口访问控制。</p>
         </div>
         {canManage ? (
@@ -94,21 +109,22 @@ export default function MenuListPage() {
           </Button>
         ) : null}
       </section>
-      <section className={pageCss.panel}>
-        <div className={pageCss.filters}>
+
+      <section className={css.panel}>
+        <div className={css.filters}>
           <Input.Search
             allowClear
-            className={pageCss.search}
+            className={css.search}
             enterButton={<SearchOutlined />}
             placeholder="按名称、编码或说明搜索"
-            value={table.searchInput}
-            onChange={(event) => table.setSearchInput(event.target.value)}
-            onSearch={table.submitSearch}
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            onSearch={submitSearch}
           />
           <Select
-            allowClear
+            {...SELECT_OPTION}
             options={TYPE_FILTER_OPTIONS}
-            placeholder="全部类型"
+            placeholder="请选择类型"
             style={{ width: 140 }}
             value={filterType}
             onChange={(value?: PermissionKind) => setFilterType(value)}
@@ -116,28 +132,28 @@ export default function MenuListPage() {
           <Button
             icon={<ReloadOutlined />}
             onClick={() => {
-              table.reload().catch(() => undefined);
+              reload().catch(() => undefined);
             }}
           >
             刷新
           </Button>
         </div>
-        <div className={pageCss.table}>
+        <div className={css.table}>
           <Table<RbacPermission>
+            rowKey="id"
             columns={columns}
-            dataSource={table.list}
+            dataSource={permissions}
             expandable={{
               expandedRowKeys: expandedKeys ?? defaultExpandedKeys,
               onExpandedRowsChange: (keys) => setExpandedKeys([...keys]),
             }}
-            loading={table.loading}
+            loading={loading}
             pagination={false}
-            rowKey="id"
             scroll={{ x: 1240 }}
-            footer={() => <span className={pageCss.muted}>共 {table.total} 项资源</span>}
+            footer={() => <span className={css.muted}>共 {total} 项资源</span>}
           />
         </div>
       </section>
-    </div>
+    </main>
   );
 }

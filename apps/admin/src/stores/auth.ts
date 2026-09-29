@@ -16,6 +16,7 @@ interface AuthState {
   initialized: boolean;
   loading: boolean;
   fetchCurrentUser: () => Promise<AuthAccount | null>;
+  setCurrentUser: (user: AuthAccount | null) => void;
   clearAuth: () => Promise<void>;
 }
 
@@ -59,6 +60,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       });
 
     return currentUserRequest;
+  },
+  setCurrentUser: (currentUser) => {
+    set({ currentUser, initialized: true, loading: false });
   },
   clearAuth: async () => {
     // 服务端销毁会话失败也要把本地状态清掉，否则用户会卡在「已登录」的假象里

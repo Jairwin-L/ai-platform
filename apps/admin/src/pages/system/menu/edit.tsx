@@ -1,7 +1,7 @@
 import { useParams } from 'react-router';
-import MenuForm from './form';
+import FormPage from './form';
 
-export default function MenuEditPage() {
+export default function Page() {
   const { id } = useParams<{ id: string }>();
-  return <MenuForm permissionId={id} />;
+  return <FormPage permissionId={id} />;
 }

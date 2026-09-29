@@ -1,0 +1,117 @@
+// 后台列表 / 表单页的公共骨架，避免每个页面重复写同一套排版
+.page {
+  display: grid;
+  // 隐式列按内容最小宽度撑开，带 scroll.x 的表格会把整页撑出可视区并被裁掉
+  grid-template-columns: minmax(0, 1fr);
+  gap: $space-md;
+}
+
+.heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: $space-md;
+
+  @media (max-width: $grid-width-md) {
+    flex-direction: column;
+  }
+
+  h1 {
+    display: flex;
+    align-items: center;
+    gap: $space-xs;
+    color: $color-text;
+    font-weight: $font-weight-strong;
+    font-size: 20px;
+    line-height: 28px;
+  }
+
+  p {
+    margin-top: $space-xxs;
+    color: $color-text-secondary;
+  }
+}
+
+.alert {
+  margin: 0;
+}
+
+.panel {
+  @include card-surface;
+
+  padding: $space-lg;
+
+  @media (max-width: $grid-width-md) {
+    padding: $space-md;
+  }
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-xs $space-md;
+  margin-bottom: $space-md;
+}
+
+.search {
+  width: 280px;
+  max-width: 100%;
+
+  @media (max-width: $grid-width-md) {
+    width: 100%;
+  }
+}
+
+.table {
+  min-width: 0;
+}
+
+// 行内操作是一组 link 按钮，按钮自带左右内边距，不再额外留间距
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $space-xs;
+  margin-top: $space-lg;
+}
+
+.muted {
+  color: $color-text-tertiary;
+}
+
+.code {
+  font-size: 12px;
+  line-height: 20px;
+  font-family: $font-family-code;
+}
+
+.hidden {
+  display: none;
+}
+
+.empty {
+  padding: $space-xl 0;
+  color: $color-text-tertiary;
+  text-align: center;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 $space-md;
+
+  @media (max-width: $grid-width-md) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+// 表单项由配置数组渲染时，长文本、树选择这类字段靠它跨满 .form-grid 的两列
+.form-item-full {
+  grid-column: 1 / -1;
+}

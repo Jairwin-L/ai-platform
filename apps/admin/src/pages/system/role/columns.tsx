@@ -4,8 +4,8 @@ import { PERMISSION_CODE } from '@ai/constants/permissions';
 import { RoleCode } from '@ai/constants/roles';
 import type { RbacRole } from '@/api/methods/rbac';
 import { EMPTY_PLACEHOLDER } from '@/constants/biz';
-import pageCss from '@/styles/page.module.scss';
-import { formatDateTime } from '@/utils';
+import css from '@/components/resource-page/index.module.scss';
+import { formatDateTime } from '@/utils/date';
 
 const { ROLE } = PERMISSION_CODE.OPERATION;
 
@@ -23,7 +23,7 @@ interface ColumnsOptions {
  *
  * 行内操作要用到页面的权限判定、路由跳转与列表刷新，所以这里导出工厂函数而不是模块级常量。
  */
-export function getRoleColumns({
+export function getColumns({
   can,
   onEdit,
   onOpenAssignUser,
@@ -39,8 +39,8 @@ export function getRoleColumns({
         <Space orientation="vertical" size={2}>
           <strong>{name}</strong>
           <Space size={4} wrap>
-            <code className={pageCss.code}>{role.code}</code>
-            {role.isSystem ? <Tag color="processing">系统角色</Tag> : null}
+            <code className={css.code}>{role.code}</code>
+            {role.isSystem ? <Tag color="blue">系统角色</Tag> : null}
           </Space>
         </Space>
       ),
@@ -66,7 +66,7 @@ export function getRoleColumns({
       dataIndex: 'description',
       ellipsis: true,
       render: (value: string | null, role) => (
-        <span className={pageCss.muted}>{value || role.remark || EMPTY_PLACEHOLDER}</span>
+        <span className={css.muted}>{value || role.remark || EMPTY_PLACEHOLDER}</span>
       ),
     },
     { title: '关联用户', dataIndex: 'userCount', width: 100, align: 'center' },
@@ -80,8 +80,8 @@ export function getRoleColumns({
     {
       title: '更新时间',
       dataIndex: 'updatedAt',
-      width: 160,
-      render: (value: string) => <span className={pageCss.muted}>{formatDateTime(value)}</span>,
+      width: 180,
+      render: (value: string) => <span className={css.muted}>{formatDateTime(value)}</span>,
     },
     {
       title: '操作',
@@ -92,7 +92,7 @@ export function getRoleColumns({
         // 超级管理员角色服务端不允许分配用户或删除
         const builtin = role.code === RoleCode.SUPER_ADMIN;
         return (
-          <div className={pageCss.actions}>
+          <div className={css.actions}>
             {can(ROLE.ASSIGN_USER) ? (
               <Button
                 disabled={builtin}

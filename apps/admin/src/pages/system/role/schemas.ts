@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { createZodFormRules } from '@/utils/zod-form-rule';
 
 /** 与 db-service createRoleSchema 的规则保持一致 */
 const ROLE_CODE_PATTERN = /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$/;
@@ -18,3 +19,5 @@ export const roleFormSchema = z.object({
 });
 
 export type RoleFormValues = z.input<typeof roleFormSchema>;
+
+export const getRoleRules = createZodFormRules(roleFormSchema);

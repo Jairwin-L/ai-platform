@@ -64,8 +64,9 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        // 只注入变量：global.scss 含真实样式规则，注入到 *.module.scss 会被局部化
-        additionalData: '@use "@/styles/variable.scss" as *;\n',
+        // 只注入变量与 mixin：global.scss 含真实样式规则，注入到 *.module.scss 会被 CSS Module 局部化，
+        // 改由 root.tsx 单独引入
+        additionalData: '@use "@/styles/variable.scss" as *;\n@use "@/styles/mixin.scss" as *;\n',
       },
     },
   },

@@ -1,7 +1,7 @@
 import { useParams } from 'react-router';
-import AiProviderForm from './form';
+import FormPage from './form';
 
-export default function AiProviderEditPage() {
+export default function Page() {
   const { value } = useParams<{ value: string }>();
-  return <AiProviderForm providerValue={value} />;
+  return <FormPage providerValue={value} />;
 }

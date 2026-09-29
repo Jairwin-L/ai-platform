@@ -1,16 +1,16 @@
-import type { TagProps } from 'antd';
+import type { BadgeProps } from 'antd';
 
-/** 与 db-service 的 UserStatusType 一一对应 */
+/** 与 db-service 的 UserStatusType 一一对应，badge 只用于列表与详情的状态点 */
 export const USER_STATUS_OPTIONS: Array<{
-  color: NonNullable<TagProps['color']>;
+  badge: NonNullable<BadgeProps['status']>;
   label: string;
   value: IApiUsers.UserStatus;
 }> = [
-  { color: 'success', label: '正常', value: 'active' },
-  { color: 'warning', label: '待激活', value: 'pending' },
-  { color: 'warning', label: '受限', value: 'restricted' },
-  { color: 'error', label: '已封禁', value: 'banned' },
-  { color: 'default', label: '已停用', value: 'inactive' },
+  { badge: 'success', label: '正常', value: 'active' },
+  { badge: 'processing', label: '待激活', value: 'pending' },
+  { badge: 'warning', label: '受限', value: 'restricted' },
+  { badge: 'error', label: '已封禁', value: 'banned' },
+  { badge: 'default', label: '已停用', value: 'inactive' },
 ];
 
 export function getUserStatusMeta(status: string) {

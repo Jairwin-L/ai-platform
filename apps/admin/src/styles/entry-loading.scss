@@ -1,43 +1,71 @@
+// 首屏加载占位样式：由 index.html 外联引入，入口 JS 下载执行前生效。
+// 占位节点渲染在 #admin 内，React 挂载时整体被替换，样式随之失效，不影响全局。
+// 变量来自 vite.config.ts 中 scss.additionalData 注入的 variable.scss。
 .admin-entry-loading {
+  position: fixed;
+  inset: 0;
   display: flex;
   flex-direction: column;
+  gap: $space-md;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  height: 100vh;
-  color: #667085;
+  color: $color-primary;
   font-size: 14px;
-}
+  line-height: 22px;
+  font-family: $font-family;
+  background: $color-bg-layout;
 
-.admin-entry-loading-dot {
-  display: inline-grid;
-  grid-template-columns: repeat(2, 10px);
-  gap: 6px;
-  animation: admin-entry-rotate 1.2s linear infinite;
-}
+  .admin-entry-loading-dot {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    transform: rotate(45deg);
+    animation: admin-entry-rotate 1.2s infinite linear;
 
-.admin-entry-loading-dot i {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #1677ff;
-  opacity: 0.3;
-}
+    > i {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: $color-primary;
+      border-radius: 100%;
+      transform: scale(0.75);
+      opacity: 0.3;
+      animation: admin-entry-fade 1s infinite linear alternate;
 
-.admin-entry-loading-dot i:nth-child(1) {
-  opacity: 1;
-}
+      &:nth-child(1) {
+        top: 0;
+        left: 0;
+      }
 
-.admin-entry-loading-dot i:nth-child(2) {
-  opacity: 0.75;
-}
+      &:nth-child(2) {
+        top: 0;
+        right: 0;
+        animation-delay: 0.4s;
+      }
 
-.admin-entry-loading-dot i:nth-child(3) {
-  opacity: 0.5;
+      &:nth-child(3) {
+        right: 0;
+        bottom: 0;
+        animation-delay: 0.8s;
+      }
+
+      &:nth-child(4) {
+        bottom: 0;
+        left: 0;
+        animation-delay: 1.2s;
+      }
+    }
+  }
 }
 
 @keyframes admin-entry-rotate {
   to {
-    transform: rotate(360deg);
+    transform: rotate(405deg);
+  }
+}
+
+@keyframes admin-entry-fade {
+  to {
+    opacity: 1;
   }
 }

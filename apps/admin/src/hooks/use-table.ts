@@ -36,6 +36,8 @@ export function useTable<T>({
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  /** 最近一次拉取是否失败；页面据此渲染通用异常页 */
+  const [loadFailed, setLoadFailed] = useState(false);
   const filtersKey = useMemo(() => JSON.stringify(filters ?? {}), [filters]);
   const [prevFiltersKey, setPrevFiltersKey] = useState(filtersKey);
   // 只有最后发出的那次请求能写回结果：翻页、筛选切得快时，先发的请求可能后返回
@@ -52,6 +54,7 @@ export function useTable<T>({
     const isLatest = () => requestId === latestRequestRef.current;
 
     setLoading(true);
+    setLoadFailed(false);
     try {
       const result = await fetcher({ page, pageSize, searchTerm });
       if (!isLatest()) return;
@@ -61,6 +64,7 @@ export function useTable<T>({
       if (!isLatest()) return;
       setList([]);
       setTotal(0);
+      setLoadFailed(true);
     } finally {
       if (isLatest()) setLoading(false);
     }
@@ -107,6 +111,7 @@ export function useTable<T>({
     page,
     pageSize,
     loading,
+    loadFailed,
     searchInput,
     setSearchInput,
     submitSearch,

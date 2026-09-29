@@ -1,5 +1,4 @@
-import { Link } from 'react-router';
-import { Button, Popconfirm, Space, Switch, Tag, type TableColumnsType } from 'antd';
+import { Badge, Button, Popconfirm, Space, Switch, Tag, type TableColumnsType } from 'antd';
 import {
   DeleteOutlined,
   EditOutlined,
@@ -12,8 +11,8 @@ import { RoleCode } from '@ai/constants/roles';
 import type { RbacUser } from '@/api/methods/rbac';
 import { EMPTY_PLACEHOLDER } from '@/constants/biz';
 import { getUserStatusMeta } from '@/constants/user';
-import pageCss from '@/styles/page.module.scss';
-import { formatDateTime } from '@/utils';
+import css from '@/components/resource-page/index.module.scss';
+import { formatDateTime } from '@/utils/date';
 
 const { USER } = PERMISSION_CODE.OPERATION;
 
@@ -21,9 +20,10 @@ export function getDisplayName(user: Pick<RbacUser, 'account' | 'nickname' | 'us
   return user.username || user.nickname || user.account || '未命名用户';
 }
 
-export function renderStatusTag(status: string) {
+/** 状态用状态点表达，Tag 只留给角色这类分类标签 */
+export function renderStatusBadge(status: string) {
   const meta = getUserStatusMeta(status);
-  return <Tag color={meta?.color ?? 'default'}>{meta?.label ?? status}</Tag>;
+  return <Badge status={meta?.badge ?? 'default'} text={meta?.label ?? status} />;
 }
 
 /** bootstrap 配置出来的超级管理员不允许在后台改状态、改角色或删除 */
@@ -38,6 +38,8 @@ interface ColumnsOptions {
   currentUserId?: string;
   /** 操作者自己是否超管，决定能否改超管账号 */
   operatorIsSuperAdmin: boolean;
+  onDetail: (user: RbacUser) => void;
+  onEdit: (user: RbacUser) => void;
   onRemove: (user: RbacUser) => Promise<boolean>;
   onResetPassword: (user: RbacUser) => void;
   onToggleState: (user: RbacUser, enabled: boolean) => Promise<boolean>;
@@ -48,10 +50,12 @@ interface ColumnsOptions {
  *
  * 行内操作要用到页面的权限判定、当前登录账号与列表刷新，所以这里导出工厂函数而不是模块级常量。
  */
-export function getUserColumns({
+export function getColumns({
   can,
   currentUserId,
   operatorIsSuperAdmin,
+  onDetail,
+  onEdit,
   onRemove,
   onResetPassword,
   onToggleState,
@@ -67,7 +71,7 @@ export function getUserColumns({
       render: (_, user) => (
         <Space orientation="vertical" size={0}>
           <strong>{getDisplayName(user)}</strong>
-          <span className={pageCss.muted}>{user.account}</span>
+          <span className={css.muted}>{user.account}</span>
         </Space>
       ),
     },
@@ -104,22 +108,20 @@ export function getUserColumns({
             }}
           />
         ) : (
-          renderStatusTag(user.status)
+          renderStatusBadge(user.status)
         ),
     },
     {
       title: '最近登录',
       dataIndex: 'lastLoginAt',
-      width: 160,
-      render: (value: string | null) => (
-        <span className={pageCss.muted}>{formatDateTime(value)}</span>
-      ),
+      width: 180,
+      render: (value: string | null) => <span className={css.muted}>{formatDateTime(value)}</span>,
     },
     {
       title: '创建时间',
       dataIndex: 'createdAt',
-      width: 160,
-      render: (value: string) => <span className={pageCss.muted}>{formatDateTime(value)}</span>,
+      width: 180,
+      render: (value: string) => <span className={css.muted}>{formatDateTime(value)}</span>,
     },
     {
       title: '操作',
@@ -131,23 +133,20 @@ export function getUserColumns({
         // 超管账号只有超管自己能改资料和密码，与服务端 UsersService 的口径一致
         const lockedForOperator = isBootstrapAdmin(user) && !operatorIsSuperAdmin;
         return (
-          <div className={pageCss.actions}>
-            <Link to={`/system/user/detail/${user.id}`}>
-              <Button icon={<EyeOutlined />} size="small" type="link">
-                查看
-              </Button>
-            </Link>
+          <div className={css.actions}>
+            <Button icon={<EyeOutlined />} size="small" type="link" onClick={() => onDetail(user)}>
+              查看
+            </Button>
             {can(USER.EDIT) ? (
-              <Link to={`/system/user/edit/${user.id}`}>
-                <Button
-                  disabled={lockedForOperator}
-                  icon={<EditOutlined />}
-                  size="small"
-                  type="link"
-                >
-                  编辑
-                </Button>
-              </Link>
+              <Button
+                disabled={lockedForOperator}
+                icon={<EditOutlined />}
+                size="small"
+                type="link"
+                onClick={() => onEdit(user)}
+              >
+                编辑
+              </Button>
             ) : null}
             {can(USER.RESET_PASSWORD) ? (
               <Button

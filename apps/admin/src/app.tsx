@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { RouterProvider } from 'react-router';
-import { App as AntdApp, ConfigProvider } from 'antd';
+import { App as AntdApp, ConfigProvider, theme, type ThemeConfig } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import 'dayjs/locale/zh-cn';
 import { getCurrentMenus, type AuthAccount, type ResourceNode } from '@/api/methods/auth';
@@ -8,6 +8,22 @@ import PageLoading from '@/components/page-loading';
 import { MENU_CHANGED_EVENT, buildMenuItems, getStaticMenuItems } from '@/layout/menus';
 import { isAdminRole, useAuthStore } from '@/stores/auth';
 import { createAdminRouter } from './routes';
+
+const { colorPrimary, colorPrimaryBg } = theme.getDesignToken();
+
+/**
+ * 侧栏保留深色，但深色菜单默认用主色实底白字标记选中项。
+ * 这里把选中项换回 design.md 规定的浅蓝底 + 主色字，让「当前位置」在深浅两种菜单里是同一个视觉信号。
+ * 取值读默认主题的派生 token，不手写色值。
+ */
+const THEME_CONFIG: ThemeConfig = {
+  components: {
+    Menu: {
+      darkItemSelectedBg: colorPrimaryBg,
+      darkItemSelectedColor: colorPrimary,
+    },
+  },
+};
 
 /**
  * antd 的浮层默认挂到 body，表格横向滚动时下拉会脱离容器，
@@ -85,7 +101,7 @@ export default function App() {
   }, [initialized, loadRouter]);
 
   return (
-    <ConfigProvider locale={zhCN} getPopupContainer={getPopupContainer}>
+    <ConfigProvider locale={zhCN} theme={THEME_CONFIG} getPopupContainer={getPopupContainer}>
       <AntdApp>{router ? <RouterProvider router={router} /> : <PageLoading />}</AntdApp>
     </ConfigProvider>
   );

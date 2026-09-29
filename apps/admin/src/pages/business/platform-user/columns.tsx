@@ -1,4 +1,4 @@
-import { Avatar, Button, Popconfirm, Space, Tag, Tooltip, type TableColumnsType } from 'antd';
+import { Avatar, Badge, Button, Popconfirm, Space, Tooltip, type TableColumnsType } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import type { PlatformUser } from '@/api/methods/rbac';
 import { EMPTY_PLACEHOLDER } from '@/constants/biz';
@@ -7,8 +7,8 @@ import {
   getUserStatusMeta,
   type PlatformUserStatusAction,
 } from '@/constants/user';
-import pageCss from '@/styles/page.module.scss';
-import { formatDateTime } from '@/utils';
+import css from '@/components/resource-page/index.module.scss';
+import { formatDateTime } from '@/utils/date';
 
 interface ColumnsOptions {
   /** 有 PLATFORM_USER_WRITE_PERMISSION 才出现操作列 */
@@ -26,7 +26,7 @@ export function getDisplayName(user: PlatformUser): string {
  *
  * 行内操作要用到页面的弹窗状态与列表刷新，所以这里导出工厂函数而不是模块级常量。
  */
-export function getPlatformUserColumns({
+export function getColumns({
   canSetState,
   onOpenStatusModal,
   onRestore,
@@ -39,7 +39,7 @@ export function getPlatformUserColumns({
       fixed: 'right',
       render: (_, user) =>
         user.status === 'active' ? (
-          <div className={pageCss.actions}>
+          <div className={css.actions}>
             {PLATFORM_USER_STATUS_ACTIONS.map((action) => (
               <Button
                 key={action.status}
@@ -80,7 +80,7 @@ export function getPlatformUserColumns({
           <Avatar icon={<UserOutlined />} src={user.avatar || undefined} />
           <Space orientation="vertical" size={0}>
             <strong>{getDisplayName(user)}</strong>
-            <span className={pageCss.muted}>{user.id}</span>
+            <span className={css.muted}>{user.id}</span>
           </Space>
         </Space>
       ),
@@ -97,8 +97,8 @@ export function getPlatformUserColumns({
       width: 110,
       render: (status: string, user) => {
         const meta = getUserStatusMeta(status);
-        const tag = <Tag color={meta?.color ?? 'default'}>{meta?.label ?? status}</Tag>;
-        if (!user.statusReason && !user.statusExpiresAt) return tag;
+        const badge = <Badge status={meta?.badge ?? 'default'} text={meta?.label ?? status} />;
+        if (!user.statusReason && !user.statusExpiresAt) return badge;
         return (
           <Tooltip
             title={
@@ -111,7 +111,7 @@ export function getPlatformUserColumns({
               </>
             }
           >
-            {tag}
+            <span>{badge}</span>
           </Tooltip>
         );
       },
@@ -119,16 +119,14 @@ export function getPlatformUserColumns({
     {
       title: '最近登录',
       dataIndex: 'lastLoginAt',
-      width: 160,
-      render: (value: string | null) => (
-        <span className={pageCss.muted}>{formatDateTime(value)}</span>
-      ),
+      width: 180,
+      render: (value: string | null) => <span className={css.muted}>{formatDateTime(value)}</span>,
     },
     {
       title: '注册时间',
       dataIndex: 'createdAt',
-      width: 160,
-      render: (value: string) => <span className={pageCss.muted}>{formatDateTime(value)}</span>,
+      width: 180,
+      render: (value: string) => <span className={css.muted}>{formatDateTime(value)}</span>,
     },
     ...(canSetState ? actionColumns : []),
   ];

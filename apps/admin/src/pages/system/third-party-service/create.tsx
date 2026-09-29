@@ -1,5 +1,5 @@
-import ThirdPartyServiceForm from './form';
+import FormPage from './form';
 
-export default function ThirdPartyServiceCreatePage() {
-  return <ThirdPartyServiceForm />;
+export default function Page() {
+  return <FormPage />;
 }

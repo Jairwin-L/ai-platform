@@ -1,0 +1,14 @@
+@use './variable' as *;
+
+// 单行文本省略
+@mixin text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// 卡片容器：扁平优先，靠容器白底与页面灰底的明度差分层，不加描边和阴影
+@mixin card-surface {
+  background: $color-bg-container;
+  border-radius: $radius-lg;
+}

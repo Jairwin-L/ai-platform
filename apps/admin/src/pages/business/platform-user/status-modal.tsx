@@ -1,9 +1,11 @@
-import { useEffect } from 'react';
-import { Alert, DatePicker, Form, Input, Modal } from 'antd';
-import dayjs from 'dayjs';
+import { useEffect, useMemo } from 'react';
+import { Alert, Form, Modal } from 'antd';
 import type { PlatformUser, PlatformUserStatusPayload } from '@/api/methods/rbac';
+import { MODAL_OPTION } from '@/constants/antd';
 import type { PlatformUserStatusAction } from '@/constants/user';
-import { getFormFieldErrors } from '@/utils/form';
+import FormItems from '@/components/form-items';
+import { createZodFormRules } from '@/utils/zod-form-rule';
+import { getFormItems } from './form-item-config';
 import { createStatusFormSchema, type StatusFormValues } from './schemas';
 
 interface StatusModalProps {
@@ -24,6 +26,11 @@ export default function StatusModal({
 }: StatusModalProps) {
   const [form] = Form.useForm<StatusFormValues>();
   const open = Boolean(action && user);
+  const reasonRequired = Boolean(action?.reasonRequired);
+  const getRules = useMemo(
+    () => createZodFormRules(createStatusFormSchema(reasonRequired)),
+    [reasonRequired],
+  );
 
   useEffect(() => {
     if (open) form.resetFields();
@@ -32,10 +39,7 @@ export default function StatusModal({
   const onFinish = (values: StatusFormValues) => {
     if (!action) return;
     const parsed = createStatusFormSchema(action.reasonRequired).safeParse(values);
-    if (!parsed.success) {
-      form.setFields(getFormFieldErrors(parsed.error.issues));
-      return;
-    }
+    if (!parsed.success) return;
 
     onSubmit({
       status: action.status,
@@ -49,6 +53,7 @@ export default function StatusModal({
   return (
     <Modal
       destroyOnHidden
+      {...MODAL_OPTION}
       cancelText="取消"
       confirmLoading={saving}
       okButtonProps={{ danger: action?.danger }}
@@ -61,33 +66,7 @@ export default function StatusModal({
       {action ? (
         <Form form={form} layout="vertical" onFinish={onFinish}>
           <Alert showIcon style={{ marginBottom: 16 }} title={action.description} type="warning" />
-          <Form.Item
-            label="原因"
-            name="reason"
-            rules={action.reasonRequired ? [{ required: true, message: '请填写原因' }] : undefined}
-            tooltip="原因会在用户登录或操作被拦截时展示给用户本人"
-          >
-            <Input.TextArea
-              autoSize={{ minRows: 3, maxRows: 6 }}
-              maxLength={255}
-              placeholder={action.reasonRequired ? '必填，将展示给用户' : '选填，将展示给用户'}
-              showCount
-            />
-          </Form.Item>
-          {action.timed ? (
-            <Form.Item
-              label="截止时间"
-              name="expiresAt"
-              extra="不填写表示需要手动恢复；到期后自动恢复为正常。"
-            >
-              <DatePicker
-                disabledDate={(date) => date.isBefore(dayjs(), 'day')}
-                placeholder="选择截止时间"
-                showTime
-                style={{ width: '100%' }}
-              />
-            </Form.Item>
-          ) : null}
+          <FormItems items={getFormItems({ action, getRules })} />
         </Form>
       ) : null}
     </Modal>

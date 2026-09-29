@@ -1,5 +1,5 @@
-import RoleForm from './form';
+import FormPage from './form';
 
-export default function RoleCreatePage() {
-  return <RoleForm />;
+export default function Page() {
+  return <FormPage />;
 }

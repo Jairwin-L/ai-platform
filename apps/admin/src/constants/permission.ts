@@ -20,10 +20,3 @@ export function getPermissionTypeMeta(type: string) {
 
 /** 按钮 / 操作是叶子权限，下面不再挂子资源 */
 export const LEAF_PERMISSION_TYPES: IApiAdmin.PermissionKind[] = ['button', 'operation'];
-
-/** 与 db-service 的 AI Provider 协议一一对应 */
-export const PROVIDER_PROTOCOL_OPTIONS: Array<{ label: string; value: string }> = [
-  { label: 'Chat Completions', value: 'chat-completions' },
-  { label: 'Messages', value: 'messages' },
-  { label: 'Generate Content', value: 'generate-content' },
-];

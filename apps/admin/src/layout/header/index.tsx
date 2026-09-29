@@ -55,16 +55,18 @@ export default function Header() {
 
   return (
     <header className={css['header-container']}>
-      <Breadcrumb items={breadcrumbItems} />
+      <div className={css['page-heading']}>
+        <Breadcrumb items={breadcrumbItems} />
+      </div>
       <Dropdown
         menu={{ items: dropdownItems, onClick: onDropdownClick }}
         placement="bottomRight"
         trigger={['click']}
       >
         <button type="button" className={css['header-avatar']}>
-          <Avatar size="small" icon={<UserOutlined />} src={currentUser?.avatar || undefined} />
+          <Avatar icon={<UserOutlined />} size={24} src={currentUser?.avatar || undefined} />
           <span className={css.username}>{displayName}</span>
-          <DownOutlined />
+          <DownOutlined className={css['dropdown-icon']} />
         </button>
       </Dropdown>
     </header>
