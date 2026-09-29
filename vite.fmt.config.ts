@@ -22,8 +22,6 @@ export const fmtConfig = {
     'lib',
     'node_modules',
     '.next',
-    '.open-next',
-    '.wrangler',
     'generated',
     'package-lock.json',
     'pnpm-lock.yaml',

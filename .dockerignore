@@ -6,8 +6,6 @@
 .vscode
 .vite-hooks
 **/.next
-**/.open-next
-**/.wrangler
 **/.DS_Store
 **/node_modules
 **/generated

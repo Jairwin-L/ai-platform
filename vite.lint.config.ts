@@ -44,8 +44,6 @@ export const lintConfig = {
     '**/.pnpm-debug.log*',
     '**/.env',
     '**/.env.*',
-    '**/.open-next',
-    '**/.wrangler',
     '**/generated',
     '**/.vercel',
     '**/*.tsbuildinfo',

@@ -288,18 +288,6 @@ development 环境的 postgres / redis 默认发布到宿主机 `0.0.0.0:5433` /
 
 服务器地址、SSH 私钥等只存在于 GitHub Environments，仓库中不出现任何真实值。
 
-## Cloudflare Workers 部署（未启用）
-
-`.github/deploy-worker.yml` 是独立的 Workers 发布流程，放在 `.github/workflows/` 之外，GitHub Actions 不会加载。接口层迁到 db-service 后，Workers 上的 platform 只剩页面，启用前需要为其配置可访问的 `API_INTERNAL_ORIGIN`，并移除 workflow 里已不再需要的数据库 / 邮件 / R2 secrets。
-
-本地预览与手动部署：
-
-```bash
-vpr @ai/platform#cf:preview
-vpr @ai/platform#cf:deploy:development
-vpr @ai/platform#cf:deploy:production
-```
-
 ## 开发约定
 
 详见 [`AGENTS.md`](AGENTS.md)（`CLAUDE.md` 为其软链接）。要点：

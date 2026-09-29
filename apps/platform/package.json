@@ -6,11 +6,6 @@
   "scripts": {
     "dev": "next dev --port 8060",
     "build": "next build",
-    "cf:build": "vp exec opennextjs-cloudflare build",
-    "cf:preview": "vp run cf:build && vp exec opennextjs-cloudflare preview --env development",
-    "cf:deploy:development": "vp run cf:build && vp exec opennextjs-cloudflare deploy --env development",
-    "cf:deploy:production": "vp run cf:build && vp exec opennextjs-cloudflare deploy --env production",
-    "cf:typegen": "vp exec wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "ci:eslint": "vp lint -f json src -o ./.ci/eslint.json",
     "lint": "vp check && vp exec stylelint --allow-empty-input --max-warnings 0 \"**/*.{css,less,scss}\"",
     "lint:fix": "vp check --fix && vp exec stylelint --allow-empty-input --fix \"**/*.{css,less,scss}\"",
@@ -59,7 +54,6 @@
   },
   "devDependencies": {
     "@ai/types": "workspace:*",
-    "@opennextjs/cloudflare": "1.19.11",
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
@@ -67,8 +61,7 @@
     "stylelint": "^16.24.0",
     "typescript": "^5.9.3",
     "vite-plus": "catalog:",
-    "vitest": "catalog:",
-    "wrangler": "4.104.0"
+    "vitest": "catalog:"
   },
   "engines": {
     "node": ">=22.18.0 <23"

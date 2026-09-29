@@ -16,7 +16,6 @@ export default {
     '**/es/**',
     '**/lib/**',
     '**/.next/**',
-    '**/.open-next/**',
     '**/out/**',
     '**/coverage/**',
     '**/*.min.css',

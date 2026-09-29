@@ -10,7 +10,6 @@ allowBuilds:
   prisma: true
   sharp: true
   vue-demi: true
-  workerd: true
 catalog:
   vite: npm:@voidzero-dev/vite-plus-core@0.2.4
   vitest: 4.1.9
@@ -19,8 +18,6 @@ minimumReleaseAgeExclude:
   - '@nestjs/common@12.1.0'
   - '@nestjs/core@12.1.0'
   - '@nestjs/platform-express@12.1.0'
-  - miniflare@4.20260623.0
-  - wrangler@4.104.0
 overrides:
   vite: 'catalog:'
   vitest: 'catalog:'
