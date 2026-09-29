@@ -7,6 +7,7 @@ import { createAlova } from 'alova';
 import type { Method, RequestBody } from 'alova';
 import fetch from 'alova/fetch';
 import ReactHook from 'alova/react';
+import { API_PROXY_PREFIX } from './base-url';
 
 let alovaMessageApi: IAlovaHttp.MessageApi | null = null;
 
@@ -342,7 +343,7 @@ function onComplete(method: Method): void {
 export const alovaInstance = createAlova({
   requestAdapter: fetch(),
   statesHook: ReactHook,
-  baseURL: '/api',
+  baseURL: API_PROXY_PREFIX,
   timeout: 10000,
   cacheFor: null,
   beforeRequest,

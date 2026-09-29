@@ -42,10 +42,11 @@
     "@tiptap/starter-kit": "^3.26.1",
     "alova": "^3.3.4",
     "antd": "^6.4.4",
+    "babel-plugin-react-compiler": "^1.0.0",
     "codemirror": "^6.0.2",
     "file-type": "^22.0.1",
     "lodash-es": "^4.18.1",
-    "next": "^16.2.9",
+    "next": "^16.3.6",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "sharp": "^0.34.5",
@@ -58,6 +59,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "sass": "^1.101.0",
+    "sass-embedded": "^1.105.0",
     "stylelint": "^16.24.0",
     "typescript": "^5.9.3",
     "vite-plus": "catalog:",
@@ -65,5 +67,18 @@
   },
   "engines": {
     "node": ">=22.18.0 <23"
-  }
+  },
+  "browserslist": [
+    "chrome >= 64",
+    "edge >= 79",
+    "firefox >= 78",
+    "opera >= 51",
+    "safari >= 12",
+    "ios_saf >= 12",
+    "and_chr >= 64",
+    "and_ff >= 78",
+    "samsung >= 9.2",
+    "not dead",
+    "not op_mini all"
+  ]
 }

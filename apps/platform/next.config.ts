@@ -1,28 +1,24 @@
 import type { NextConfig } from 'next';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { API_PROXY_PREFIX, COMMON_API_PREFIXES, PLATFORM_API_NAMESPACE } from './src/api/base-url';
 
 const root = dirname(fileURLToPath(import.meta.url));
 // pnpm workspace root: dependencies are hoisted into <workspace>/node_modules/.pnpm,
 // so Turbopack and output file tracing must be able to reach it.
 const workspaceRoot = resolve(root, '../..');
 
+/** 站点域名：next/image 远程图片与 Server Actions 的同源校验共用 */
+const SITE_HOSTNAME = 'nextjs-starter-kit.jairwin.cc';
+
 const REMOTE_PATTERNS = [
   {
     protocol: 'https',
-    hostname: 'nextjs-starter-kit.jairwin.cc',
+    hostname: SITE_HOSTNAME,
     port: '',
     pathname: '/**',
   },
 ] satisfies NonNullable<NonNullable<NextConfig['images']>['remotePatterns']>;
-
-/** 浏览器端接口的同源前缀：alova baseURL 与 fetch 字面量都用它 */
-const API_PROXY_PREFIX = '/api';
-/**
- * db-service 上的通用接口只挂根路径（不带 platform/ 命名空间），转发时去掉同源前缀；
- * 其余前台接口转发到 db-service 的 `platform/` 命名空间下。
- */
-const COMMON_API_PREFIXES = ['/upload', '/compress'];
 
 /**
  * 浏览器端接口的转发目标（db-service 的内网地址）。
@@ -37,42 +33,28 @@ function resolveApiProxyTarget(): string | null {
   return target.replace(/\/+$/, '');
 }
 
-function buildContentSecurityPolicy(): string {
-  const directives: string[][] = [
-    ['default-src', "'self'"],
-    ['base-uri', "'self'"],
-    ['form-action', "'self'"],
-    ['frame-ancestors', "'none'"],
-    ['object-src', "'none'"],
-    [
-      'script-src',
-      "'self'",
-      "'unsafe-inline'",
-      'https://static.cloudflareinsights.com',
-      "'unsafe-eval'",
-    ],
-    ['style-src', "'self'", "'unsafe-inline'"],
-    ['img-src', "'self'", 'data:', 'blob:', 'https:'],
-    ['font-src', "'self'", 'data:'],
-    ['connect-src', "'self'", 'https:', 'https://cloudflareinsights.com', 'http:', 'ws:', 'wss:'],
-    ['media-src', "'self'", 'data:', 'blob:'],
-    ['manifest-src', "'self'"],
-    ['worker-src', "'self'", 'blob:'],
-  ];
-
-  return directives.map((directive) => directive.join(' ')).join('; ');
-}
-
 const nextConfig: NextConfig = {
-  // monorepo 内的共享包直接以 TS 源码发布，交给 Next 编译
-  transpilePackages: ['@ai/constants', '@ai/utils'],
-  output: 'standalone',
-  outputFileTracingRoot: workspaceRoot,
+  reactStrictMode: false,
   // 不下发 X-Powered-By: Next.js，少暴露一项技术栈信息
   poweredByHeader: false,
+  // monorepo 内的共享包直接以 TS 源码发布，交给 Next 编译
+  // alova 的 ESM 产物含 class static block（ES2022），iOS Safari < 16.4 解析即报
+  // SyntaxError，整个 client chunk 挂掉，必须交给 SWC 按 browserslist 降级
+  transpilePackages: ['@ai/constants', '@ai/utils', 'alova'],
+  output: 'standalone',
+  // monorepo：standalone 产物需要把 workspace 根目录纳入文件追踪范围
+  outputFileTracingRoot: workspaceRoot,
+  productionBrowserSourceMaps: false,
+  reactCompiler: true,
   experimental: {
-    // 图片压缩接口经 rewrites 转发，请求体上限要覆盖 db-service 的 20MiB 单文件上限
-    proxyClientMaxBodySize: '21mb',
+    authInterrupts: true,
+    // 图片压缩接口经 rewrites 转发，请求体上限要覆盖 db-service 的 6MiB 单文件上限
+    proxyClientMaxBodySize: '6mb',
+    turbopackRustReactCompiler: true,
+    serverActions: {
+      allowedOrigins: [SITE_HOSTNAME],
+      bodySizeLimit: '6mb',
+    },
   },
   // 必须是 beforeFiles：放到 afterFiles 会先被页面路由接走
   async rewrites() {
@@ -81,14 +63,16 @@ const nextConfig: NextConfig = {
 
     return {
       beforeFiles: [
-        // 通用接口排在兜底规则前面：外部转发命中第一条就结束
+        // 通用接口在 db-service 只挂根路径，转发时去掉同源前缀。
+        // 必须排在兜底规则前面：外部转发命中第一条就结束，不会再往下匹配。
         ...COMMON_API_PREFIXES.map((prefix) => ({
           source: `${API_PROXY_PREFIX}${prefix}/:path*`,
           destination: `${target}${prefix}/:path*`,
         })),
         {
+          // 其余前台接口在 db-service 收在 `platform/` 命名空间下
           source: `${API_PROXY_PREFIX}/:path*`,
-          destination: `${target}/platform/:path*`,
+          destination: `${target}${PLATFORM_API_NAMESPACE}/:path*`,
         },
       ],
       afterFiles: [],
@@ -96,6 +80,8 @@ const nextConfig: NextConfig = {
     };
   },
   sassOptions: {
+    implementation: 'sass-embedded',
+    fiber: false,
     loadPaths: [root],
     additionalData: [
       '@import "src/styles/variable.scss";',
@@ -109,20 +95,6 @@ const nextConfig: NextConfig = {
   },
   turbopack: {
     root: workspaceRoot,
-  },
-  // TODO:
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: buildContentSecurityPolicy(),
-          },
-        ],
-      },
-    ];
   },
 };
 

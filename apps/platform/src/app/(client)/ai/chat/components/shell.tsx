@@ -23,6 +23,7 @@ import {
   type AiChatMessage,
   type AiChatModelConfig,
 } from '@/api/modules/ai-chat';
+import { API_PROXY_PREFIX } from '@/api/base-url';
 import { AccountMenu } from '@/app/(client)/(site)/components/account-menu';
 import { ChatMessage } from './message';
 import { ConversationSidebar } from './sidebar';
@@ -213,7 +214,7 @@ export function ChatShell() {
     let conversationId = activeConversationId ?? undefined;
 
     try {
-      const response = await fetch('/api/ai/chat/stream', {
+      const response = await fetch(`${API_PROXY_PREFIX}/ai/chat/stream`, {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },

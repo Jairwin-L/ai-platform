@@ -7,14 +7,13 @@
  * 访问 db-service，并把当前请求的 Cookie 原样带过去。
  */
 import { cookies } from 'next/headers';
+import { PLATFORM_API_NAMESPACE } from './base-url';
 
 // 这份工具会读取 next/headers，被打进客户端 bundle 一定是误用，早失败早发现
 if (typeof window !== 'undefined') {
   throw new Error('[api/server] 只能在服务端使用，客户端组件请改用 @/api/alova');
 }
 
-/** db-service 上前台接口的命名空间，与 rewrites 的转发目标一致 */
-const PLATFORM_API_PREFIX = '/platform';
 /** 内网一跳，正常在毫秒级；db-service 卡住时宁可降级也不要把页面渲染一起拖死 */
 const SERVER_REQUEST_TIMEOUT_MS = 5000;
 
@@ -45,7 +44,7 @@ export async function fetchPlatformApi<T>(path: string): Promise<T | null> {
   const cookieHeader = (await cookies()).toString();
 
   try {
-    const response = await fetch(`${origin}${PLATFORM_API_PREFIX}${path}`, {
+    const response = await fetch(`${origin}${PLATFORM_API_NAMESPACE}${path}`, {
       headers: { Accept: 'application/json', ...(cookieHeader ? { cookie: cookieHeader } : {}) },
       cache: 'no-store',
       signal: AbortSignal.timeout(SERVER_REQUEST_TIMEOUT_MS),
