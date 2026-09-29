@@ -42,6 +42,6 @@
   "editor.formatOnSave": true,
   "editor.rulers": [100],
   "cSpell.words": ["alova"],
-  "oxc.fmt.configPath": "./apps/platform/vite.config.ts",
+  "oxc.fmt.configPath": "./vite.config.ts",
   "editor.formatOnSaveMode": "file"
 }

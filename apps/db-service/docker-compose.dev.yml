@@ -1,0 +1,12 @@
+# development 环境部署时叠加的 override：把 postgres 和 redis 端口暴露到宿主机，
+# 方便开发者从本机直连 dev 数据库。生产环境不叠加这个文件（数据库不对外暴露）。
+# 默认端口避开 5432 / 6379，防止与同机其他项目的 dev 栈冲突。
+# 由 scripts/deploy.sh development 自动叠加，不需要手动指定。
+services:
+  postgres:
+    ports:
+      - '${POSTGRES_BIND_ADDRESS:-0.0.0.0}:${POSTGRES_PORT:-5433}:5432'
+
+  redis:
+    ports:
+      - '${REDIS_BIND_ADDRESS:-0.0.0.0}:${REDIS_PORT:-6380}:6379'

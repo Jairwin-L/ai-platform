@@ -2,6 +2,7 @@
 
 import { ApiOutlined, KeyOutlined, LockOutlined, UserOutlined } from '@ant-design/icons';
 import { usePathname, useRouter } from 'next/navigation';
+import { Alert } from 'antd';
 import ClientSideOnly from '@/components/client-side-only';
 import { usePermission } from '@/hooks/use-permission';
 import styles from './layout.module.scss';
@@ -39,6 +40,26 @@ function buildAccountNavItems(userId?: string): IAppPages.AccountNavItem[] {
       label: '第三方服务凭据',
     },
   ];
+}
+
+/** 受限用户仍能登录浏览，但写操作会被 db-service 拦截，这里提前说明原因与解除时间 */
+function RestrictedNotice({ user }: { user: IApiAuth.AuthUser }) {
+  return (
+    <Alert
+      showIcon
+      className={styles.alert}
+      title="账号已被限制使用，暂时无法修改资料、上传图片、使用 AI 对话或修改密钥"
+      type="warning"
+      description={
+        <>
+          {user.statusReason ? <div>原因：{user.statusReason}</div> : null}
+          {user.statusExpiresAt ? (
+            <div>解除时间：{new Date(user.statusExpiresAt).toLocaleString('zh-CN')}</div>
+          ) : null}
+        </>
+      }
+    />
+  );
 }
 
 export default function AccountLayout({ children }: IAppPages.AccountLayoutProps) {
@@ -86,7 +107,10 @@ export default function AccountLayout({ children }: IAppPages.AccountLayoutProps
               </ul>
             </nav>
           </aside>
-          <section className={styles.content}>{children}</section>
+          <section className={styles.content}>
+            {user?.status === 'restricted' ? <RestrictedNotice user={user} /> : null}
+            {children}
+          </section>
         </div>
       )}
     </ClientSideOnly>

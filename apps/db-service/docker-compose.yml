@@ -1,0 +1,106 @@
+# db-service 栈：postgres / redis / db-service / prisma 工具。
+# 数据层（Prisma、PostgreSQL、Redis）全部由 db-service 拥有；
+# platform 栈通过外部共享网络 ${SHARED_NETWORK} 连过来。
+#
+# 部署入口：apps/db-service/scripts/deploy.sh <production|development>
+
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:18-alpine}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ai_platform}
+      POSTGRES_USER: ${POSTGRES_USER:-ai_platform}
+      # 部署时由 scripts/deploy.sh 校验必填；默认值只服务于本地 build override
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ai_platform}
+    volumes:
+      - postgres-data:${POSTGRES_DATA_TARGET:-/var/lib/postgresql}
+    networks:
+      ai-platform:
+        aliases:
+          - postgres
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: ${REDIS_IMAGE:-redis:7-alpine}
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - redis-data:/data
+    networks:
+      ai-platform:
+        aliases:
+          - redis
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 接口服务（NestJS）：platform 经共享网络 http://db-service:${SERVICE_PORT} 访问，
+  # 管理后台经宿主机反向代理访问；端口默认只绑 127.0.0.1，不直接暴露公网。
+  db-service:
+    # 部署时由 scripts/deploy.sh 显式注入（脚本会校验必填）；默认值只服务于本地 build override，
+    # 因为 compose 的 `${VAR:?}` 在合并 override 之前就会求值，写成必填会让本地构建流程直接失败。
+    image: ${SERVICE_IMAGE:-ai-platform-db-service:local}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      ai-platform:
+        aliases:
+          - db-service
+    environment:
+      NODE_ENV: production
+      NODE_OPTIONS: ${NODE_OPTIONS:---max-old-space-size=3072}
+      PORT: ${SERVICE_PORT:-8072}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://ai_platform:ai_platform@postgres:5432/ai_platform?schema=public}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      ENABLE_API_DOCS: ${ENABLE_API_DOCS:-false}
+      AUTH_CODE_SECRET: ${AUTH_CODE_SECRET:-}
+      AI_KEY_ENCRYPTION_KEY_V1: ${AI_KEY_ENCRYPTION_KEY_V1:-}
+      AI_KEY_REDIS_ID_SECRET: ${AI_KEY_REDIS_ID_SECRET:-}
+      AI_SECRET_MASTER_KEY: ${AI_SECRET_MASTER_KEY:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}
+      RESEND_FROM_NAME: ${RESEND_FROM_NAME:-}
+      # db-service 始终在 platform / 反向代理之后，需要按 X-Forwarded-Proto 识别 HTTPS
+      BYOK_TRUST_PROXY_HEADERS: ${BYOK_TRUST_PROXY_HEADERS:-true}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      R2_ENDPOINT_URL: ${R2_ENDPOINT_URL:-}
+      R2_BUCKET_NAME: ${R2_BUCKET_NAME:-}
+    ports:
+      - '${SERVICE_BIND:-127.0.0.1}:${SERVICE_PORT:-8072}:${SERVICE_PORT:-8072}'
+
+  # migrate deploy / seed / bootstrap-admin 都跑在这个一次性容器里。
+  # 镜像由 CI 推到 GHCR（<repo>:prisma-<sha>），服务器只 pull 不 build。
+  migrate:
+    image: ${PRISMA_TOOL_IMAGE:-ai-platform-prisma-tool:local}
+    profiles:
+      - tools
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ai-platform
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://ai_platform:ai_platform@postgres:5432/ai_platform?schema=public}
+
+networks:
+  ai-platform:
+    name: ${SHARED_NETWORK:-ai-platform-net}
+
+volumes:
+  postgres-data:
+    name: ${POSTGRES_DATA_VOLUME:-ai-platform_postgres-data}
+  redis-data:
+    name: ${REDIS_DATA_VOLUME:-ai-platform_redis-data}

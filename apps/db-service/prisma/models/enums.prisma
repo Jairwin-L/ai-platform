@@ -1,0 +1,43 @@
+enum UserStatusType {
+  active
+  pending
+  restricted
+  banned
+  inactive
+}
+
+enum PermissionType {
+  directory
+  menu
+  button
+  system
+  module
+  page
+  operation
+  data
+}
+
+enum RoleStatus {
+  ENABLED
+  DISABLED
+}
+
+enum AiProviderKind {
+  OPENAI_COMPATIBLE
+  ANTHROPIC
+  GEMINI
+}
+
+enum ChatRole {
+  SYSTEM
+  USER
+  ASSISTANT
+  TOOL
+}
+
+enum ChatMessageStatus {
+  STREAMING
+  COMPLETED
+  STOPPED
+  ERROR
+}

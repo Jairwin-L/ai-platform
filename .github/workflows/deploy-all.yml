@@ -1,0 +1,87 @@
+name: deploy-all
+run-name: deploy-all ${{ github.ref_name }} (${{ inputs.targets }})
+
+# 手动触发：在 Actions 页面选择 dev 或 main 分支运行。
+# 顺序：总是先 db-service（共享网络、数据库、Prisma migrate 由它负责），
+# 成功后按 targets 部署 platform / admin（两者都选时并行）；db-service 失败则后续都不执行。
+# 各应用的校验 / 构建 / 部署逻辑直接复用 db-service.yml、platform.yml、admin.yml，
+# 这里只做编排，不要复制部署步骤。
+on:
+  workflow_dispatch:
+    inputs:
+      # workflow_dispatch 没有互斥的 boolean，用 choice 实现三选一；
+      # 改选项文案时要同步修改下方 jobs 的 if 条件。
+      # choice 无法留空（不写 default 时 UI 会预选第一项），所以第一项放占位符，
+      # 由 check-targets job 拦截，强制手动选择部署范围。
+      targets:
+        description: '部署范围（必选）'
+        type: choice
+        required: true
+        options:
+          - 'please select targets'
+          - 'first db-service, then platform and admin'
+          - 'first db-service, then platform'
+          - 'first db-service, then admin'
+      run_menu_seed:
+        description: '重跑菜单种子：以 menu/data.ts 为准覆盖同步，后台手动新增的菜单连同角色关联会被删除'
+        type: boolean
+        default: false
+      run_role_seed:
+        description: '重跑角色种子：种子角色的名称与权限重置为 role/data.ts，后台新建的角色保留（新增权限码需同时勾选菜单）'
+        type: boolean
+        default: false
+
+# 被调用的 workflow 里 build job 需要 packages: write 推 GHCR 镜像，
+# 调用方授予的权限是上限，必须在这里放开。
+permissions:
+  contents: read
+  packages: write
+
+# group 名不能与子 workflow 的 db-service-* / platform-* 重名，否则会互相等待造成死锁。
+concurrency:
+  group: deploy-all-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  check-targets:
+    name: Check deploy targets
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Require explicit targets
+        shell: bash
+        env:
+          TARGETS: ${{ inputs.targets }}
+        run: |
+          case "${TARGETS}" in
+            'first db-service, then platform and admin'|'first db-service, then platform'|'first db-service, then admin')
+              echo "部署范围：${TARGETS}"
+              ;;
+            *)
+              echo "未选择部署范围（当前：${TARGETS}），请在 Run workflow 里选择后重新运行。" >&2
+              exit 1
+              ;;
+          esac
+
+  db-service:
+    name: db-service
+    needs: check-targets
+    uses: ./.github/workflows/db-service.yml
+    secrets: inherit
+    with:
+      run_menu_seed: ${{ inputs.run_menu_seed }}
+      run_role_seed: ${{ inputs.run_role_seed }}
+
+  platform:
+    name: platform
+    needs: db-service
+    if: inputs.targets != 'first db-service, then admin'
+    uses: ./.github/workflows/platform.yml
+    secrets: inherit
+
+  admin:
+    name: admin
+    needs: db-service
+    if: inputs.targets != 'first db-service, then platform'
+    uses: ./.github/workflows/admin.yml
+    secrets: inherit

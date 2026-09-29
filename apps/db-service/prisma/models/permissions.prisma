@@ -1,0 +1,25 @@
+/// 管理端菜单 / 按钮资源：同一张表既生成侧边栏菜单，也是接口鉴权的权限码来源
+model Permission {
+  id              String           @id
+  code            String           @unique @db.VarChar(100)
+  name            String           @db.VarChar(100)
+  description     String?          @db.VarChar(255)
+  path            String?          @db.VarChar(255)
+  icon            String?          @db.VarChar(100)
+  isShow          Boolean          @default(true) @map("is_show")
+  enable          Boolean          @default(true)
+  keepAlive       Boolean          @default(false) @map("keep_alive")
+  sort            Int              @default(0)
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSystem        Boolean          @default(false) @map("is_system")
+  parentId        String?          @map("parent_id")
+  type            PermissionType   @default(operation)
+  parent          Permission?      @relation("PermissionHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children        Permission[]     @relation("PermissionHierarchy")
+  rolePermissions RolePermission[]
+
+  @@index([parentId])
+  @@index([enable, sort, createdAt])
+  @@map("permissions")
+}

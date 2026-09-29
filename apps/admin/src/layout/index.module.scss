@@ -1,0 +1,101 @@
+.layout-wrap {
+  height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
+
+  > :global(.ant-layout) {
+    min-width: 0;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .sider-container {
+    position: sticky;
+    top: 0;
+    inset-inline-start: 0;
+    height: 100vh;
+    overflow: visible;
+
+    :global(.ant-layout-sider-children) {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: auto;
+      scrollbar-gutter: stable;
+      scrollbar-width: thin;
+    }
+
+    :global(.ant-menu) {
+      flex: 1;
+      border-inline-end: 0;
+    }
+
+    @media (max-width: $grid-width-lg) {
+      position: fixed;
+      z-index: 30;
+      inset: 0 auto 0 0;
+      box-shadow: $shadow-popup;
+    }
+  }
+
+  .sider-toggle {
+    display: inline-flex;
+    position: fixed;
+    z-index: 32;
+    // 骑在 Logo 区与菜单的分界线上：Logo / 顶栏高 64px，按钮高 32px
+    top: 48px;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    color: $color-text-tertiary;
+    font-size: 12px;
+    background: $color-bg-container;
+    border: 1px solid $color-border-secondary;
+    border-radius: 50%;
+    box-shadow: $shadow-tertiary;
+    cursor: pointer;
+    // 位移时长需对齐 antd Sider 宽度动画（motionDurationMid），否则按钮会先跳到终点再等侧栏追上
+    transition:
+      inset-inline-start $motion-duration-mid,
+      color $motion-duration-mid,
+      border-color $motion-duration-mid;
+
+    &:hover {
+      color: $color-primary-hover;
+      border-color: $color-primary-hover;
+    }
+  }
+
+  .sider-mask {
+    display: none;
+
+    @media (max-width: $grid-width-lg) {
+      display: block;
+      position: fixed;
+      z-index: 29;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: $color-bg-mask;
+      border: 0;
+      cursor: default;
+    }
+  }
+
+  .layout-main-container {
+    min-width: 0;
+    height: calc(100vh - #{$header-height});
+    padding: $space-lg;
+    overflow: hidden auto;
+    background: $color-bg-layout;
+
+    @media (max-width: $grid-width-md) {
+      padding: $space-md;
+    }
+
+    @media (max-width: $grid-width-sm) {
+      height: calc(100vh - #{$header-height-sm});
+    }
+  }
+}

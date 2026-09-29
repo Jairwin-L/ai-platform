@@ -1,0 +1,179 @@
+name: admin
+run-name: admin deploy ${{ github.ref_name }}
+
+# 手动触发：在 Actions 页面选择 dev 或 main 分支运行。
+# 管理后台不进 Docker：构建静态产物后 scp 到服务器，由宿主机 Web 服务器托管。
+on:
+  workflow_dispatch:
+  # 供 deploy-all.yml / deploy-apps.yml 编排调用
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate with Vite+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate deployment branch
+        shell: bash
+        run: |
+          case "${GITHUB_REF_NAME}" in
+            dev|main)
+              ;;
+            *)
+              echo "Unsupported deployment branch: ${GITHUB_REF_NAME}" >&2
+              echo "Use dev or main." >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: '22'
+          cache: true
+          run-install: false
+
+      # 这一步是全量安装（不带 --filter）：lint 用的根 stylelint.config.mjs
+      # 需要解析根 devDependencies 里的 stylelint-config-ali，过滤安装装不到它。
+      # build 作业不依赖根配置，仍保持按 admin 过滤安装。
+      - name: Install dependencies
+        run: vp install --frozen-lockfile
+
+      # admin 的 lint = `vp check`（类型 + oxlint + 格式）+ stylelint，已按包作用域执行
+      - name: Lint admin
+        run: vpr @ai/admin#lint
+
+  build:
+    name: Build static assets
+    runs-on: ubuntu-latest
+    needs: validate
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+    env:
+      DEPLOY_ENVIRONMENT: ${{ github.ref_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: '22'
+          cache: true
+          run-install: false
+
+      # 末尾的 ... 表示连同 admin 依赖的 workspace 包一起安装
+      - name: Install dependencies
+        run: vp install --filter "./apps/admin..." --frozen-lockfile
+
+      # VITE_* 是构建期常量，在构建期内联进产物，只能放公开信息（接口地址、标题），不能放任何密钥；
+      # Vite 的 loadEnv 会读取同名 process.env，不需要额外写 .env 文件（.env.* 也不入库）。
+      - name: Build dist
+        id: build
+        env:
+          VITE_BASE_API_URL: ${{ vars.VITE_BASE_API_URL }}
+          VITE_APP_TITLE: ${{ vars.VITE_APP_TITLE || '管理后台' }}
+          VITE_PLATFORM_URL: ${{ vars.VITE_PLATFORM_URL }}
+        run: |
+          : "${VITE_BASE_API_URL:?Missing variable VITE_BASE_API_URL (public db-service URL for the admin)}"
+
+          if [ "${DEPLOY_ENVIRONMENT}" = "dev" ]; then
+            vp run --filter ./apps/admin build:dev
+            echo "dist_path=apps/admin/dist-dev" >> "${GITHUB_OUTPUT}"
+          else
+            vp run --filter ./apps/admin build
+            echo "dist_path=apps/admin/dist" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-dist
+          path: ${{ steps.build.outputs.dist_path }}
+          if-no-files-found: error
+          retention-days: 3
+
+  deploy:
+    name: Deploy to server
+    runs-on: ubuntu-latest
+    needs: build
+    concurrency:
+      group: admin-deploy-${{ github.ref_name }}
+      cancel-in-progress: false
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+    permissions:
+      contents: read
+    env:
+      DEPLOY_ENVIRONMENT: ${{ github.ref_name }}
+      DIST_PATH: admin-dist
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: admin-dist
+          path: ${{ env.DIST_PATH }}
+
+      - name: Configure SSH
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          : "${DEPLOY_HOST:?Missing required secret DEPLOY_HOST}"
+          : "${DEPLOY_PORT:?Missing required secret DEPLOY_PORT}"
+          : "${DEPLOY_SSH_KEY:?Missing required secret DEPLOY_SSH_KEY}"
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${DEPLOY_SSH_KEY}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -T 10 -p "${DEPLOY_PORT}" -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts || {
+            echo "Failed to scan SSH host key for ${DEPLOY_HOST}:${DEPLOY_PORT}."
+            echo "Check DEPLOY_HOST, DEPLOY_PORT, firewall rules, and whether SSH is reachable from GitHub Actions."
+            exit 1
+          }
+
+      # 先传到临时目录再整体替换：避免 scp 中途失败让线上目录停在半新半旧的状态。
+      - name: Deploy dist
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_ADMIN_PATH: ${{ vars.DEPLOY_ADMIN_PATH }}
+        run: |
+          : "${DEPLOY_HOST:?Missing required secret DEPLOY_HOST}"
+          : "${DEPLOY_PORT:?Missing required secret DEPLOY_PORT}"
+          : "${DEPLOY_USER:?Missing required secret DEPLOY_USER}"
+          : "${DEPLOY_ADMIN_PATH:?Missing required variable DEPLOY_ADMIN_PATH}"
+          : "${DIST_PATH:?Missing dist path}"
+
+          ssh_run() {
+            ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT}" \
+              "${DEPLOY_USER}@${DEPLOY_HOST}" "$@"
+          }
+
+          remote_tmp="/tmp/ai-platform-admin-${DEPLOY_ENVIRONMENT}-${GITHUB_SHA}"
+
+          ssh_run "rm -rf '${remote_tmp}' && mkdir -p '${remote_tmp}' '${DEPLOY_ADMIN_PATH}'"
+
+          scp -i ~/.ssh/deploy_key -P "${DEPLOY_PORT}" -r \
+            "${DIST_PATH}/." \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${remote_tmp}/"
+
+          ssh_run "find '${DEPLOY_ADMIN_PATH}' -mindepth 1 -maxdepth 1 -exec rm -rf {} + \
+            && cp -a '${remote_tmp}/.' '${DEPLOY_ADMIN_PATH}/'"
+
+          ssh_run "rm -rf '${remote_tmp}'"

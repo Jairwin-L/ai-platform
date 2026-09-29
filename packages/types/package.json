@@ -1,0 +1,15 @@
+{
+  "name": "@ai/types",
+  "version": "0.1.0",
+  "private": true,
+  "types": "./index.d.ts",
+  "exports": {
+    ".": "./index.d.ts"
+  },
+  "scripts": {
+    "check": "vp check"
+  },
+  "devDependencies": {
+    "vite-plus": "catalog:"
+  }
+}

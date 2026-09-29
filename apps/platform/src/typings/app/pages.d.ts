@@ -1,9 +1,4 @@
 declare namespace IAppPages {
-  interface AdminOverviewData {
-    permissionCount: number;
-    roleCount: number;
-  }
-
   type UploadListFile = import('antd').UploadFile & {
     compressedSize?: number;
     originalSize?: number;

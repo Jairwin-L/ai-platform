@@ -4,9 +4,9 @@
  */
 
 import type { Editor } from '@tiptap/react';
-import { compressImage } from '@/utils/compress-image';
-import { getFileLink } from '@/utils/link';
-import { requestPresignedUrls, uploadWithPresignedUrl } from '@/utils/r2-upload';
+import { compressImage } from '@ai/utils/compress-image';
+import { getFileLink } from '@ai/utils/link';
+import { requestPresignedUrls, uploadWithPresignedUrl } from '@ai/utils/r2-upload';
 
 export const MAX_FILE_SIZE = 20 * 1024 * 1024;
 

@@ -6,7 +6,7 @@ import { debounce } from 'lodash-es';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import type { AiChatConversation } from '@/api/modules/ai-chat';
-import { APP_BLACK_LOGO, APP_NAME } from '@/constants';
+import { APP_BLACK_LOGO, APP_NAME } from '@ai/constants';
 import styles from '../page.module.scss';
 
 interface ConversationSidebarProps {

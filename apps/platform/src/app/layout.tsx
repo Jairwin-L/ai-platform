@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from 'next';
-import { cookies } from 'next/headers';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import { AntdProvider, Wrapper } from '@/components';
-import { APP_NAME } from '@/constants';
-import { getAuthPayloadBySessionToken, getSessionCookieName } from '@/lib/server/auth-session';
+import { APP_NAME } from '@ai/constants';
+import { AUTH_SESSION_COOKIE_NAME } from '@ai/constants/auth';
+import { cookies } from 'next/headers';
+import { fetchPlatformApi } from '@/api/server';
 import 'antd/dist/reset.css';
 import '@/styles/globals.scss';
 
@@ -113,9 +114,11 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: Readonly<IComponent.ChildrenProps>) {
-  const cookieStore = await cookies();
-  const sessionToken = cookieStore.get(getSessionCookieName())?.value;
-  const initialAuthPayload = sessionToken ? await getAuthPayloadBySessionToken(sessionToken) : null;
+  // 没有会话 Cookie 时不必再去问 db-service，匿名访问少一次内网请求
+  const hasSession = (await cookies()).has(AUTH_SESSION_COOKIE_NAME);
+  const initialAuthPayload = hasSession
+    ? await fetchPlatformApi<IApiAuth.AuthPayload>('/me')
+    : null;
 
   return (
     <html lang="en">

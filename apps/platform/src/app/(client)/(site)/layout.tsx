@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { APP_BLACK_LOGO, APP_NAME } from '@/constants';
+import { APP_BLACK_LOGO, APP_NAME } from '@ai/constants';
 import { AccountMenu } from './components/account-menu';
 import { AiMenu } from './components/ai-menu';
 import { EditorMenu } from './components/editor-menu';

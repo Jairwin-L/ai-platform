@@ -1,50 +1,23 @@
 {
-  "name": "platform",
+  "name": "@ai/platform",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "homepage": "https://github.com/Jairwin-L/nextjs-starter-kit#readme",
-  "bugs": {
-    "url": "https://github.com/Jairwin-L/nextjs-starter-kit/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Jairwin-L/nextjs-starter-kit.git"
-  },
-  "funding": "https://github.com/sponsors/Jairwin-L",
-  "author": {
-    "name": "Jairwin",
-    "email": "jairwin@jairwin.cc"
-  },
   "scripts": {
     "dev": "next dev --port 8060",
-    "build": "vp run openapi:generate && next build",
-    "cf:build": "vp run prisma:generate && vp exec opennextjs-cloudflare build",
-    "cf:preview": "vp run cf:build && vp exec opennextjs-cloudflare preview --env development",
-    "cf:deploy:development": "vp run cf:build && vp exec opennextjs-cloudflare deploy --env development",
-    "cf:deploy:production": "vp run cf:build && vp exec opennextjs-cloudflare deploy --env production",
-    "cf:typegen": "vp exec wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "build": "next build",
     "ci:eslint": "vp lint -f json src -o ./.ci/eslint.json",
-    "lint": "vp lint . && stylelint --allow-empty-input \"**/*.{css,less,scss}\"",
-    "lint:fix": "vp fmt . && vp lint --fix . && stylelint --allow-empty-input --fix \"**/*.{css,less,scss}\"",
-    "openapi:generate": "tsx scripts/generate-openapi.ts && vp fmt public/openapi.json",
-    "prisma:generate": "prisma generate",
-    "prisma:deploy": "prisma migrate deploy",
-    "prisma:sync:deploy": "tsx prisma/data/sync-deploy.ts",
-    "prisma:push:deploy": "prisma db push",
-    "prisma:push": "dotenv -e .env -- prisma db push",
-    "prisma:seed:deploy": "tsx prisma/data/main.ts",
-    "prisma:seed": "dotenv -e .env -- tsx prisma/data/main.ts",
-    "prisma:setup": "vp run prisma:push && vp run prisma:seed",
-    "prisma:bootstrap-admin:deploy": "tsx prisma/data/bootstrap-admin.ts",
-    "prisma:bootstrap-admin": "dotenv -e .env -- tsx prisma/data/bootstrap-admin.ts",
-    "prisma:studio": "dotenv -e .env -- prisma studio",
-    "prisma:migrate": "dotenv -e .env -- prisma migrate dev",
+    "lint": "vp check && vp exec stylelint --allow-empty-input --max-warnings 0 \"**/*.{css,less,scss}\"",
+    "lint:fix": "vp check --fix && vp exec stylelint --allow-empty-input --fix \"**/*.{css,less,scss}\"",
     "start": "next start --port 8062",
     "start:test": "next start --port 8061",
-    "start:dev": "next start --port 8060"
+    "start:dev": "next start --port 8060",
+    "check": "vp check",
+    "test": "vp test"
   },
   "dependencies": {
+    "@ai/constants": "workspace:*",
+    "@ai/utils": "workspace:*",
     "@ant-design/icons": "^6.1.0",
     "@ant-design/nextjs-registry": "^1.0.0",
     "@ant-design/x": "^2.8.0",
@@ -52,9 +25,6 @@
     "@ant-design/x-sdk": "^2.8.0",
     "@codemirror/lang-markdown": "^6.5.0",
     "@floating-ui/react": "^0.27.19",
-    "@prisma/adapter-pg": "^7.8.0",
-    "@prisma/client": "^7.8.0",
-    "@scalar/api-reference-react": "^0.9.38",
     "@tiptap/extension-highlight": "^3.26.1",
     "@tiptap/extension-image": "^3.26.1",
     "@tiptap/extension-link": "^3.26.1",
@@ -72,45 +42,43 @@
     "@tiptap/starter-kit": "^3.26.1",
     "alova": "^3.3.4",
     "antd": "^6.4.4",
-    "aws4fetch": "^1.0.20",
+    "babel-plugin-react-compiler": "^1.0.0",
     "codemirror": "^6.0.2",
     "file-type": "^22.0.1",
     "lodash-es": "^4.18.1",
-    "next": "^16.2.9",
-    "next-swagger-doc": "^0.4.1",
-    "pg": "^8.22.0",
-    "pg-cloudflare": "1.4.0",
+    "next": "^16.3.6",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "sharp": "^0.34.5",
-    "tinify": "^1.8.2",
     "zod": "^4.2.1",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "1.19.11",
+    "@ai/types": "workspace:*",
     "@types/node": "^24.13.2",
-    "@types/pg": "^8.20.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "dotenv": "^17.4.2",
-    "dotenv-cli": "^10.0.0",
-    "prisma": "^7.8.0",
     "sass": "^1.101.0",
+    "sass-embedded": "^1.105.0",
     "stylelint": "^16.24.0",
-    "stylelint-config-ali": "^2.3.0",
-    "tsx": "^4.22.3",
     "typescript": "^5.9.3",
     "vite-plus": "catalog:",
-    "vitest": "catalog:",
-    "wrangler": "4.104.0"
-  },
-  "stylelint": {
-    "extends": [
-      "stylelint-config-ali"
-    ]
+    "vitest": "catalog:"
   },
   "engines": {
     "node": ">=22.18.0 <23"
-  }
+  },
+  "browserslist": [
+    "chrome >= 64",
+    "edge >= 79",
+    "firefox >= 78",
+    "opera >= 51",
+    "safari >= 12",
+    "ios_saf >= 12",
+    "and_chr >= 64",
+    "and_ff >= 78",
+    "samsung >= 9.2",
+    "not dead",
+    "not op_mini all"
+  ]
 }

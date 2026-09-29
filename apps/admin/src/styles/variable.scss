@@ -1,0 +1,71 @@
+// 设计 token：取值对齐 Ant Design v6 默认亮色主题（https://ant.design/design.md）。
+// antd 组件本身读 ConfigProvider 的 token，这里只给自定义样式用；改主题时两边要同步。
+
+// 断点
+$grid-width-sm: 576px;
+$grid-width-md: 768px;
+$grid-width-lg: 992px;
+$grid-width-xl: 1200px;
+
+// 间距：一律落在 4px 网格上
+$space-xxs: 4px;
+$space-xs: 8px;
+$space-md: 16px;
+$space-lg: 24px;
+$space-xl: 32px;
+
+// 圆角：控件 6px、容器 8px、标签与提示 4px
+$radius-md: 4px;
+$radius: 6px;
+$radius-lg: 8px;
+
+// 品牌色与功能色
+$color-primary: #1677ff;
+$color-primary-hover: #4096ff;
+$color-primary-bg: #e6f4ff;
+$color-primary-border: #91caff;
+
+// 三层表面：页面底 / 容器 / 浮层（浮层与容器同色，靠阴影区分）
+$color-bg-layout: #f5f5f5;
+$color-bg-container: #fff;
+$color-fill-alter: #fafafa;
+$color-fill-hover: rgb(0 0 0 / 4%);
+$color-bg-mask: rgb(0 0 0 / 45%);
+
+// 文字：用透明黑叠加，放在带底色的单元格上也不会发灰
+$color-text: rgb(0 0 0 / 88%);
+$color-text-secondary: rgb(0 0 0 / 65%);
+$color-text-tertiary: rgb(0 0 0 / 45%);
+$color-text-quaternary: rgb(0 0 0 / 25%);
+// 深色底（深色侧栏、主色实底按钮）上的文字
+$color-text-light-solid: #fff;
+
+// 描边
+$color-border-secondary: #f0f0f0;
+
+// 字体
+$font-family:
+  -apple-system, blinkmacsystemfont, 'Segoe UI', roboto, 'Helvetica Neue', arial, 'Noto Sans',
+  sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+$font-family-code: sfmono-regular, consolas, 'Liberation Mono', menlo, courier, monospace;
+$font-weight-strong: 600;
+
+// 阴影：只给真正浮起来的表面用
+$shadow-tertiary:
+  0 1px 2px 0 rgb(0 0 0 / 5%),
+  0 1px 6px -1px rgb(0 0 0 / 3%),
+  0 2px 4px 0 rgb(0 0 0 / 3%);
+$shadow-popup:
+  0 6px 16px 0 rgb(0 0 0 / 8%),
+  0 3px 6px -4px rgb(0 0 0 / 12%),
+  0 9px 28px 8px rgb(0 0 0 / 5%);
+
+// 动效：只用 antd 的三档时长与内置缓动
+$motion-duration-fast: 0.1s;
+$motion-duration-mid: 0.2s;
+$motion-duration-slow: 0.3s;
+$motion-ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+
+// 布局
+$header-height: 64px;
+$header-height-sm: 56px;

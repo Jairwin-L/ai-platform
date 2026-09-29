@@ -1,0 +1,148 @@
+.dashboard {
+  display: grid;
+  gap: $space-md;
+}
+
+.welcome {
+  @include card-surface;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: $space-md;
+  padding: $space-lg;
+
+  @media (max-width: $grid-width-sm) {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: $space-md;
+  }
+
+  .eyebrow {
+    margin-bottom: $space-xs;
+    color: $color-text-tertiary;
+  }
+
+  h2 {
+    color: $color-text;
+    font-weight: $font-weight-strong;
+    font-size: 24px;
+    line-height: 32px;
+
+    @media (max-width: $grid-width-sm) {
+      font-size: 20px;
+      line-height: 28px;
+    }
+  }
+}
+
+.metric {
+  height: 100%;
+
+  p {
+    margin-top: $space-xs;
+    color: $color-text-secondary;
+  }
+}
+
+.shortcuts {
+  @include card-surface;
+
+  padding: $space-lg;
+
+  @media (max-width: $grid-width-sm) {
+    padding: $space-md;
+  }
+}
+
+.section-title {
+  margin-bottom: $space-md;
+  color: $color-text;
+  font-weight: $font-weight-strong;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: $space-md;
+
+  @media (max-width: $grid-width-xl) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @media (max-width: $grid-width-md) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: $grid-width-sm) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.shortcut-item {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: $space-md;
+  min-width: 0;
+  padding: $space-md;
+  color: $color-text;
+  text-align: left;
+  background: $color-bg-container;
+  border: 1px solid $color-border-secondary;
+  border-radius: $radius-lg;
+  cursor: pointer;
+  // 扁平优先：悬停只改描边与底色，不抬升、不加阴影
+  transition:
+    border-color $motion-duration-mid $motion-ease-in-out,
+    background-color $motion-duration-mid $motion-ease-in-out;
+
+  &:hover {
+    background: $color-fill-alter;
+    border-color: $color-primary-border;
+
+    .arrow {
+      color: $color-primary;
+    }
+  }
+
+  // 入口图标统一用主色浅底，不按类别自定义强调色
+  .icon {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    color: $color-primary;
+    font-size: 20px;
+    background: $color-primary-bg;
+    border-radius: $radius-lg;
+    place-items: center;
+  }
+
+  .text {
+    display: grid;
+    gap: $space-xxs;
+    min-width: 0;
+  }
+
+  .label {
+    @include text-ellipsis;
+
+    font-weight: $font-weight-strong;
+  }
+
+  .description {
+    @include text-ellipsis;
+
+    color: $color-text-tertiary;
+    font-size: 12px;
+    line-height: 20px;
+  }
+
+  .arrow {
+    color: $color-text-quaternary;
+    font-size: 12px;
+    transition: color $motion-duration-mid $motion-ease-in-out;
+  }
+}

@@ -4,18 +4,20 @@ packages:
 allowBuilds:
   '@parcel/watcher': true
   '@prisma/engines': true
+  '@scarf/scarf': false
+  '@nestjs/core': false
   esbuild: true
   prisma: true
   sharp: true
   vue-demi: true
-  workerd: true
 catalog:
-  vite: npm:@voidzero-dev/vite-plus-core@latest
+  vite: npm:@voidzero-dev/vite-plus-core@0.2.4
   vitest: 4.1.9
-  vite-plus: latest
+  vite-plus: 0.2.4
 minimumReleaseAgeExclude:
-  - miniflare@4.20260623.0
-  - wrangler@4.104.0
+  - '@nestjs/common@12.1.0'
+  - '@nestjs/core@12.1.0'
+  - '@nestjs/platform-express@12.1.0'
 overrides:
   vite: 'catalog:'
   vitest: 'catalog:'

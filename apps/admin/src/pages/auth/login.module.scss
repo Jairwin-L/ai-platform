@@ -1,0 +1,51 @@
+.login-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100vh;
+  overflow: auto;
+  background: $color-bg-layout;
+}
+
+.login-content {
+  flex: 1;
+  padding: ($space-xl + $space-lg) $space-md $space-lg;
+}
+
+.login-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-md;
+  margin-bottom: $space-lg;
+
+  .logo-img {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+  }
+
+  // 取 design.md 的 fontSizeHeading2 / lineHeightHeading2
+  h1 {
+    color: $color-text;
+    font-weight: $font-weight-strong;
+    font-size: 30px;
+    line-height: 38px;
+  }
+}
+
+.login-main {
+  width: 328px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.login-error {
+  margin-bottom: $space-lg;
+}
+
+.login-footer {
+  padding: $space-lg $space-md;
+  color: $color-text-tertiary;
+  text-align: center;
+}

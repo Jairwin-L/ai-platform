@@ -9,11 +9,11 @@ import {
   type ThirdPartyServiceCredential,
 } from '@/api/modules/third-party-service-credentials';
 import { useDebounced } from '@/hooks/use-debounced';
-import { getFileLink } from '@/utils/link';
-import { fileTypeValid } from '@/utils/file';
-import { compressImage } from '@/utils/compress-image';
-import type { CompressStrategy } from '@/utils/compress-image';
-import { formatFileSize, requestPresignedUrls, uploadWithPresignedUrl } from '@/utils/r2-upload';
+import { getFileLink } from '@ai/utils/link';
+import { fileTypeValid } from '@ai/utils/file';
+import { compressImage } from '@ai/utils/compress-image';
+import type { CompressStrategy } from '@ai/utils/compress-image';
+import { formatFileSize, requestPresignedUrls, uploadWithPresignedUrl } from '@ai/utils/r2-upload';
 import styles from './page.module.scss';
 
 const { Dragger } = Upload;

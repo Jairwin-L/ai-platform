@@ -1,0 +1,9 @@
+# 团队共享 MCP server，由 `teamai pull` / `teamai mcp inject` 注入各 AI 工具配置。
+# 不要在这里写任何真实 token / API Key；需要凭据的 server 通过本机环境变量提供。
+servers:
+  - name: antd
+    description: Ant Design 组件文档与 API 查询（需本机安装 @ant-design/cli）
+    transport: stdio
+    command: antd
+    args:
+      - mcp

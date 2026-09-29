@@ -1,24 +1,15 @@
-import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { getAuthUserBySessionToken, getSessionCookieName } from '@/lib/server/auth-session';
-import { getUserProfile } from '@/lib/server/user-profile';
+import { fetchPlatformApi } from '@/api/server';
+import type { UserProfile } from '@/api/modules/users';
 import { AccountProfileContent } from './account-profile-content';
-
-async function getCurrentUserId() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(getSessionCookieName())?.value;
-  const user = await getAuthUserBySessionToken(token);
-
-  return user?.userId;
-}
 
 export default async function Page({ params }: IAppPages.AccountPageProps) {
   const { id } = await params;
   if (!id) {
     notFound();
   }
-  const currentUserId = await getCurrentUserId();
-  const profile = await getUserProfile(id, currentUserId);
+
+  const profile = await fetchPlatformApi<UserProfile>(`/users/${encodeURIComponent(id)}`);
 
   if (!profile) {
     notFound();

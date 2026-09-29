@@ -6,13 +6,13 @@ import { DynamicSimpleEditor } from '@/components/editor/dynamic-editor';
 import { DynamicSimpleEditorViewer } from '@/components/editor/dynamic-viewer';
 import { DynamicMarkdownEditor } from '@/components/markdown-editor/dynamic-editor';
 import { DynamicMarkdownEditorViewer } from '@/components/markdown-editor/dynamic-viewer';
-import type { EditorType } from '@/constants/editor';
+import type { EditorType } from '@ai/constants/editor';
 import {
   CODE_MIRROR_CONTENT_EXAMPLE,
   MARKDOWN_CONTENT_EXAMPLE,
   RICHTEXT_CONTENT_EXAMPLE,
   getEditorItem,
-} from '@/constants/editor';
+} from '@ai/constants/editor';
 import styles from './editor-page.module.scss';
 
 interface EditorPageProps {

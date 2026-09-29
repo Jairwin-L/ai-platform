@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { markdown } from '@codemirror/lang-markdown';
 import { basicSetup, EditorView } from 'codemirror';
-import { CODE_MIRROR_CONTENT_EXAMPLE } from '@/constants/editor';
+import { CODE_MIRROR_CONTENT_EXAMPLE } from '@ai/constants/editor';
 import styles from './index.module.scss';
 
 function createEditorTheme() {

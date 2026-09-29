@@ -6,7 +6,6 @@ import { Dropdown, Skeleton } from 'antd';
 import type { MenuProps } from 'antd';
 import { signOut } from '@/api/modules/auth';
 import type { AuthUser } from '@/api/modules/auth';
-import { ADMIN_ROLE_CODES } from '@/constants';
 import { useDebounced } from '@/hooks/use-debounced';
 import { usePermission } from '@/hooks/use-permission';
 import styles from './index.module.scss';
@@ -23,7 +22,7 @@ function getAvatarText(user: AuthUser | null): string {
 export function AccountMenu() {
   const pathname = usePathname();
   const router = useRouter();
-  const { clearSession, hasRole, isReady, user } = usePermission();
+  const { clearSession, isReady, user } = usePermission();
   const [avatarFailed, setAvatarFailed] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -72,11 +71,6 @@ export function AccountMenu() {
       return;
     }
 
-    if (key === 'ADMIN_PANEL') {
-      router.push('/admin');
-      return;
-    }
-
     if (key === 'SIGN_OUT') {
       debouncedSignOutCurrentUser();
     }
@@ -84,13 +78,10 @@ export function AccountMenu() {
 
   const displayName = getDisplayName(user);
   const shouldShowAvatarImage = Boolean(user?.picture && !avatarFailed);
-  const canOpenAdmin = ADMIN_ROLE_CODES.some((role) => hasRole(role));
   const menuItems: MenuProps['items'] = [
     { key: 'ACCOUNT', label: '我的账户' },
     { key: 'AI_SETTING', label: 'AI 密钥' },
     { key: 'THIRD_PARTY_SERVICE', label: '第三方服务凭据' },
-    { type: 'divider' },
-    ...(canOpenAdmin ? [{ key: 'ADMIN_PANEL', label: '管理系统' }] : []),
     { type: 'divider' },
     {
       key: 'SIGN_OUT',

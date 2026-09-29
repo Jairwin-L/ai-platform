@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button, Form, Input, Typography } from 'antd';
-import { VERIFICATION_CODE_TTL_SECONDS } from '@/constants';
+import { VERIFICATION_CODE_TTL_SECONDS } from '@ai/constants';
 import { requestResetPasswordCode, resetPassword } from '@/api/modules/auth';
 import { useDebounced } from '@/hooks/use-debounced';
 import { useAuthSessionStore } from '@/stores/auth-session';

@@ -1,7 +1,7 @@
 'use client';
 
 import { Input, Modal } from 'antd';
-import { MODAL_OPTION } from '@/constants/antd';
+import { MODAL_OPTION } from '@ai/constants/antd';
 
 interface RenameConversationModalProps {
   open: boolean;

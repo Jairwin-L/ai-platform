@@ -1,0 +1,28 @@
+.logo-box {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: $space-xs;
+  height: $header-height;
+  padding: 0 $space-lg;
+
+  :global(.ant-layout-sider-collapsed) & {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  .logo-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+  }
+
+  .logo-text {
+    @include text-ellipsis;
+
+    color: $color-text-light-solid;
+    font-weight: $font-weight-strong;
+    font-size: 16px;
+    line-height: 24px;
+  }
+}

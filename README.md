@@ -1,22 +1,300 @@
 # ai-platform
 
-pnpm workspace monorepo.
+## repo
 
-## Getting started
+[https://github.com/Jairwin-L/ai-platform](https://github.com/Jairwin-L/ai-platform)
 
-```bash
-pnpm install          # install all workspace dependencies (also sets up git hooks)
-pnpm dev              # pnpm --filter platform dev
-pnpm build            # pnpm --filter platform build
-pnpm verify           # vp run verify in apps/platform
+AI 平台 monorepo：Next.js App Router 前台（platform）+ NestJS 接口服务（db-service）+ Vite React 管理后台（admin）。内置 React 19、TypeScript、Sass Module、Ant Design、alova 请求封装、Prisma/PostgreSQL、Redis、BYOK（自带 API Key）AI Chat、OpenAPI（Scalar）文档，以及 Docker + GitHub Actions 部署流程。
+
+## monorepo
+
+本仓库由 [Vite+](https://vite.plus)（`vp`）统一管理工作区：`vpr`（`vp run` 的独立简写）负责任务编排、依赖顺序与缓存，包管理由 `vp install` 驱动（底层是 pnpm workspace）。
+
+```
+apps/
+  platform/            Next.js 前台（@ai/platform），只负责页面；浏览器 /api/* 经 rewrites 转发到 db-service
+  db-service/          NestJS 接口服务（@ai/db-service），持有 Prisma schema / 迁移 / seed、Redis、全部业务接口
+  admin/               Vite + React 管理后台（@ai/admin），静态部署，直连 db-service
+packages/
+  constants/           @ai/constants —— 与应用解耦的常量
+  utils/               @ai/utils —— 与应用解耦的纯工具函数
+  types/               @ai/types —— 与应用解耦的全局 ambient 类型声明
 ```
 
-Run app-specific scripts with `pnpm --filter platform <script>` or from inside `apps/platform`.
+依赖方向为 `platform / admin / db-service -> utils -> constants`，`types` 独立无依赖。数据库只由 db-service 访问，platform 与 admin 都通过 HTTP 调用。
+
+| 应用       | 开发端口             | 生产端口       |
+| ---------- | -------------------- | -------------- |
+| platform   | 8060                 | 8062           |
+| admin      | 8050（preview 8051） | 静态文件       |
+| db-service | 8070                 | 8072（容器内） |
+
+lint / fmt / staged / `verify` 任务统一配置在根目录 `vite.config.ts`（规则拆在 `vite.lint.config.ts`、`vite.fmt.config.ts`），Stylelint 配置在根目录 `stylelint.config.mjs`，TS 公共选项在 `tsconfig.base.json`。
+
+常用命令（在仓库根目录执行）：
+
+```bash
+vp install            # 安装依赖（同时安装 git hooks）
+vpr dev               # platform 开发服务，端口 8060
+vpr dev:service       # db-service 开发服务，端口 8070
+vpr dev:admin         # admin 开发服务，端口 8050
+vpr dev:all           # 三个应用并行启动
+vpr build             # platform 生产构建
+vpr build:service     # db-service 打包（先生成 Prisma Client）
+vpr build:admin       # admin 静态构建
+vpr test              # 全 workspace 单测（带缓存）
+vpr check             # 全 workspace 类型 + lint + 格式（带缓存）
+vpr lint              # check + Stylelint
+vpr lint:fix          # 自动修复
+vpr prisma:generate   # 生成 db-service 的 Prisma Client
+vpr verify            # 全量验证（Prisma Client + check + test + Stylelint），CI 使用
+```
+
+单独操作某个项目（`vpr <包名>#<脚本>`，或用 `-C` 切到包目录）：
+
+```bash
+vpr @ai/db-service#prisma:studio
+vpr @ai/utils#test
+vp -C apps/db-service run prisma:push
+```
+
+`vpr` 的常用选择器：`-r` 全 workspace、`-F <包名|目录|glob>` 过滤、`-t` 带上依赖、`--parallel` 并行、`--cache` / `--no-cache` 控制缓存、`-v` 查看执行摘要。
+
+## teamai
+
+本仓库用 [teamai-cli](https://github.com/Tencent/teamai-cli) 统一管理 AI 协作资源（skills / rules / docs / hooks / MCP），采用**单仓模式（`mode: self`）**：本仓库自己就是团队仓，知识随业务代码提交到 `main`，会话报告走 `teamai-reports` 孤儿分支。
+
+```
+.teamai/
+  teamai.yaml        团队配置（入库）
+  skills/            团队 skills —— 唯一来源（入库）
+  rules/             共享规则（入库）
+  docs/              团队文档（入库）
+  agents/            subagent 定义（入库）
+  learnings/         沉淀的会话知识（入库）
+  env/               共享环境变量（入库，不放真实密钥）
+  hooks/             团队 hooks（入库）
+  mcp/mcp.yaml       共享 MCP server（入库，不放 token）
+  config.yaml        本机配置（含绝对路径与用户名，不入库）
+  state.json         同步状态（不入库）
+  reports-wt/        teamai-reports 分支的 git worktree（不入库）
+```
+
+`.teamai/.gitignore` 声明上面哪些是机器本地状态；根 `.gitignore` 不要整目录忽略 `.teamai/`，否则 git 不会下降进去，那份声明会彻底失效。
+
+各 AI 工具目录下的 `skills/` 是 `teamai pull` 生成的**实体副本**，已在根 `.gitignore` 忽略：
+
+```
+.claude/skills/      ← 由 .teamai/skills/ 注入，勿手工编辑，勿入库
+.codex/skills/       ← 同上
+.claude/settings.json、.codex/hooks.json   团队 hooks，入库
+.claude/settings.local.json                个人权限配置，不入库
+```
+
+新人 clone 后首次开 AI 会话时，SessionStart hook 会自动跑 `teamai pull` 把 skills 注入到工具目录；没装 teamai 的 hook 会静默跳过。手动初始化：
+
+```bash
+vp install -g teamai-cli
+teamai init . --self --scope project --agent claude,codex
+```
+
+常用命令：
+
+```bash
+teamai doctor            # 诊断配置（认准输出里的 Scope 是 project）
+teamai status            # 本地与团队仓的差异、同步状态
+teamai skill             # 列出 REPO SKILLS 与各工具目录已注入的 skills
+teamai pull              # 拉团队资源并注入本地 AI 工具（会话启动时自动执行）
+teamai push              # 把本地新增资源提 PR 到本仓库
+```
+
+新增一个团队 skill：直接放进 `.teamai/skills/<name>/`（带 `SKILL.md`），然后 `teamai pull` 注入本地验证，最后随业务代码一起提交。**不要**直接往 `.claude/skills/` 里放 —— 那是产物目录，会被忽略且下次 pull 可能被覆盖。
+
+## 安全与敏感数据
+
+本仓库是**公开仓库**，提交前请确认：
+
+- 真实环境变量只放在未入库的 `apps/*/.env`（本地）或 GitHub Environments 的 secrets / vars（部署）。根 `.gitignore` 忽略所有 `.env` / `.env.*`，只放行无敏感值的 `.env.example`。
+- 新增环境变量时同步更新对应应用的 `.env.example`（只写占位值）与部署 workflow：接口侧见 [`apps/db-service/.env.example`](apps/db-service/.env.example)，前台见 [`apps/platform/.env.example`](apps/platform/.env.example)，后台见 [`apps/admin/.env.example`](apps/admin/.env.example)。
+- admin 的 `VITE_*`、platform 的 `NEXT_PUBLIC_*` 会被编译进前端产物，只能放公开信息。
+- 不提交密钥、token、私钥、数据库连接串、服务器 IP / SSH 信息、个人邮箱 / 手机号；`.teamai/env/`、`.teamai/mcp/` 同样只放无敏感值的配置。
+- Compose 与部署脚本里的 PostgreSQL 默认口令只用于 Compose 内网（postgres 不暴露宿主端口），**生产环境必须通过 `POSTGRES_PASSWORD` / `DATABASE_URL` secret 覆盖**。
+- db-service 端口默认只绑定 `127.0.0.1`，由宿主机反向代理（HTTPS）对外提供给管理后台；生产环境 `/doc` 默认隐藏。
+- 所有 PR 默认请求 `@Jairwin-L` 审核（`.github/CODEOWNERS`）；建议为 `main` / `dev` 开启 branch protection，并为 `production` environment 配置 Required reviewers。
+
+## 功能概览
+
+- platform：Next.js App Router 前台页面（首页、登录注册、文章、AI Chat、个人中心），SSR 通过 `API_INTERNAL_ORIGIN` 直连 db-service。
+- db-service：NestJS 12 接口服务，统一响应封装与错误码、zod（Standard Schema）参数校验、Redis 会话（前台 / 后台会话域隔离）、限流、RBAC、BYOK 请求安全校验、R2 直传签名、图片压缩。
+- admin：用户 / 角色 / 权限 / 系统设置 / AI Provider / 第三方服务管理；仅 `SUPER_ADMIN` / `ADMIN` 可登录，登录密码 RSA-OAEP 加密传输。
+- BYOK AI Chat：用户自带多 Provider API Key，服务端加密存储（见 [`apps/db-service/docs/byok-security.md`](apps/db-service/docs/byok-security.md)）。
+- Docker 多阶段构建：platform 镜像、db-service 镜像与 Prisma 迁移镜像；GitHub Actions 自动校验、构建 GHCR 镜像，并通过 SSH + Docker Compose 部署。
+
+## 技术栈
+
+Next.js 16 · NestJS 12 · React 19 · TypeScript · Sass Module · Ant Design 6 · alova · Prisma 7 · PostgreSQL · Redis · Vite+ / pnpm · Docker / Docker Compose
+
+## 环境要求
+
+- Node.js `22.18.0` 或更高的 `22.x` 版本
+- Vite+ CLI `vp`
+- pnpm，由 Vite+ 按项目配置使用
+- PostgreSQL 与 Redis，本地开发可使用本机服务或 Docker
+
+## 环境变量
+
+复制示例文件后填入真实值（`.env` / `.env.local` 均不入库）：
+
+```bash
+cp apps/db-service/.env.example apps/db-service/.env
+cp apps/platform/.env.example apps/platform/.env
+cp apps/admin/.env.example apps/admin/.env.local
+```
+
+db-service 本地开发至少需要 `DATABASE_URL`、`REDIS_URL`、`AUTH_CODE_SECRET`；邮件验证码还需要 `RESEND_API_KEY`、`RESEND_FROM_EMAIL`；BYOK 需要 `AI_KEY_ENCRYPTION_KEY_V1`、`AI_KEY_REDIS_ID_SECRET`（`openssl rand -base64 32` 生成）。完整列表与说明见各应用的 `.env.example`。
+
+platform 只需要 `API_INTERNAL_ORIGIN`（db-service 地址，本地 `http://localhost:8070`）；它同时是 rewrites 的转发目标，在构建期写入。
+
+## 本地开发
+
+同步数据库结构并写入基础角色 / 权限数据：
+
+```bash
+vpr @ai/db-service#prisma:setup
+```
+
+启动开发服务：
+
+```bash
+vpr dev:all
+```
+
+- platform：[http://localhost:8060](http://localhost:8060)（`/`、`/sign-in`、`/sign-up`、`/articles`、`/ai/chat`）
+- admin：[http://localhost:8050](http://localhost:8050)（vite 代理 `/api` → db-service）
+- db-service：[http://localhost:8070/doc](http://localhost:8070/doc)（Scalar API 文档，非生产环境默认开启）
+
+首个管理员：管理端使用独立的系统账号（与 platform 注册账号分表）。在 `apps/db-service/.env` 里设置 `BOOTSTRAP_ADMIN_ACCOUNT` 与 `BOOTSTRAP_ADMIN_PASSWORD`（密码至少 6 位，只放本地 env，不要提交），执行 `vpr @ai/db-service#prisma:seed` 后再执行 `vpr @ai/db-service#prisma:bootstrap-admin`，即可用该账号登录管理端。
+
+db-service 的其他脚本（均可用 `vpr @ai/db-service#<脚本>` 执行）：
+
+```bash
+openapi:generate          # 生成 openapi.json
+prisma:generate           # 生成 Prisma Client
+prisma:migrate            # 创建并执行本地迁移
+prisma:push               # 根据 schema 推送数据库结构，仅适合空库或临时开发
+prisma:seed               # 初始化种子：菜单 / 角色只在 RBAC 未初始化时写入，并同步 AI Provider、第三方服务选项
+prisma:seed:menu          # 以 prisma/data/menu/data.ts 为准重新同步菜单 / 按钮资源（会删除后台手动新增的菜单）
+prisma:seed:role          # 以 prisma/data/role/data.ts 为准重置种子角色（后台新建的角色保留）
+prisma:bootstrap-admin    # 按 BOOTSTRAP_ADMIN_ACCOUNT / PASSWORD 创建或补齐超级管理员系统账号
+prisma:studio             # 打开 Prisma Studio
+prisma:deploy             # 部署环境执行已提交的 Prisma migrations
+```
 
 ## Docker
 
-The build context is the workspace root:
+每个 app 自带一套 Docker 文件，仓库根目录没有 Dockerfile 和 docker-compose：
+
+| 文件                                       | 说明                                                                                   |
+| ------------------------------------------ | -------------------------------------------------------------------------------------- |
+| `apps/platform/Dockerfile`                 | Next.js standalone，target `runner`                                                    |
+| `apps/platform/docker-compose.yml`         | 部署基线，只有 `app` 一个服务，接入 db-service 栈的共享网络                            |
+| `apps/platform/docker-compose.build.yml`   | 本地 override：用源码构建代替拉 GHCR 镜像                                              |
+| `apps/platform/scripts/deploy.sh`          | platform 部署脚本                                                                      |
+| `apps/db-service/Dockerfile`               | NestJS（target `service-runner`）+ Prisma 工具（target `prisma`）                      |
+| `apps/db-service/docker-compose.yml`       | 部署基线：postgres / redis / db-service / migrate，创建共享网络与数据卷                |
+| `apps/db-service/docker-compose.dev.yml`   | development **环境**部署时自动叠加：把 postgres（`5433`）、redis（`6380`）暴露到宿主机 |
+| `apps/db-service/docker-compose.build.yml` | 本地 override：用源码构建代替拉 GHCR 镜像                                              |
+| `apps/db-service/scripts/deploy.sh`        | db-service 部署脚本，含 Prisma migrate deploy、种子数据、超级管理员                    |
+
+**postgres 和 redis 只属于 db-service 栈。** platform 栈通过外部共享网络 `SHARED_NETWORK`（生产 `ai-platform-prod-net`，开发 `ai-platform-dev-net`）访问 `http://db-service:<端口>`，所以首次部署必须先部署 db-service。
+
+默认端口：platform `8062`（prod）/ `8060`（dev），db-service `8072`（prod）/ `8070`（dev，默认只绑 `127.0.0.1`，管理后台经宿主机反向代理访问）。端口由各自的 `scripts/deploy.sh` 按环境固定注入，改端口要改脚本里的 `default_app_port` / `default_service_port`，并同步 platform 的 `API_INTERNAL_ORIGIN`。
+
+本地用源码构建整套服务（命令在仓库根目录执行，Dockerfile 的构建 context 是仓库根目录）：
 
 ```bash
-docker build -f apps/platform/Dockerfile --target runner .
+export POSTGRES_PASSWORD=<本地密码>
+docker compose -f apps/db-service/docker-compose.yml -f apps/db-service/docker-compose.dev.yml -f apps/db-service/docker-compose.build.yml --profile tools run --rm migrate
+docker compose -f apps/db-service/docker-compose.yml -f apps/db-service/docker-compose.dev.yml -f apps/db-service/docker-compose.build.yml up -d --build
+docker compose -f apps/platform/docker-compose.yml -f apps/platform/docker-compose.build.yml up -d --build
 ```
+
+> Compose 会自动加载 `apps/db-service/.env` 做变量插值：其中给 `vpr dev` 用的 `DATABASE_URL` / `REDIS_URL` 指向 `localhost`，在容器里连不上。本地跑 Docker 时先把这两个变量在 shell 里覆盖为 `postgresql://ai_platform:<本地密码>@postgres:5432/ai_platform?schema=public` 与 `redis://redis:6379/0`。
+
+手动构建镜像：
+
+```bash
+SHA="$(git rev-parse HEAD)"
+docker build -f apps/platform/Dockerfile --target runner --build-arg API_INTERNAL_ORIGIN=http://db-service:8072 -t ghcr.io/<owner>/ai-platform:front-end-${SHA} .
+docker build -f apps/db-service/Dockerfile --target service-runner -t ghcr.io/<owner>/ai-platform:service-${SHA} .
+docker build -f apps/db-service/Dockerfile --target prisma -t ghcr.io/<owner>/ai-platform:prisma-${SHA} .
+```
+
+platform 的 `API_INTERNAL_ORIGIN` 会被 `next.config.ts` 的 rewrites 在构建期写进 routes-manifest，必须通过 `--build-arg` 传入（缺失时构建直接失败）；dev / prod 的 db-service 端口不同，两个环境各自构建 platform 镜像。
+
+新增 `packages/*` 或 `apps/*` 时，需要同步 `apps/platform/Dockerfile` 与 `apps/db-service/Dockerfile` 中 `deps` 阶段的 `COPY <dir>/package.json`。
+
+## 部署流程
+
+所有 workflow **只支持手动触发**（`Actions -> <workflow> -> Run workflow`，选 `dev` 或 `main` 分支）。分支决定环境：`main` → `production`，`dev` → `development`。
+
+| workflow                            | 构建镜像                                      | 部署内容                                                                        |
+| ----------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------- |
+| `.github/workflows/db-service.yml`  | `<repo>:service-<sha>`、`<repo>:prisma-<sha>` | postgres / redis / db-service，执行 Prisma migrate deploy、种子数据、超级管理员 |
+| `.github/workflows/platform.yml`    | `<repo>:front-end-<sha>`                      | 只重启 platform 容器                                                            |
+| `.github/workflows/admin.yml`       | 无（静态资源）                                | scp 到服务器静态目录，整体替换                                                  |
+| `.github/workflows/deploy-all.yml`  | 复用上面三个                                  | 先 db-service，成功后按 `targets` 部署 platform / admin（都选时并行）           |
+| `.github/workflows/deploy-apps.yml` | 复用 platform / admin                         | 并行发布 platform 与 admin，不动数据库                                          |
+
+- **db-service 只在 `dev` 分支校验并打包**；`main` 分支不打包，直接复用服务器上 dev 栈（Compose project `ai-platform-dev`）正在运行的镜像，因此发布生产前先在 `dev` 跑一次 db-service。
+- 镜像只有不可变的 commit SHA tag，没有 `:latest`；platform 与 db-service 共用同一个 GHCR 仓库，只靠 tag 前缀区分，部署脚本只清理本栈前缀的旧镜像，Prisma 工具镜像用完即删（`KEEP_PRISMA_TOOL_IMAGE=true` 可保留）。
+- `deploy-all` 的 `targets` 第一项是占位符，不选择部署范围时 workflow 在第一步失败，不会部署任何应用。
+- 菜单与角色种子只在库未初始化时自动执行；改了 `apps/db-service/prisma/data/menu` 或 `role` 后，运行 db-service（或 deploy-all）并勾选 `run_menu_seed` / `run_role_seed`。
+
+服务器目录（两个栈各自一个目录，由变量直接指定，workflow 不会再往后拼子目录）：
+
+```text
+${DEPLOY_DB_SERVICE_PATH}/   # docker-compose.yml、docker-compose.dev.yml、scripts/deploy.sh、.env.<environment>
+${DEPLOY_PLATFORM_PATH}/     # docker-compose.yml、scripts/deploy.sh、.env.<environment>
+${DEPLOY_ADMIN_PATH}/        # admin 静态产物，每次部署整体清空重建，不要和其他文件混放
+```
+
+服务器 env 文件由 workflow 按 GitHub Environment 的 secrets / vars 每次整体生成覆盖。Compose project（db-service `ai-platform-prod` / `ai-platform-dev`，platform `ai-platform-app-prod` / `ai-platform-app-dev`）、共享网络、端口、库名（`ai_platform` / `ai_platform_dev`）等固定配置都写在两个 `scripts/deploy.sh` 里，不需要配到 GitHub Environment。数据卷名默认 `<project>_postgres-data` / `<project>_redis-data`，**改 project 名或 `POSTGRES_DATA_VOLUME` 而不迁移旧卷，等同于换一个空库**。
+
+在 `Settings -> Environments` 中分别创建 `production` 与 `development`，各配置一份：
+
+- 必填 Secrets：`DEPLOY_HOST`、`DEPLOY_USER`、`DEPLOY_SSH_KEY`、`POSTGRES_PASSWORD`、`AUTH_CODE_SECRET`、`AI_KEY_ENCRYPTION_KEY_V1`、`AI_KEY_REDIS_ID_SECRET`、`RESEND_API_KEY`、`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY`
+- 必填 Variables（或 Secrets）：`DEPLOY_DB_SERVICE_PATH`、`DEPLOY_PLATFORM_PATH`、`DEPLOY_ADMIN_PATH`、`RESEND_FROM_EMAIL`、`R2_ENDPOINT_URL`、`R2_BUCKET_NAME`、`VITE_BASE_API_URL`（db-service 的公网 HTTPS 地址，admin 构建期写入）
+- 可选 Secrets：`DEPLOY_PORT`（默认 `22`）、`GHCR_READ_TOKEN`（默认回落 `GITHUB_TOKEN`）、`DATABASE_URL`（默认由 `POSTGRES_*` 推导）、`REDIS_URL`、`AI_SECRET_MASTER_KEY`、`BOOTSTRAP_ADMIN_PASSWORD`
+- 可选 Variables：`BOOTSTRAP_ADMIN_ACCOUNT`（与 `BOOTSTRAP_ADMIN_PASSWORD` 同时配置时，部署会确保该超级管理员系统账号存在；已存在的账号不会被重置密码）、`CORS_ALLOWED_ORIGINS`（必须包含管理后台域名）、`RESEND_FROM_NAME`、`ENABLE_API_DOCS`、`SERVICE_BIND`（默认 `127.0.0.1`）、`BYOK_TRUST_PROXY_HEADERS`（默认 `true`）、`API_INTERNAL_ORIGIN`（默认 `http://db-service:8072` / `http://db-service:8070`）、`VITE_APP_TITLE`、`VITE_PLATFORM_URL`
+
+建议在 `Settings -> Environments -> production` 开启 `Required reviewers`，避免 `main` 部署绕过人工确认。
+
+也可以在服务器上手动执行部署脚本（两个脚本都带 `--help`）：
+
+```bash
+SHA=<要部署的 commit sha>
+
+# 先部署 db-service：它创建共享网络、postgres、redis，并执行 Prisma migrate deploy 与种子
+cd ${DEPLOY_DB_SERVICE_PATH}
+SERVICE_IMAGE=ghcr.io/<owner>/ai-platform:service-${SHA} scripts/deploy.sh production
+
+# 再部署 platform
+cd ${DEPLOY_PLATFORM_PATH}
+APP_IMAGE=ghcr.io/<owner>/ai-platform:front-end-${SHA} scripts/deploy.sh production
+```
+
+development 环境的 postgres / redis 默认发布到宿主机 `0.0.0.0:5433` / `0.0.0.0:6380`，方便本机直连 dev 库；必须在服务器防火墙和云安全组中只放行可信 IP。生产环境不暴露这两个端口。
+
+服务器地址、SSH 私钥等只存在于 GitHub Environments，仓库中不出现任何真实值。
+
+## 开发约定
+
+详见 [`AGENTS.md`](AGENTS.md)（`CLAUDE.md` 为其软链接）。要点：
+
+- platform 请求优先复用 `apps/platform/src/api/alova.ts` 与 `apps/platform/src/api/` 业务请求模块；SSR 取数用 `apps/platform/src/api/server.ts`。
+- 新接口写在 `apps/db-service/src/modules/`，参数用 zod schema 通过 `@Body({ schema })` / `@Query({ schema })` 校验，鉴权用 `Auth` / `OptionalAuth`（前台）与 `AdminPermissionAuth` / `AdminAnyPermissionAuth`（管理端，权限码见 `@ai/constants/permissions`）装饰器。
+- Server Component / Client Component 按需区分，只有存在客户端交互时才添加 `"use client"`。
+- `utils` 相关文件需要保留 JSDoc `@file`、`@func`、`@desc`、`@param` 和 `@returns` 说明，工具函数使用 `function` 声明。
+- 多个异步任务并发时使用 `Promise.allSettled` 并显式处理成功和失败结果。
+- 提交信息使用 Conventional Commits（英文），例如 `feat: add article management`。

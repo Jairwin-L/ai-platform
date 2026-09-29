@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@ai/constants": ["../constants/src/index.ts"],
+      "@ai/constants/*": ["../constants/src/*"],
+      "@ai/utils": ["./src/index.ts"],
+      "@ai/utils/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*", "tests/**/*", "../types/src/**/*.d.ts"]
+}

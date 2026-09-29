@@ -1,0 +1,19 @@
+# 纯本地使用的 override：不 pull GHCR 镜像，直接用仓库源码构建。
+# context 是仓库根目录，所以必须从根目录执行：
+#   docker compose -f apps/db-service/docker-compose.yml \
+#                  -f apps/db-service/docker-compose.dev.yml \
+#                  -f apps/db-service/docker-compose.build.yml up -d
+services:
+  db-service:
+    image: ${SERVICE_IMAGE:-ai-platform-db-service:local}
+    build:
+      context: ../..
+      dockerfile: apps/db-service/Dockerfile
+      target: service-runner
+
+  migrate:
+    image: ${PRISMA_TOOL_IMAGE:-ai-platform-prisma-tool:local}
+    build:
+      context: ../..
+      dockerfile: apps/db-service/Dockerfile
+      target: prisma
